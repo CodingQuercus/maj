@@ -1,7 +1,12 @@
+import { Metadata } from 'next';
 import AccountActions from '@/app/components/AccountActions';
 import { createClient } from '@/lib/supabase/server';
 
 import { Settings } from 'lucide-react';
+
+export const metadata: Metadata = {
+    title: 'Account',
+}
 
 export default async function AccountPage() {
     const supabase = await createClient();
