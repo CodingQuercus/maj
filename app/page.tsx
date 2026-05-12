@@ -1,65 +1,262 @@
-import Image from "next/image";
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import Image from 'next/image';
 
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+import { ClipboardList, LayoutDashboard, Users } from 'lucide-react';
+
+export default async function HomePage() {
+    // Check if user is already logged in, redirect to application if so.
+    const supabase = await createClient();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+    if (user) redirect('/applications');
+
+    return (
+        <main
+            style={{
+                minHeight: '100vh',
+                background: 'var(--color-canvas)',
+                display: 'flex',
+                flexDirection: 'column',
+            }}
+        >
+            {/* Top navigation and sign in link */}
+            <nav
+                aria-label="Main navigation"
+                style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: 'var(--space-8) var(--space-8)',
+                    borderBottom: '1px solid var(--color-border-soft)',
+                }}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+                <Link
+                    href="/"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 'var(--space-2)',
+                        textDecoration: 'none',
+                    }}
+                >
+                    <Image
+                        src="/maj-logo.svg"
+                        alt="Maj"
+                        width={24}
+                        height={24}
+                        style={{ height: 'auto' }}
+                    />
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span
+                            style={{
+                                fontSize: 'var(--text-md)',
+                                fontWeight: '700',
+                                color: 'var(--color-text-primary)',
+                                lineHeight: 1.2,
+                            }}
+                        >
+                            Maj
+                        </span>
+                        <span
+                            style={{
+                                fontSize: 'var(--text-xs)',
+                                fontWeight: '500',
+                                color: 'var(--color-text-secondary)',
+                                letterSpacing: 'var(--tracking-tight)',
+                            }}
+                        >
+                            My Application Journal
+                        </span>
+                    </div>
+                </Link>
+                <Link
+                    href="/login"
+                    aria-label="Sign in to your account"
+                    className="btn btn-secondary btn-sm"
+                >
+                    Sign in
+                </Link>
+            </nav>
+
+            {/* Hero section */}
+            <section
+                style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    padding: 'var(--space-16) var(--space-8)',
+                    gap: 'var(--space-6)',
+                }}
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+                <div
+                    style={{
+                        display: 'flex',
+                        gap: 'var(--space-4)',
+                        alignItems: 'center',
+                        marginBottom: 'var(--space-8)',
+                    }}
+                >
+                    <Image
+                        src="/maj-logo.svg"
+                        alt="Maj"
+                        width={128}
+                        height={128}
+                        style={{ height: 'auto' }}
+                    />
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'flex-start',
+                            lineHeight: 1.2,
+                        }}
+                    >
+                        <span
+                            style={{
+                                fontSize: 'var(--text-7xl)',
+                                fontWeight: '700',
+                                color: 'var(--color-text-primary)',
+                            }}
+                        >
+                            Maj
+                        </span>
+                        <span
+                            style={{
+                                fontSize: 'var(--text-xl)',
+                                fontWeight: '500',
+                                color: 'var(--color-text-secondary)',
+                                letterSpacing: 'var(--tracking-light)'
+                            }}
+                        >
+                            My Application Journal
+                        </span>
+                    </div>
+                </div>
+
+                {/* Headline and subtext */}
+                <div
+                    style={{
+                        maxWidth: '700px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 'var(--space-4)',
+                    }}
+                >
+                    <h1
+                        style={{
+                            fontSize: 'var(--text-4xl)',
+                            letterSpacing: 'var(--tracking-tight)',
+                            lineHeight: '1.1',
+                        }}
+                    >
+                        Never lose track of an application again.
+                    </h1>
+                    <p
+                        style={{
+                            fontSize: 'var(--text-lg)',
+                            color: 'var(--color-text-secondary)',
+                            lineHeight: 'var(--leading-relaxed)',
+                        }}
+                    >
+                        Log where you&apos;ve applied, update statuses as things
+                        move, and keep notes on every opportunity.
+                    </p>
+                </div>
+
+                {/* CTA Buttons */}
+                <div
+                    style={{
+                        display: 'flex',
+                        gap: 'var(--space-3)',
+                        flexWrap: 'wrap',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <Link
+                        href="/login?mode=signup"
+                        className="btn btn-primary btn-lg"
+                    >
+                        Get started
+                    </Link>
+                    <Link href="/login" className="btn btn-secondary btn-lg">
+                        Sign in
+                    </Link>
+                </div>
+
+                {/* Feature highlights */}
+                <div
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, 1fr)',
+                        gap: 'var(--space-6)',
+                        maxWidth: '720px',
+                        width: '100%',
+                        marginTop: 'var(--space-8)',
+                        borderTop: '1px solid var(--color-border-soft)',
+                        marginBottom: 'var(--space-8)',
+                        borderBottom: '1px solid var(--color-border-soft)',
+                        paddingTop: 'var(--space-8)',
+                        paddingBottom: 'var(--space-8)',
+                    }}
+                >
+                    {[
+                        {
+                            icon: <ClipboardList size={24} />,
+                            title: 'Track applications',
+                            desc: 'Log every job you apply to with status, notes and contacts.',
+                        },
+                        {
+                            icon: <LayoutDashboard size={24} />,
+                            title: 'Visualize progress',
+                            desc: 'See your job search at a glance with a live dashboard.',
+                        },
+                        {
+                            icon: <Users size={24} />,
+                            title: 'Store contacts',
+                            desc: 'Keep track of recruiters and hiring managers per application.',
+                        },
+                    ].map((f) => (
+                        <div
+                            key={f.title}
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: 'var(--space-3)',
+                                textAlign: 'center',
+                            }}
+                        >
+                            <span style={{ color: 'var(--color-accent)' }}>
+                                {f.icon}
+                            </span>
+                            <p
+                                style={{
+                                    fontSize: 'var(--text-sm)',
+                                    fontWeight: '600',
+                                    color: 'var(--color-text-primary)',
+                                }}
+                            >
+                                {f.title}
+                            </p>
+                            <p
+                                style={{
+                                    fontSize: 'var(--text-sm)',
+                                    color: 'var(--color-text-tertiary)',
+                                    lineHeight: 'var(--leading-normal)',
+                                }}
+                            >
+                                {f.desc}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+        </main>
+    );
 }
