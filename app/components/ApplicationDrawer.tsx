@@ -29,7 +29,7 @@ export default function ApplicationDrawer({
     const [deadline, setDeadline] = useState(application?.deadline ?? '');
     const [appliedAt, setAppliedAt] = useState(
         application?.applied_at?.split('T')[0] ??
-            new Date().toISOString().split('T')[0]
+        new Date().toISOString().split('T')[0]
     );
     const [url, setUrl] = useState(application?.url ?? '');
     const [description, setDescription] = useState(
@@ -37,6 +37,7 @@ export default function ApplicationDrawer({
     );
     const [notes, setNotes] = useState(application?.notes ?? '');
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const supabase = createClient();
     const router = useRouter();
@@ -44,6 +45,7 @@ export default function ApplicationDrawer({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setError(null);
 
         if (isEditing) {
             const { error } = await supabase
@@ -63,10 +65,13 @@ export default function ApplicationDrawer({
                 })
                 .eq('id', application.id);
 
-            if (!error) {
-                router.refresh();
-                onClose();
+            if (error) {
+                setError('Something went wrong. Please try again');
+                setLoading(false);
+                return
             }
+            router.refresh();
+            onClose();
         } else {
             const {
                 data: { user },
@@ -89,11 +94,14 @@ export default function ApplicationDrawer({
                 url: url || null,
             });
 
-            if (!error) {
-                router.refresh();
-                onClose();
-                resetForm();
+            if (error) {
+                setError('Something went wrong. Please try again');
+                setLoading(false);
+                return
             }
+            router.refresh();
+            onClose();
+            resetForm();
         }
 
         setLoading(false);
@@ -276,31 +284,35 @@ export default function ApplicationDrawer({
                     <div
                         style={{
                             display: 'flex',
-                            gap: 'var(--space-3)',
+                            flexDirection: 'column',
+                            gap: 'var(--space-2)',
                             paddingTop: 'var(--space-4)',
                             borderTop: '1px solid var(--color-border)',
                         }}
                     >
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="btn btn-secondary"
-                            style={{ flex: 1 }}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="btn btn-primary"
-                            style={{ flex: 1 }}
-                        >
-                            {loading
-                                ? 'Saving...'
-                                : isEditing
-                                  ? 'Save changes'
-                                  : 'Save application'}
-                        </button>
+                        {error && <p className="field-error" role="alert">{error}</p>}
+                        <div style={{ display: 'flex', gap: 'var(--space-2)', }}>
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="btn btn-secondary"
+                                style={{ flex: 1 }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="btn btn-primary"
+                                style={{ flex: 1 }}
+                            >
+                                {loading
+                                    ? 'Saving...'
+                                    : isEditing
+                                        ? 'Save changes'
+                                        : 'Save application'}
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>

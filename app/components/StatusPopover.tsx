@@ -52,13 +52,19 @@ export default function StatusPopover({
 
     const handleSelect = async (newStatus: Status) => {
         // Update UI optimistically before database confirms.
+        const previous = status;
         setStatus(newStatus);
         setOpen(false);
-        await supabase
+        const { error } = await supabase
             .from('job_applications')
             .update({ status: newStatus })
             .eq('id', applicationId);
-        router.refresh();
+
+        if (error) {
+            setStatus(previous)
+        } else {
+            router.refresh()
+        }
     };
 
     return (

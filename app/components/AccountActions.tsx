@@ -13,25 +13,40 @@ type AccountActionProps = {
 export default function AccountActions({ email }: AccountActionProps) {
     const [resetSent, setResetSent] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [resetError, setResetError] = useState<string | null>(null);
+    const [deleteError, setDeleteError] = useState<string | null>(null)
+
+
     const supabase = createClient();
     const router = useRouter();
 
     const handleResetPassword = async () => {
-        await supabase.auth.resetPasswordForEmail(email, {
+        setResetError(null);
+
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: `${window.location.origin}/reset-password`,
         });
+
+        if (error) {
+            setResetError('Could not send reset link. Please try again.');
+            return
+        }
+
         setResetSent(true);
     };
 
     const handleDeleteAccount = async () => {
-        if (
-            !confirm(
-                'Are you sure? This will permanently delete your account and all your applications.'
-            )
-        )
-            return;
+        if (!confirm('Are you sure? This will permanently delete your account and all your applications.'))
+            return
         setDeleting(true);
-        await supabase.auth.signOut();
+        setDeleteError(null);
+
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            setDeleteError('Could not delete account. Please try again.')
+            setDeleting(false);
+            return
+        }
         router.push('/');
         router.refresh();
     };
@@ -78,12 +93,15 @@ export default function AccountActions({ email }: AccountActionProps) {
                         Reset link sent to {email}
                     </p>
                 ) : (
-                    <button
-                        onClick={handleResetPassword}
-                        className="btn btn-secondary btn-sm"
-                    >
-                        Send reset link
-                    </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                        {resetError && <p className="field-error" role="alert">{resetError}</p>}
+                        <button
+                            onClick={handleResetPassword}
+                            className="btn btn-secondary btn-sm"
+                        >
+                            Send reset link
+                        </button>
+                    </div>
                 )}
             </div>
 
@@ -112,14 +130,18 @@ export default function AccountActions({ email }: AccountActionProps) {
                     Permanently delete your account and all your data. This
                     cannot be undone.
                 </p>
-                <button
-                    onClick={handleDeleteAccount}
-                    disabled={deleting}
-                    className="btn btn-danger btn-sm"
-                    aria-label="Permanently delete your account"
-                >
-                    {deleting ? 'Deleting...' : 'Delete account'}
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)'}}>
+                    {deleteError && <p className="field-error" role="alert">{deleteError}</p>}
+                    <button
+                        onClick={handleDeleteAccount}
+                        disabled={deleting}
+                        className="btn btn-danger btn-sm"
+                        aria-label="Permanently delete your account"
+                    >
+                        {deleting ? 'Deleting...' : 'Delete account'}
+                    </button>
+                </div>
+
             </div>
         </div>
     );

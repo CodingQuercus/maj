@@ -64,6 +64,8 @@ export default function ApplicationDetail({
     const [contactName, setContactName] = useState('');
     const [contactEmail, setContactEmail] = useState('');
     const [contactRole, setContactRole] = useState('');
+    const [deleteError, setDeleteError] = useState<string | null>(null);
+    const [contactError, setContactError] = useState<string | null>(null);
 
     const router = useRouter();
     const supabase = useMemo(() => createClient(), []);
@@ -80,29 +82,45 @@ export default function ApplicationDetail({
     }, [application.id, supabase]);
 
     const handleStatusChange = async (newStatus: Status) => {
+        const previous = status;
+
         setStatus(newStatus);
-        await supabase
+
+        const { error } = await supabase
             .from('job_applications')
             .update({ status: newStatus })
             .eq('id', application.id);
-        router.refresh();
+
+        if (error) {
+            setStatus(previous);
+        } else {
+            router.refresh();
+        }
     };
 
     const handleDelete = async () => {
         if (!confirm('Are you sure you want to delete this application?'))
             return;
         setDeleting(true);
-        await supabase
+        setDeleteError(null);
+        const { error } = await supabase
             .from('job_applications')
             .delete()
             .eq('id', application.id);
+
+        if (error) {
+            setDeleteError('Could not delete application. Please try again.');
+            setDeleting(false);
+            return;
+        }
         router.push('/applications');
         router.refresh();
     };
 
     const handleAddContact = async () => {
+        setContactError(null);
         if (!contactName.trim()) return;
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('contacts')
             .insert({
                 job_application_id: application.id,
@@ -112,17 +130,26 @@ export default function ApplicationDetail({
             })
             .select()
             .single();
-        if (data) {
-            setContacts([...contacts, data]);
-            setContactName('');
-            setContactEmail('');
-            setContactRole('');
-            setAddingContact(false);
+
+        if(error) {
+            setContactError('Could not add contact. Please try again.')
+            return
         }
+        setContacts([...contacts, data]);
+        setContactName('');
+        setContactEmail('');
+        setContactRole('');
+        setAddingContact(false);
+        setContactError(null);
     };
 
     const handleDeleteContact = async (id: string) => {
-        await supabase.from('contacts').delete().eq('id', id);
+        setContactError(null);
+        const { error } = await supabase.from('contacts').delete().eq('id', id);
+        if (error) {
+            setContactError('Could not delete contact. Please try again.');
+            return
+        }
         setContacts(contacts.filter((c) => c.id !== id));
     };
 
@@ -445,6 +472,7 @@ export default function ApplicationDetail({
                                 value={contactRole}
                                 onChange={(e) => setContactRole(e.target.value)}
                             />
+                            {contactError && <p className="field-error" role="alert">{contactError}</p>}
                             <div
                                 style={{
                                     display: 'flex',
@@ -552,9 +580,12 @@ export default function ApplicationDetail({
                     style={{
                         padding: 'var(--space-6) 0',
                         display: 'flex',
-                        justifyContent: 'flex-end',
+                        flexDirection: 'column',
+                        alignItems: 'flex-end',
+                        gap: 'var(--space-2)',
                     }}
                 >
+                    {deleteError && <p className="field-error" role="alert">{deleteError}</p>}
                     <button
                         onClick={handleDelete}
                         disabled={deleting}
