@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 
-import { ClipboardList, LayoutDashboard, Users } from 'lucide-react';
+import { ClipboardList, LayoutDashboard, FileText } from 'lucide-react';
 
 export default async function HomePage() {
     // Check if user is already logged in, redirect to application if so.
@@ -209,7 +209,7 @@ export default async function HomePage() {
                         {
                             icon: <ClipboardList size={24} />,
                             title: 'Track applications',
-                            desc: 'Log every job you apply to with status, notes and contacts.',
+                            desc: 'Log every job you apply to with status, notes and contact information.',
                         },
                         {
                             icon: <LayoutDashboard size={24} />,
@@ -217,9 +217,9 @@ export default async function HomePage() {
                             desc: 'See your job search at a glance with a live dashboard.',
                         },
                         {
-                            icon: <Users size={24} />,
-                            title: 'Store contacts',
-                            desc: 'Keep track of recruiters and hiring managers per application.',
+                            icon: <FileText size={24} />,
+                            title: 'Keep everything in one place',
+                            desc: 'Job description, notes, deadlines and status — all per application.',
                         },
                     ].map((f) => (
                         <div
@@ -237,7 +237,7 @@ export default async function HomePage() {
                             </span>
                             <p
                                 style={{
-                                    fontSize: 'var(--text-sm)',
+                                    fontSize: 'var(--text-md)',
                                     fontWeight: '600',
                                     color: 'var(--color-text-primary)',
                                 }}
@@ -246,7 +246,7 @@ export default async function HomePage() {
                             </p>
                             <p
                                 style={{
-                                    fontSize: 'var(--text-sm)',
+                                    fontSize: 'var(--text-base)',
                                     color: 'var(--color-text-tertiary)',
                                     lineHeight: 'var(--leading-normal)',
                                 }}
