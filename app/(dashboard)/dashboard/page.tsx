@@ -12,7 +12,7 @@ export default async function DashboardPage() {
 
     const { data: applications } = await supabase
         .from('job_applications')
-        .select('status');
+        .select('*');
 
     return <DashboardView applications={applications ?? []} />;
 }

@@ -65,7 +65,7 @@
     /* Green */
     --status-rejected: #dc2626;
     /* Red */
-    --status-saved: #7c3aed;
+    --status-withdrawn: #7c3aed;
     /* Violet */
 
     /* Typography */
@@ -610,9 +610,9 @@ select[aria-invalid='true'] {
     border-color: var(--color-danger-border);
 }
 
-.badge-saved {
+.badge-withdrawn {
     background: #f5f3ff;
-    color: var(--status-saved);
+    color: var(--status-withdrawn);
     border-color: #ddd6fe;
 }
 

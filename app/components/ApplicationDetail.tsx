@@ -266,7 +266,7 @@ export default function ApplicationDetail({
                                     }}
                                 >
                                     <Calendar size={12} />
-                                    Sent{' '}
+                                    Applied{' '}
                                     {new Date(
                                         application.applied_at
                                     ).toLocaleDateString('sv-SE')}

@@ -8,13 +8,13 @@ import {
     ResponsiveContainer,
     Legend,
 } from 'recharts';
-import { Status } from '@/lib/types';
+import { JobApplication, Status } from '@/lib/types';
 import { LayoutDashboard } from 'lucide-react';
 
 import PageTitle from './PageTitle';
 
 type DashboardViewProps = {
-    applications: { status: Status }[];
+    applications: JobApplication[];
 };
 
 // Colors per status
@@ -59,10 +59,11 @@ export default function DashboardView({ applications }: DashboardViewProps) {
         }));
 
     const statCards = [
-        { 
-            label: 'Total', 
-            value: total, 
-            color: 'var(--color-text-primary)' },
+        {
+            label: 'Total',
+            value: total,
+            color: 'var(--color-text-primary)'
+        },
         {
             label: 'Applied',
             value: statusCounts.applied ?? 0,
@@ -88,22 +89,50 @@ export default function DashboardView({ applications }: DashboardViewProps) {
             value: statusCounts.rejected ?? 0,
             color: statusColors.rejected,
         },
+        {
+            label: 'Withdrawn',
+            value: statusCounts.withdrawn ?? 0,
+            color: statusColors.withdrawn,
+        }
     ];
 
     return (
-        <div style={{ padding: 'var(--space-8)', maxWidth: '900px' }}>
+        <div style={{ padding: 'var(--space-8)', maxWidth: '900px', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
             <PageTitle icon={<LayoutDashboard size={32} />} title="Dashboard" />
 
+            <div
+                className="card"
+                style={{ textAlign: 'center' }}
+                role="region"
+                aria-label={`Total: ${total}`}
+            >
+                <div style={{
+                    fontSize: 'var(--text-3xl)',
+                    fontWeight: '700',
+                    color: 'var(--color-text-primary)',
+                    marginBottom: 'var(--space-1)',
+                }}>
+                    {total}
+                </div>
+                <div style={{
+                    fontSize: 'var(--text-xs)',
+                    color: 'var(--color-text-tertiary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    fontWeight: '500',
+                }}>
+                    Total
+                </div>
+            </div>
             {/* Stats cards, one per tracked status plus a total*/}
             <div
                 style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
                     gap: 'var(--space-4)',
-                    marginBottom: 'var(--space-8)',
                 }}
             >
-                {statCards.map((card) => (
+            {statCards.filter(c => c.label !== 'Total').map((card) => (
                     <div
                         key={card.label}
                         className="card"
