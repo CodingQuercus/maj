@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { JobApplication, Status, Contact } from '@/lib/types';
 
-import { useBreakpoint, BreakPoint } from '@/hooks/useBreakpoint';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 
 import {
     ArrowLeft,
