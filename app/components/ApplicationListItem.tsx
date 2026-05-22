@@ -88,10 +88,10 @@ export default function ApplicationListItem({
                 {application.company}
             </td>
             {bp !== 'tablet' && (
-                <td style={{ 
-                        fontSize: 'var(--text-sm)', 
-                        color: 'var(--color-text-tertiary)' 
-                    }}
+                <td style={{
+                    fontSize: 'var(--text-sm)',
+                    color: 'var(--color-text-tertiary)'
+                }}
                 >
                     {application.location ?? '—'}
                 </td>

@@ -145,7 +145,7 @@ export default function ApplicationDrawer({
                     position: 'fixed',
                     top: 0,
                     right: 0,
-                    height: '100vh',
+                    height: '100dvh',
                     width: 'min(480px, 100vw)',
                     background: 'var(--color-white)',
                     borderLeft: '1px solid var(--color-border)',

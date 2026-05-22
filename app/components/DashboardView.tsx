@@ -102,131 +102,146 @@ export default function DashboardView({ applications }: DashboardViewProps) {
     ];
 
     return (
-        <div style={{
-            padding: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
-            paddingBottom: bp === 'mobile' ? '120px' : 'var(--space-8)',
-            maxWidth: '900px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-4)',
-        }}>
-            <PageTitle icon={<LayoutDashboard size={bp === 'mobile' ? 24 : 32} />} title="Dashboard" noMargin />
-            <div
-                className="card"
-                style={{
-                    textAlign: 'center',
-                    padding: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-6)',
-                }}
-            >
-                <div style={{
-                    fontSize: bp === 'mobile' ? 'var(--text-xl)' : 'var(--text-3xl)',
-                    fontWeight: '700',
-                    color: 'var(--color-text-primary)',
-                    marginBottom: 'var(--space-1)',
-                }}>
-                    {total}
-                </div>
-                <div style={{
-                    fontSize: 'var(--text-xs)',
-                    color: 'var(--color-text-tertiary)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.08em',
-                    fontWeight: '500',
-                }}>
-                    Total
-                </div>
-            </div>
-            {/* Stats cards, one per tracked status plus a total*/}
-            <div
-                style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                    gap: 'var(--space-4)',
-                }}
-            >
-                {statCards.filter(c => c.label !== 'Total').map((card) => (
-                    <div
-                        key={card.label}
-                        className="card"
-                        style={{
-                            textAlign: 'center',
-                            padding: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-6)',
-                        }}
-                        role="region"
-                        aria-label={`${card.label}: ${card.value}`}
-                    >
-                        <div style={{
-                            fontSize: bp === 'mobile' ? 'var(--text-xl)' : 'var(--text-3xl)',
-                            fontWeight: '700',
-                            color: card.color,
-                            marginBottom: 'var(--space-1)',
-                        }}
-                        >
-                            {card.value}
-                        </div>
-                        <div
-                            style={{
-                                fontSize: 'var(--text-xs)',
-                                color: 'var(--color-text-tertiary)',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.08em',
-                                fontWeight: '500',
-                            }}
-                        >
-                            {card.label}
-                        </div>
-                    </div>
-                ))}
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+
+            <div style={{
+                paddingTop: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
+                paddingLeft: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
+                paddingRight: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
+                paddingBottom: 0,
+                flexShrink: 0,
+            }}>
+                <PageTitle icon={<LayoutDashboard size={bp === 'mobile' ? 24 : 32} />} title="Dashboard" />
             </div>
 
-            {/* Donut chart, only shown if there is data */}
-            {total === 0 ? (
+            <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
+                paddingBottom: bp === 'mobile' ? '120px' : 'var(--space-8)',
+                maxWidth: '900px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-4)',
+            }}>
+
                 <div
-                    className="panel"
-                    style={{ textAlign: 'center', padding: 'var(--space-12)' }}
+                    className="card"
+                    style={{
+                        textAlign: 'center',
+                        padding: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-6)',
+                    }}
                 >
-                    <p style={{ color: 'var(--color-text-tertiary)' }}>
-                        No data yet. Add your first application!
-                    </p>
+                    <div style={{
+                        fontSize: bp === 'mobile' ? 'var(--text-xl)' : 'var(--text-3xl)',
+                        fontWeight: '700',
+                        color: 'var(--color-text-primary)',
+                        marginBottom: 'var(--space-1)',
+                    }}>
+                        {total}
+                    </div>
+                    <div style={{
+                        fontSize: 'var(--text-xs)',
+                        color: 'var(--color-text-tertiary)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                        fontWeight: '500',
+                    }}>
+                        Total
+                    </div>
                 </div>
-            ) : (
-                <div className="card">
-                    <h2
-                        style={{
-                            fontSize: 'var(--text-md)',
-                            marginBottom: 'var(--space-6)',
-                        }}
-                    >
-                        Breakdown of your applications
-                    </h2>
-                    <ResponsiveContainer width="100%" height={bp === 'mobile' ? 220 : 300}>
-                        <PieChart aria-label="Application status breakdown">
-                            <Pie
-                                data={chartData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={bp === 'mobile' ? 55 : 80}
-                                outerRadius={bp === 'mobile' ? 90 : 120}
-                                paddingAngle={3}
-                                dataKey="value"
+                {/* Stats cards, one per tracked status plus a total*/}
+                <div
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                        gap: 'var(--space-4)',
+                    }}
+                >
+                    {statCards.filter(c => c.label !== 'Total').map((card) => (
+                        <div
+                            key={card.label}
+                            className="card"
+                            style={{
+                                textAlign: 'center',
+                                padding: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-6)',
+                            }}
+                            role="region"
+                            aria-label={`${card.label}: ${card.value}`}
+                        >
+                            <div style={{
+                                fontSize: bp === 'mobile' ? 'var(--text-xl)' : 'var(--text-3xl)',
+                                fontWeight: '700',
+                                color: card.color,
+                                marginBottom: 'var(--space-1)',
+                            }}
                             >
-                                {chartData.map((entry, index) => (
-                                    <Cell key={index} fill={entry.color} />
-                                ))}
-                            </Pie>
-                            <Tooltip
-                                formatter={(value, name) => [value, name]}
-                                contentStyle={{
-                                    borderRadius: '8px',
-                                    border: '1px solid var(--color-border)',
-                                    fontSize: '13px',
+                                {card.value}
+                            </div>
+                            <div
+                                style={{
+                                    fontSize: 'var(--text-xs)',
+                                    color: 'var(--color-text-tertiary)',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.08em',
+                                    fontWeight: '500',
                                 }}
-                            />
-                            {bp !== 'mobile' && <Legend />}
-                        </PieChart>
-                    </ResponsiveContainer>
+                            >
+                                {card.label}
+                            </div>
+                        </div>
+                    ))}
                 </div>
-            )}
+
+                {/* Donut chart, only shown if there is data */}
+                {total === 0 ? (
+                    <div
+                        className="panel"
+                        style={{ textAlign: 'center', padding: 'var(--space-12)' }}
+                    >
+                        <p style={{ color: 'var(--color-text-tertiary)' }}>
+                            No data yet. Add your first application!
+                        </p>
+                    </div>
+                ) : (
+                    <div className="card">
+                        <h2
+                            style={{
+                                fontSize: 'var(--text-md)',
+                                marginBottom: 'var(--space-6)',
+                            }}
+                        >
+                            Breakdown of your applications
+                        </h2>
+                        <ResponsiveContainer width="100%" height={bp === 'mobile' ? 220 : 300}>
+                            <PieChart aria-label="Application status breakdown">
+                                <Pie
+                                    data={chartData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={bp === 'mobile' ? 55 : 80}
+                                    outerRadius={bp === 'mobile' ? 90 : 120}
+                                    paddingAngle={3}
+                                    dataKey="value"
+                                >
+                                    {chartData.map((entry, index) => (
+                                        <Cell key={index} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                                <Tooltip
+                                    formatter={(value, name) => [value, name]}
+                                    contentStyle={{
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--color-border)',
+                                        fontSize: '13px',
+                                    }}
+                                />
+                                {bp !== 'mobile' && <Legend />}
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

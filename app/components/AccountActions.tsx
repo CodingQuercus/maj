@@ -130,7 +130,7 @@ export default function AccountActions({ email }: AccountActionProps) {
                     Permanently delete your account and all your data. This
                     cannot be undone.
                 </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)'}}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                     {deleteError && <p className="field-error" role="alert">{deleteError}</p>}
                     <button
                         onClick={handleDeleteAccount}
