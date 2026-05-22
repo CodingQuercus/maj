@@ -315,7 +315,7 @@ export default function ApplicationDetail({
                     overflowY: 'auto',
                     paddingLeft: pad,
                     paddingRight: pad,
-                    paddingBottom: bp === 'mobile' ? '140px' : pad,
+                    paddingBottom: bp === 'mobile' ? '164px' : pad,
                     maxWidth: '680px'
                 }}>
 

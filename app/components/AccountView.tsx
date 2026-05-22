@@ -32,7 +32,7 @@ export default function AccountView({ email, createdAt }: AccountViewProps) {
                 paddingTop: 'var(--space-4)',
                 paddingLeft: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
                 paddingRight: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
-                paddingBottom: bp === 'mobile' ? '140px' : 'var(--space-8)',
+                paddingBottom: bp === 'mobile' ? '164px' : 'var(--space-8)',
                 maxWidth: '480px',
             }}>
                 {/* User profile information */}

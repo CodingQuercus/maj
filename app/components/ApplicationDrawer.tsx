@@ -19,7 +19,6 @@ export default function ApplicationDrawer({
     open,
     onClose,
     application,
-    bp,
 }: DrawerProps) {
     const isEditing = !!application;
 

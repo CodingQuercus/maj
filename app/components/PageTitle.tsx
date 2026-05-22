@@ -24,7 +24,7 @@ export default function PageTitle({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 'var(--space-2)',
-                marginBottom: noMargin ? 0 : 'var(--space-8)',
+                marginBottom: noMargin ? 0 : bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
             }}
         >
             <span
