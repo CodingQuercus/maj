@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { JobApplication, Status, Contact } from '@/lib/types';
+
+import { useBreakpoint, BreakPoint } from '@/hooks/useBreakpoint';
+
 import {
     ArrowLeft,
     Pencil,
@@ -67,6 +70,7 @@ export default function ApplicationDetail({
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [contactError, setContactError] = useState<string | null>(null);
 
+    const bp = useBreakpoint();
     const router = useRouter();
     const supabase = useMemo(() => createClient(), []);
 
@@ -600,6 +604,7 @@ export default function ApplicationDetail({
                 open={drawerOpen}
                 onClose={() => setDrawerOpen(false)}
                 application={application}
+                bp={bp}
             />
         </>
     );

@@ -287,6 +287,7 @@ export default function ApplicationsView({
             <ApplicationDrawer
                 open={drawerOpen}
                 onClose={() => setDrawerOpen(false)}
+                bp={bp}
             />
         </div>
     );

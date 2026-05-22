@@ -1,5 +1,5 @@
 'use client';
-import { useBreakpoint, type BreakPoint } from '@/hooks/useBreakpoint';
+import { type BreakPoint } from '@/hooks/useBreakpoint';
 import { JobApplication } from '@/lib/types';
 import StatusPopover from './StatusPopover';
 

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { JobApplication, WorkType } from '@/lib/types';
+import { BreakPoint } from '@/hooks/useBreakpoint';
 
 import { X } from 'lucide-react';
 
@@ -11,12 +12,14 @@ type DrawerProps = {
     open: boolean;
     onClose: () => void;
     application?: JobApplication;
+    bp: BreakPoint;
 };
 
 export default function ApplicationDrawer({
     open,
     onClose,
     application,
+    bp,
 }: DrawerProps) {
     const isEditing = !!application;
 
@@ -143,7 +146,7 @@ export default function ApplicationDrawer({
                     top: 0,
                     right: 0,
                     height: '100vh',
-                    width: '480px',
+                    width: 'min(480px, 100vw)',
                     background: 'var(--color-white)',
                     borderLeft: '1px solid var(--color-border)',
                     boxShadow: 'var(--shadow-lg)',
@@ -187,6 +190,7 @@ export default function ApplicationDrawer({
                         display: 'flex',
                         flexDirection: 'column',
                         gap: 'var(--space-4)',
+                        paddingBottom: bp === 'mobile' ? 'calc(64px + var(--space-6))' : 'var(--space-6)',
                     }}
                 >
                     <div>
