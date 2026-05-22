@@ -11,7 +11,7 @@ import { JobApplication } from '@/lib/types';
 import SortableColumnHeader from './SortableColumnHeader';
 
 
-import { ClipboardList, Plus } from 'lucide-react';
+import { ClipboardList, Plus, ChevronDown } from 'lucide-react';
 import PageTitle from './PageTitle';
 
 type ApplicationListProps = {
@@ -42,8 +42,12 @@ export default function ApplicationsView({
     const [filter, setFilter] = useState<string>('all');
     const [search, setSearch] = useState('');
 
+    const [filterOpen, setFilterOpen] = useState(false);
+    const [sortOpen, setSortOpen] = useState(false);
+
     const [sortKey, setSortKey] = useState<SortKey>('applied_at');
     const [sortDir, setSortDir] = useState<SortDir>('desc');
+
 
     // Toggle sort direction if same key, otherwise sort key by new key ascending.
     const handleSort = (key: SortKey) => {
@@ -93,7 +97,7 @@ export default function ApplicationsView({
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        marginBottom: 'var(--space-8)',
+                        marginBottom: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-8)',
                     }}
                 >
                     <PageTitle icon={<ClipboardList size={bp === 'mobile' ? 24 : 32} />} title="Applications" noMargin />
@@ -113,7 +117,7 @@ export default function ApplicationsView({
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        marginBottom: 'var(--space-4)',
+                        marginBottom: 'var(--space-3)',
                         gap: 'var(--space-4)',
                     }}
                 >
@@ -124,69 +128,136 @@ export default function ApplicationsView({
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search for role or company..."
                         className="input-search"
-                        style={{ maxWidth: '320px' }}
+                        style={{ maxWidth: bp === 'mobile' ? '100%' : '320px' }}
                     />
                 </div>
 
-                {/* Filter by application status */}
-                <div
-                    style={{
-                        display: 'flex',
-                        gap: 'var(--space-4)',
-                        marginBottom: 'var(--space-6)',
-                        flexWrap: 'wrap',
-                    }}
-                >
-                    {statuses.map((s) => (
-                        <button
-                            key={s}
-                            onClick={() => setFilter(s)}
-                            className={
-                                s !== 'all'
-                                    ? `badge badge-dot badge-${s}`
-                                    : 'badge'
-                            }
-                            style={{
-                                cursor: 'pointer',
-                                border:
-                                    filter === s
-                                        ? '2px solid currentColor'
-                                        : '1px solid',
-                                opacity: filter === s ? 1 : 0.5,
-                                padding: '6px 12px',
-                            }}
-                            aria-pressed={filter === s}
-                        >
-                            {s === 'all'
-                                ? `All (${applications.length})`
-                                : statusLabels[s]}
-                        </button>
-                    ))}
-                </div>
+                {bp === 'mobile' ? (
+                    <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
+                        {/* Filter popover */}
+                        <div style={{ position: 'relative', flex: 1 }}>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                style={{ width: '100%', justifyContent: 'space-between' }}
+                                onClick={() => { setFilterOpen(!filterOpen); setSortOpen(false); }}
+                                aria-expanded={filterOpen}
+                            >
+                                <span>Filter: {statusLabels[filter] ?? 'All'}</span>
+                                <ChevronDown size={14} />
+                            </button>
+                            {filterOpen && (
+                                <>
+                                    <div onClick={() => setFilterOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: 'calc(100% + 4px)',
+                                        left: 0,
+                                        right: 0,
+                                        background: 'var(--color-white)',
+                                        border: '1px solid var(--color-border)',
+                                        borderRadius: 'var(--radius-lg)',
+                                        boxShadow: 'var(--shadow-md)',
+                                        zIndex: 20,
+                                        padding: 'var(--space-2)',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: 'var(--space-1)',
+                                    }}>
+                                        {statuses.map((s) => (
+                                            <button
+                                                key={s}
+                                                onClick={() => { setFilter(s); setFilterOpen(false); }}
+                                                className={s !== 'all' ? `badge badge-dot badge-${s}` : 'badge'}
+                                                style={{
+                                                    cursor: 'pointer',
+                                                    justifyContent: 'flex-start',
+                                                    border: filter === s ? '2px solid currentColor' : '1px solid',
+                                                    opacity: filter === s ? 1 : 0.6,
+                                                    padding: '6px 12px',
+                                                    width: '100%',
+                                                }}
+                                            >
+                                                {s === 'all' ? `All (${applications.length})` : statusLabels[s]}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
 
-                {/* Sort dropdown on mobile */}
-                {bp === 'mobile' && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
-                        <label htmlFor="mobile-sort" style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-tertiary)', marginBottom: 0 }}>
-                            Sort by
-                        </label>
-                        <select
-                            id="mobile-sort"
-                            value={`${sortKey}-${sortDir}`}
-                            onChange={(e) => {
-                                const [key, dir] = e.target.value.split('-');
-                                setSortKey(key as SortKey);
-                                setSortDir(dir as SortDir);
-                            }}
-                            style={{ width: 'auto', cursor: 'pointer' }}
-                            className="btn btn-secondary btn-sm"
-                        >
-                            <option value="applied_at-desc">Date (newest)</option>
-                            <option value="applied_at-asc">Date (oldest)</option>
-                            <option value="title-asc">Role (A–Z)</option>
-                            <option value="company-asc">Company (A–Z)</option>
-                            <option value="status-asc">Status</option>
-                        </select>
+                        {/* Sort popover */}
+                        <div style={{ position: 'relative', flex: 1 }}>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                style={{ width: '100%', justifyContent: 'space-between' }}
+                                onClick={() => { setSortOpen(!sortOpen); setFilterOpen(false); }}
+                                aria-expanded={sortOpen}
+                            >
+                                <span>Sort: {sortKey === 'applied_at' ? 'Date' : sortKey === 'title' ? 'Role' : 'Company'}</span>
+                                <ChevronDown size={14} />
+                            </button>
+                            {sortOpen && (
+                                <>
+                                    <div onClick={() => setSortOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: 'calc(100% + 4px)',
+                                        left: 0,
+                                        right: 0,
+                                        background: 'var(--color-white)',
+                                        border: '1px solid var(--color-border)',
+                                        borderRadius: 'var(--radius-lg)',
+                                        boxShadow: 'var(--shadow-md)',
+                                        zIndex: 20,
+                                        padding: 'var(--space-2)',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: 'var(--space-1)',
+                                    }}>
+                                        {[
+                                            { label: 'Date (newest)', key: 'applied_at' as SortKey, dir: 'desc' as SortDir },
+                                            { label: 'Date (oldest)', key: 'applied_at' as SortKey, dir: 'asc' as SortDir },
+                                            { label: 'Role (A–Z)', key: 'title' as SortKey, dir: 'asc' as SortDir },
+                                            { label: 'Company (A–Z)', key: 'company' as SortKey, dir: 'asc' as SortDir },
+                                            { label: 'Status', key: 'status' as SortKey, dir: 'asc' as SortDir },
+                                        ].map((opt) => (
+                                            <button
+                                                key={opt.label}
+                                                onClick={() => { setSortKey(opt.key); setSortDir(opt.dir); setSortOpen(false); }}
+                                                className="btn btn-ghost btn-sm"
+                                                style={{
+                                                    justifyContent: 'flex-start',
+                                                    fontWeight: sortKey === opt.key && sortDir === opt.dir ? '600' : '400',
+                                                    color: sortKey === opt.key && sortDir === opt.dir ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                                }}
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                ) : (
+                    /* Filter applications by status */
+                    <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-6)', flexWrap: 'wrap' }}>
+                        {statuses.map((s) => (
+                            <button
+                                key={s}
+                                onClick={() => setFilter(s)}
+                                className={s !== 'all' ? `badge badge-dot badge-${s}` : 'badge'}
+                                style={{
+                                    cursor: 'pointer',
+                                    border: filter === s ? '2px solid currentColor' : '1px solid',
+                                    opacity: filter === s ? 1 : 0.5,
+                                    padding: '6px 12px',
+                                }}
+                                aria-pressed={filter === s}
+                            >
+                                {s === 'all' ? `All (${applications.length})` : statusLabels[s]}
+                            </button>
+                        ))}
                     </div>
                 )}
             </div>
@@ -239,7 +310,14 @@ export default function ApplicationsView({
                 </div>
             )}
 
-            <div style={{ flex: 1, overflowY: 'auto', paddingTop: 'var(--space-2)', paddingLeft: pad, paddingRight: pad, paddingBottom: pad }}>
+            <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                paddingTop: 'var(--space-2)',
+                paddingLeft: pad,
+                paddingRight: pad,
+                paddingBottom: bp === 'mobile' ? 'calc(64px + var(--space-4))' : pad
+            }}>
                 {bp !== 'mobile' ? (
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <tbody>
