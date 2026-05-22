@@ -1,6 +1,10 @@
+"use client";
+
 import AccountActions from './AccountActions';
 import PageTitle from './PageTitle';
 import { Settings } from 'lucide-react';
+
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 
 type AccountViewProps = {
     email: string;
@@ -8,8 +12,13 @@ type AccountViewProps = {
 };
 
 export default function AccountView({ email, createdAt }: AccountViewProps) {
+    const bp = useBreakpoint();
     return (
-        <main style={{ padding: 'var(--space-8)', maxWidth: '480px' }}>
+        <main style={{
+            padding: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
+            maxWidth: '480px',
+            paddingBottom: bp === 'mobile' ? 'calc(64px + var(--space-6))' : 'var(--space-8)',
+        }}>
             <PageTitle icon={<Settings size={32} />} title="Account" />
 
             {/* User profile information */}
@@ -77,8 +86,8 @@ export default function AccountView({ email, createdAt }: AccountViewProps) {
                         >
                             {createdAt
                                 ? new Date(createdAt).toLocaleDateString(
-                                      'sv-SE'
-                                  )
+                                    'sv-SE'
+                                )
                                 : '—'}
                         </span>
                     </div>
