@@ -162,7 +162,7 @@ export default function ApplicationDrawer({
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        padding: 'var(--space-6)',
+                        padding: 'var(--space-4)',
                         borderBottom: '1px solid var(--color-border)',
                     }}
                 >
@@ -179,6 +179,7 @@ export default function ApplicationDrawer({
                 </div>
 
                 <form
+                    id="application-form"
                     onSubmit={handleSubmit}
                     aria-label={
                         isEditing ? 'Edit application form' : 'New application'
@@ -186,7 +187,7 @@ export default function ApplicationDrawer({
                     style={{
                         flex: 1,
                         overflowY: 'auto',
-                        padding: 'var(--space-6)',
+                        padding: 'var(--space-4)',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: 'var(--space-4)',
@@ -284,41 +285,26 @@ export default function ApplicationDrawer({
                             placeholder="Your thoughts..."
                         />
                     </div>
-
-                    <div
-                        style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 'var(--space-2)',
-                            paddingTop: 'var(--space-4)',
-                            borderTop: '1px solid var(--color-border)',
-                        }}
-                    >
-                        {error && <p className="field-error" role="alert">{error}</p>}
-                        <div style={{ display: 'flex', gap: 'var(--space-2)', }}>
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="btn btn-secondary"
-                                style={{ flex: 1 }}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="btn btn-primary"
-                                style={{ flex: 1 }}
-                            >
-                                {loading
-                                    ? 'Saving...'
-                                    : isEditing
-                                        ? 'Save changes'
-                                        : 'Save application'}
-                            </button>
-                        </div>
-                    </div>
                 </form>
+
+                <div style={{
+                    padding: 'var(--space-4) var(--space-4)',
+                    paddingBottom: bp === 'mobile' ? 'calc(64px + var(--space-4))' : 'var(--space-6)',
+                    borderTop: '1px solid var(--color-border)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 'var(--space-2)',
+                }}>
+                    {error && <p className="field-error" role="alert">{error}</p>}
+                    <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                        <button type="button" onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>
+                            Cancel
+                        </button>
+                        <button type="submit" form="application-form" disabled={loading} className="btn btn-primary" style={{ flex: 1 }}>
+                            {loading ? 'Saving...' : isEditing ? 'Save changes' : 'Save application'}
+                        </button>
+                    </div>
+                </div>
             </div>
         </>
     );

@@ -108,11 +108,9 @@ export default function DashboardView({ applications }: DashboardViewProps) {
             maxWidth: '900px',
             display: 'flex',
             flexDirection: 'column',
-            gap: 'var(--space-4)'
+            gap: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-4)',
         }}>
-            <div style={{ marginBottom: bp === 'mobile' ? 'var(--space-1)' : 'var(--space-6)' }}>
-                <PageTitle icon={<LayoutDashboard size={bp === 'mobile' ? 24 : 32} />} title="Dashboard" noMargin />
-            </div>
+            <PageTitle icon={<LayoutDashboard size={bp === 'mobile' ? 24 : 32} />} title="Dashboard" noMargin />
             <div
                 className="card"
                 style={{

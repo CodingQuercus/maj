@@ -12,6 +12,12 @@ export default function HomeNav() {
                 alignItems: 'center',
                 padding: 'var(--space-8)',
                 borderBottom: '1px solid var(--color-border-soft)',
+                position: 'sticky',
+                top: 0,
+                zIndex: 50,
+                background: 'rgba(250, 250, 250, 0.85)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
             }}
         >
             <Link

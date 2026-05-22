@@ -64,99 +64,100 @@ export default function LoginPage({
             style={{ background: 'var(--color-canvas)' }}
         >
             <HomeNav />
-<div style={{ 
-        flex: 1, 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        padding: 'var(--space-8) var(--space-4)',
-    }}>            <div className="card" style={{
-                width: '100%',
-                maxWidth: '380px',
-                margin: '0 var(--space-4)',
+            <div style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 'var(--space-8) var(--space-4)',
             }}>
-                <h1 style={{ marginBottom: 'var(--space-6)' }}>
-                    {mode === 'login' ? 'Welcome back' : 'Create account'}
-                </h1>
+                <div className="card" style={{
+                    width: '100%',
+                    maxWidth: '380px',
+                    margin: '0 var(--space-4)',
+                }}>
+                    <h1 style={{ marginBottom: 'var(--space-6)' }}>
+                        {mode === 'login' ? 'Welcome back' : 'Create account'}
+                    </h1>
 
-                <form
-                    onSubmit={handleLogin}
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 'var(--space-4)',
-                    }}
-                    aria-label={
-                        mode === 'login'
-                            ? 'Sign in form'
-                            : 'Create account form'
-                    }
-                >
-                    <div>
-                        <label htmlFor="email">Email</label>
-                        <input
-                            id="email"
-                            type="email"
-                            value={email}
-                            autoComplete="email"
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="you@example.com"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="password">Password</label>
-                        <input
-                            id="password"
-                            type="password"
-                            value={password}
-                            // Helps password managers distinguish between login and signup.
-                            autoComplete={
-                                mode === 'login'
-                                    ? 'current-password'
-                                    : 'new-password'
-                            }
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="••••••••"
-                            required
-                        />
-                    </div>
-
-                    {/* Error message announced to screen readers via role="alert" */}
-                    {error && (
-                        <p className="field-error" role="alert">
-                            {error}
-                        </p>
-                    )}
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="btn btn-primary btn-lg"
+                    <form
+                        onSubmit={handleLogin}
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 'var(--space-4)',
+                        }}
+                        aria-label={
+                            mode === 'login'
+                                ? 'Sign in form'
+                                : 'Create account form'
+                        }
                     >
-                        {loading
-                            ? 'Loading...'
-                            : mode === 'login'
-                                ? 'Sign in'
-                                : 'Create account'}
+                        <div>
+                            <label htmlFor="email">Email</label>
+                            <input
+                                id="email"
+                                type="email"
+                                value={email}
+                                autoComplete="email"
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="you@example.com"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="password">Password</label>
+                            <input
+                                id="password"
+                                type="password"
+                                value={password}
+                                // Helps password managers distinguish between login and signup.
+                                autoComplete={
+                                    mode === 'login'
+                                        ? 'current-password'
+                                        : 'new-password'
+                                }
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="••••••••"
+                                required
+                            />
+                        </div>
+
+                        {/* Error message announced to screen readers via role="alert" */}
+                        {error && (
+                            <p className="field-error" role="alert">
+                                {error}
+                            </p>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="btn btn-primary btn-lg"
+                        >
+                            {loading
+                                ? 'Loading...'
+                                : mode === 'login'
+                                    ? 'Sign in'
+                                    : 'Create account'}
+                        </button>
+                    </form>
+
+                    <hr />
+
+                    {/* Toggle between login and signup */}
+                    <button
+                        onClick={() =>
+                            setMode(mode === 'login' ? 'signup' : 'login')
+                        }
+                        className="btn btn-ghost"
+                        style={{ width: '100%' }}
+                    >
+                        {mode === 'login'
+                            ? "Don't have an account? Sign up"
+                            : 'Already have an account? Sign in'}
                     </button>
-                </form>
-
-                <hr />
-
-                {/* Toggle between login and signup */}
-                <button
-                    onClick={() =>
-                        setMode(mode === 'login' ? 'signup' : 'login')
-                    }
-                    className="btn btn-ghost"
-                    style={{ width: '100%' }}
-                >
-                    {mode === 'login'
-                        ? "Don't have an account? Sign up"
-                        : 'Already have an account? Sign in'}
-                </button>
-            </div>
+                </div>
             </div>
         </main>
     );
