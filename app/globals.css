@@ -752,3 +752,13 @@ hr {
     background: var(--color-accent-subtle);
     color: var(--color-accent-text);
 }
+
+/* MEDIA */
+@media (max-width: 639px) {
+    .dashboard-main {
+        padding-bottom: calc(64px + env(safe-area-inset-bottom));
+        padding-left: var(--space-4);
+        padding-right: var(--space-4);
+        padding-top: var(--space-4);
+    }
+}
