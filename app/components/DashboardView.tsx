@@ -110,7 +110,7 @@ export default function DashboardView({ applications }: DashboardViewProps) {
             flexDirection: 'column',
             gap: 'var(--space-4)'
         }}>
-            <PageTitle icon={<LayoutDashboard size={32} />} title="Dashboard" />
+            <PageTitle icon={<LayoutDashboard size={bp === 'mobile' ? 24 : 32} />} title="Dashboard" />
 
             <div
                 className="card"

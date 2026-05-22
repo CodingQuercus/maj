@@ -96,11 +96,7 @@ export default function ApplicationsView({
                         marginBottom: 'var(--space-8)',
                     }}
                 >
-                    <PageTitle
-                        icon={<ClipboardList size={32} />}
-                        title="Applications"
-                        noMargin
-                    />
+                    <PageTitle icon={<ClipboardList size={bp === 'mobile' ? 24 : 32} />} title="Applications" noMargin />
                     <button
                         aria-label="Add new application"
                         className="btn btn-primary"

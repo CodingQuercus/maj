@@ -3,6 +3,7 @@
 import { useState, use } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import HomeNav from '../components/HomeNav';
 
 export default function LoginPage({
     searchParams,
@@ -59,10 +60,21 @@ export default function LoginPage({
 
     return (
         <main
-            className="min-h-screen flex items-center justify-center"
+            className="min-h-screen flex flex-col"
             style={{ background: 'var(--color-canvas)' }}
         >
-            <div className="card" style={{ width: '100%', maxWidth: '380px' }}>
+            <HomeNav />
+<div style={{ 
+        flex: 1, 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        padding: 'var(--space-8) var(--space-4)',
+    }}>            <div className="card" style={{
+                width: '100%',
+                maxWidth: '380px',
+                margin: '0 var(--space-4)',
+            }}>
                 <h1 style={{ marginBottom: 'var(--space-6)' }}>
                     {mode === 'login' ? 'Welcome back' : 'Create account'}
                 </h1>
@@ -125,8 +137,8 @@ export default function LoginPage({
                         {loading
                             ? 'Loading...'
                             : mode === 'login'
-                              ? 'Sign in'
-                              : 'Create account'}
+                                ? 'Sign in'
+                                : 'Create account'}
                     </button>
                 </form>
 
@@ -144,6 +156,7 @@ export default function LoginPage({
                         ? "Don't have an account? Sign up"
                         : 'Already have an account? Sign in'}
                 </button>
+            </div>
             </div>
         </main>
     );

@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 
+import HomeNav from './components/HomeNav';
+
 import { ClipboardList, LayoutDashboard, FileText } from 'lucide-react';
 
 export default async function HomePage() {
@@ -23,63 +25,7 @@ export default async function HomePage() {
             }}
         >
             {/* Top navigation and sign in link */}
-            <nav
-                aria-label="Main navigation"
-                style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: 'var(--space-8) var(--space-8)',
-                    borderBottom: '1px solid var(--color-border-soft)',
-                }}
-            >
-                <Link
-                    href="/"
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 'var(--space-2)',
-                        textDecoration: 'none',
-                    }}
-                >
-                    <Image
-                        src="/maj-logo.svg"
-                        alt="Maj"
-                        width={24}
-                        height={24}
-                        style={{ height: 'auto' }}
-                    />
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span
-                            style={{
-                                fontSize: 'var(--text-md)',
-                                fontWeight: '700',
-                                color: 'var(--color-text-primary)',
-                                lineHeight: 1.2,
-                            }}
-                        >
-                            Maj
-                        </span>
-                        <span
-                            style={{
-                                fontSize: 'var(--text-xs)',
-                                fontWeight: '500',
-                                color: 'var(--color-text-secondary)',
-                                letterSpacing: 'var(--tracking-tight)',
-                            }}
-                        >
-                            My Application Journal
-                        </span>
-                    </div>
-                </Link>
-                <Link
-                    href="/login"
-                    aria-label="Sign in to your account"
-                    className="btn btn-secondary btn-sm"
-                >
-                    Sign in
-                </Link>
-            </nav>
+            <HomeNav />
 
             {/* Hero section */}
             <section
@@ -108,6 +54,7 @@ export default async function HomePage() {
                         width={128}
                         height={128}
                         style={{ height: 'auto' }}
+                        className='hero-logo'
                     />
                     <div
                         style={{
@@ -118,6 +65,7 @@ export default async function HomePage() {
                         }}
                     >
                         <span
+                            className="hero-title"
                             style={{
                                 fontSize: 'var(--text-7xl)',
                                 fontWeight: '700',
@@ -149,6 +97,7 @@ export default async function HomePage() {
                     }}
                 >
                     <h1
+                        className='hero-text'
                         style={{
                             fontSize: 'var(--text-4xl)',
                             letterSpacing: 'var(--tracking-tight)',
@@ -158,6 +107,7 @@ export default async function HomePage() {
                         Never lose track of an application again.
                     </h1>
                     <p
+                        className='hero-paragraph'
                         style={{
                             fontSize: 'var(--text-lg)',
                             color: 'var(--color-text-secondary)',
@@ -191,9 +141,9 @@ export default async function HomePage() {
 
                 {/* Feature highlights */}
                 <div
+                    className='feature-grid'
                     style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(3, 1fr)',
                         gap: 'var(--space-6)',
                         maxWidth: '720px',
                         width: '100%',
