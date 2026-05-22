@@ -11,6 +11,8 @@ import {
 import { JobApplication, Status } from '@/lib/types';
 import { LayoutDashboard } from 'lucide-react';
 
+import { useBreakpoint } from '@/hooks/useBreakpoint';
+
 import PageTitle from './PageTitle';
 
 type DashboardViewProps = {
@@ -38,6 +40,9 @@ const statusLabels: Record<Status, string> = {
 };
 
 export default function DashboardView({ applications }: DashboardViewProps) {
+
+    const bp = useBreakpoint();
+
     const total = applications.length;
 
     // Count applications per status
@@ -97,7 +102,14 @@ export default function DashboardView({ applications }: DashboardViewProps) {
     ];
 
     return (
-        <div style={{ padding: 'var(--space-8)', maxWidth: '900px', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        <div style={{
+            padding: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
+            paddingBottom: bp === 'mobile' ? 'calc(64px + var(--space-6))' : 'var(--space-8)',
+            maxWidth: '900px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--space-4)'
+        }}>
             <PageTitle icon={<LayoutDashboard size={32} />} title="Dashboard" />
 
             <div
@@ -132,7 +144,7 @@ export default function DashboardView({ applications }: DashboardViewProps) {
                     gap: 'var(--space-4)',
                 }}
             >
-            {statCards.filter(c => c.label !== 'Total').map((card) => (
+                {statCards.filter(c => c.label !== 'Total').map((card) => (
                     <div
                         key={card.label}
                         className="card"
@@ -185,14 +197,14 @@ export default function DashboardView({ applications }: DashboardViewProps) {
                     >
                         Breakdown of your applications
                     </h2>
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={bp === 'mobile' ? 220 : 300}>
                         <PieChart aria-label="Application status breakdown">
                             <Pie
                                 data={chartData}
                                 cx="50%"
                                 cy="50%"
-                                innerRadius={80}
-                                outerRadius={120}
+                                innerRadius={bp === 'mobile' ? 55 : 80}
+                                outerRadius={bp === 'mobile' ? 90 : 120}
                                 paddingAngle={3}
                                 dataKey="value"
                             >
@@ -208,7 +220,7 @@ export default function DashboardView({ applications }: DashboardViewProps) {
                                     fontSize: '13px',
                                 }}
                             />
-                            <Legend />
+                            {bp !== 'mobile' && <Legend />}
                         </PieChart>
                     </ResponsiveContainer>
                 </div>
