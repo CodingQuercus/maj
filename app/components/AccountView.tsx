@@ -16,9 +16,11 @@ export default function AccountView({ email, createdAt }: AccountViewProps) {
 
     return (
         <main style={{
-            padding: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
-            maxWidth: '480px',
+            paddingTop: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
+            paddingLeft: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
+            paddingRight: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
             paddingBottom: bp === 'mobile' ? 'calc(64px + var(--space-6))' : 'var(--space-8)',
+            maxWidth: '480px',
         }}>
             <div style={{ marginBottom: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-6)' }}>
                 <PageTitle icon={<Settings size={bp === 'mobile' ? 24 : 32} />} title="Account" noMargin />
