@@ -316,7 +316,7 @@ export default function ApplicationsView({
                 paddingTop: 'var(--space-2)',
                 paddingLeft: pad,
                 paddingRight: pad,
-                paddingBottom: bp === 'mobile' ? 'calc(64px + var(--space-4))' : pad
+                paddingBottom: bp === 'mobile' ? '120px' : pad
             }}>
                 {bp !== 'mobile' ? (
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>

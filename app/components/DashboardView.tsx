@@ -104,7 +104,7 @@ export default function DashboardView({ applications }: DashboardViewProps) {
     return (
         <div style={{
             padding: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
-            paddingBottom: bp === 'mobile' ? 'calc(64px + var(--space-6))' : 'var(--space-8)',
+            paddingBottom: bp === 'mobile' ? '120px' : 'var(--space-8)',
             maxWidth: '900px',
             display: 'flex',
             flexDirection: 'column',

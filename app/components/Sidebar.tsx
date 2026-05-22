@@ -86,7 +86,7 @@ export default function Sidebar() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-around',
-                    zIndex: 100,
+                    zIndex: 10,
                     paddingBottom: 'env(safe-area-inset-bottom)',
                 }}
             >
