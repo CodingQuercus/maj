@@ -97,7 +97,7 @@ export default function ApplicationsView({
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        marginBottom: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-8)',
+                        marginBottom: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-4)',
                     }}
                 >
                     <PageTitle icon={<ClipboardList size={bp === 'mobile' ? 24 : 32} />} title="Applications" noMargin />
@@ -241,7 +241,7 @@ export default function ApplicationsView({
                     </div>
                 ) : (
                     /* Filter applications by status */
-                    <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-6)', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-6)', flexWrap: 'wrap' }}>
                         {statuses.map((s) => (
                             <button
                                 key={s}

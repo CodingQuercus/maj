@@ -110,16 +110,18 @@ export default function DashboardView({ applications }: DashboardViewProps) {
             flexDirection: 'column',
             gap: 'var(--space-4)'
         }}>
-            <PageTitle icon={<LayoutDashboard size={bp === 'mobile' ? 24 : 32} />} title="Dashboard" />
-
+            <div style={{ marginBottom: bp === 'mobile' ? 'var(--space-1)' : 'var(--space-6)' }}>
+                <PageTitle icon={<LayoutDashboard size={bp === 'mobile' ? 24 : 32} />} title="Dashboard" noMargin />
+            </div>
             <div
                 className="card"
-                style={{ textAlign: 'center' }}
-                role="region"
-                aria-label={`Total: ${total}`}
+                style={{
+                    textAlign: 'center',
+                    padding: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-6)',
+                }}
             >
                 <div style={{
-                    fontSize: 'var(--text-3xl)',
+                    fontSize: bp === 'mobile' ? 'var(--text-xl)' : 'var(--text-3xl)',
                     fontWeight: '700',
                     color: 'var(--color-text-primary)',
                     marginBottom: 'var(--space-1)',
@@ -148,17 +150,19 @@ export default function DashboardView({ applications }: DashboardViewProps) {
                     <div
                         key={card.label}
                         className="card"
-                        style={{ textAlign: 'center' }}
+                        style={{
+                            textAlign: 'center',
+                            padding: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-6)',
+                        }}
                         role="region"
                         aria-label={`${card.label}: ${card.value}`}
                     >
-                        <div
-                            style={{
-                                fontSize: 'var(--text-3xl)',
-                                fontWeight: '700',
-                                color: card.color,
-                                marginBottom: 'var(--space-1)',
-                            }}
+                        <div style={{
+                            fontSize: bp === 'mobile' ? 'var(--text-xl)' : 'var(--text-3xl)',
+                            fontWeight: '700',
+                            color: card.color,
+                            marginBottom: 'var(--space-1)',
+                        }}
                         >
                             {card.value}
                         </div>
