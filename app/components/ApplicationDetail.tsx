@@ -167,7 +167,7 @@ export default function ApplicationDetail({
                         onClick={() => router.back()}
                         aria-label="Go back to applications"
                         className="btn btn-ghost btn-sm"
-                        style={{ marginBottom: 'var(--space-6)' }}
+                        style={{ marginBottom: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-6)' }}
                     >
                         <ArrowLeft size={16} />
                         Back
@@ -176,10 +176,7 @@ export default function ApplicationDetail({
                     {/* Header */}
                     <div
                         style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'flex-start',
-                            marginBottom: 'var(--space-6)',
+                            marginBottom: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-6)',
                         }}
                     >
                         <div
@@ -187,12 +184,24 @@ export default function ApplicationDetail({
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: 'var(--space-3)',
+                                width: '100%'
                             }}
                         >
-                            <h1>
-                                {application.title}
-                            </h1>
-
+                            <div
+                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                            >
+                                <h1 style={{ fontSize: bp === 'mobile' ? 'var(--text-xl)' : undefined }}>
+                                    {application.title}
+                                </h1>
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={() => setDrawerOpen(true)}
+                                    style={{ flexShrink: 0 }}
+                                >
+                                    <Pencil size={14} />
+                                    Edit
+                                </button>
+                            </div>
                             {/* Metadata for a job application */}
                             <div
                                 style={{
@@ -258,8 +267,7 @@ export default function ApplicationDetail({
                             <div
                                 style={{
                                     display: 'flex',
-                                    gap: 'var(--space-4)',
-                                    flexWrap: 'wrap',
+                                    gap: 'var(--space-2)',
                                 }}
                             >
                                 {application.applied_at && (
@@ -316,15 +324,6 @@ export default function ApplicationDetail({
                                 </Link>
                             )}
                         </div>
-
-                        <button
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => setDrawerOpen(true)}
-                            style={{ flexShrink: 0 }}
-                        >
-                            <Pencil size={14} />
-                            Edit
-                        </button>
                     </div>
 
                     <hr />
