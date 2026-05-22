@@ -3,18 +3,19 @@ import { ReactNode } from 'react';
 type SectionLabelProps = {
     icon: ReactNode;
     label: string;
+    noMargin?: true
 };
 
 // Reusable section label.
 // Used to introduce sections in detail views.
-export default function SectionLabel({ icon, label }: SectionLabelProps) {
+export default function SectionLabel({ icon, label, noMargin }: SectionLabelProps) {
     return (
         <div
             style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 'var(--space-2)',
-                marginBottom: 'var(--space-3)',
+                marginBottom: noMargin ? 0 : 'var(--space-3)',
             }}
         >
             <span

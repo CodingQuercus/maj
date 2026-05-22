@@ -241,7 +241,7 @@ export default function ApplicationsView({
                     </div>
                 ) : (
                     /* Filter applications by status */
-                    <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-6)', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
                         {statuses.map((s) => (
                             <button
                                 key={s}

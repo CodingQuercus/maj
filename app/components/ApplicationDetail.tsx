@@ -305,24 +305,6 @@ export default function ApplicationDetail({
                                     </span>
                                 )}
                             </div>
-
-                            {/* Show external link to job posting if added */}
-                            {application.url && (
-                                <Link
-                                    href={application.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="btn btn-ghost btn-sm"
-                                    style={{
-                                        color: 'var(--color-accent)',
-                                        fontSize: 'var(--text-sm)',
-                                        alignSelf: 'flex-start',
-                                    }}
-                                >
-                                    <ExternalLink size={14} />
-                                    View job posting
-                                </Link>
-                            )}
                         </div>
                     </div>
 
@@ -376,10 +358,21 @@ export default function ApplicationDetail({
 
                     {/* Job description */}
                     <div style={{ padding: 'var(--space-4) 0' }}>
-                        <SectionLabel
-                            icon={<FileText size={16} />}
-                            label="Job description"
-                        />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' }}>
+                            <SectionLabel icon={<FileText size={16} />} label="Job description" noMargin />
+                            {application.url && (
+                                <Link
+                                    href={application.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="btn btn-ghost btn-sm"
+                                    style={{ color: 'var(--color-accent)', fontSize: 'var(--text-sm)' }}
+                                >
+                                    <ExternalLink size={16} />
+                                    View posting
+                                </Link>
+                            )}
+                        </div>
                         {application.description ? (
                             <p
                                 style={{
@@ -445,6 +438,7 @@ export default function ApplicationDetail({
                             <SectionLabel
                                 icon={<Users size={16} />}
                                 label="Contacts"
+                                noMargin
                             />
                             <button
                                 className="btn btn-ghost btn-sm"
