@@ -1,11 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+
+import { useBreakpoint } from '@/hooks/useBreakpoint';
+
 import ApplicationDrawer from './ApplicationDrawer';
 import ApplicationListItem from './ApplicationListItem';
 import { JobApplication } from '@/lib/types';
 
 import SortableColumnHeader from './SortableColumnHeader';
+
 
 import { ClipboardList, Plus } from 'lucide-react';
 import PageTitle from './PageTitle';
@@ -30,6 +34,9 @@ const statusLabels: Record<string, string> = {
 export default function ApplicationsView({
     applications,
 }: ApplicationListProps) {
+
+    const bp = useBreakpoint();
+
     const [drawerOpen, setDrawerOpen] = useState(false);
 
     const [filter, setFilter] = useState<string>('all');
@@ -74,9 +81,12 @@ export default function ApplicationsView({
         'withdrawn',
     ];
 
+    const pad = bp === 'mobile' ? 'var(--space-3)' : 'var(--space-8)';
+
     return (
-        <>
-            <div style={{ padding: 'var(--space-8)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+
+            <div style={{ paddingTop: pad, paddingLeft: pad, paddingRight: pad, paddingBottom: 0, flexShrink: 0 }}>
                 {/* Page header with title and new application button */}
                 <div
                     style={{
@@ -96,7 +106,8 @@ export default function ApplicationsView({
                         className="btn btn-primary"
                         onClick={() => setDrawerOpen(true)}
                     >
-                        <Plus size={16} /> New application
+                        <Plus size={16} />
+                        {bp !== 'mobile' && 'New application'}
                     </button>
                 </div>
 
@@ -157,86 +168,126 @@ export default function ApplicationsView({
                     ))}
                 </div>
 
-                {/* Application table with sortable columns */}
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                        <tr
-                            style={{
-                                display: 'grid',
-                                gridTemplateColumns: '2fr 1.5fr 1fr 1fr 1fr',
-                                padding: 'var(--space-2) var(--space-4)',
-                                borderBottom: '1px solid var(--color-border)',
+                {/* Sort dropdown on mobile */}
+                {bp === 'mobile' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
+                        <label htmlFor="mobile-sort" style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-tertiary)', marginBottom: 0 }}>
+                            Sort by
+                        </label>
+                        <select
+                            id="mobile-sort"
+                            value={`${sortKey}-${sortDir}`}
+                            onChange={(e) => {
+                                const [key, dir] = e.target.value.split('-');
+                                setSortKey(key as SortKey);
+                                setSortDir(dir as SortDir);
                             }}
+                            style={{ width: 'auto', cursor: 'pointer' }}
+                            className="btn btn-secondary btn-sm"
                         >
-                            {(
-                                [
-                                    { label: 'Role', key: 'title' },
-                                    { label: 'Company', key: 'company' },
-                                    { label: 'Location', key: 'location' },
-                                    { label: 'Applied', key: 'applied_at' },
-                                    { label: 'Status', key: 'status' },
-                                ] as { label: string; key: SortKey }[]
-                            ).map((col) => (
-                                <th
-                                    key={col.key}
-                                    style={{
-                                        textAlign: 'left',
-                                        fontWeight: 'normal',
-                                    }}
-                                >
-                                    <SortableColumnHeader
-                                        label={col.label}
-                                        sortKey={col.key}
-                                        currentSortKey={sortKey}
-                                        sortDir={sortDir}
-                                        // Cast to sortKey since the component accepts string
-                                        onSort={(key) =>
-                                            handleSort(key as SortKey)
-                                        }
-                                    />
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredApplications.length === 0 ? (
-                            <tr>
-                                <td
-                                    colSpan={5}
-                                    style={{
-                                        textAlign: 'center',
-                                        padding: 'var(--space-12)',
-                                    }}
-                                >
-                                    <p
+                            <option value="applied_at-desc">Date (newest)</option>
+                            <option value="applied_at-asc">Date (oldest)</option>
+                            <option value="title-asc">Role (A–Z)</option>
+                            <option value="company-asc">Company (A–Z)</option>
+                            <option value="status-asc">Status</option>
+                        </select>
+                    </div>
+                )}
+            </div>
+
+            {/* Application table with sortable columns */}
+            {bp !== 'mobile' && (
+                <div style={{ paddingLeft: pad, paddingRight: pad }}>
+
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                            <tr
+                                style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: bp === 'tablet' ? '2fr 1.5fr 1fr 1.2fr' : '2fr 1.5fr 1fr 1fr 1fr',
+                                    padding: 'var(--space-2) var(--space-4)',
+                                    borderBottom: '1px solid var(--color-border)',
+                                }}
+                            >
+                                {(
+                                    [
+                                        { label: 'Role', key: 'title' },
+                                        { label: 'Company', key: 'company' },
+                                        ...(bp !== 'tablet' ? [{ label: 'Location', key: 'location' }] : []),
+                                        { label: 'Applied', key: 'applied_at' },
+                                        { label: 'Status', key: 'status' },
+                                    ] as { label: string; key: SortKey }[]
+                                ).map((col) => (
+                                    <th
+                                        key={col.key}
                                         style={{
-                                            color: 'var(--color-text-tertiary)',
+                                            textAlign: 'left',
+                                            fontWeight: 'normal',
                                         }}
                                     >
-                                        {search
-                                            ? `No results for "${search}".`
-                                            : filter === 'all'
-                                              ? 'No applications yet. Add your first one!'
-                                              : `No applications with status "${statusLabels[filter]}".`}
-                                    </p>
-                                </td>
+                                        <SortableColumnHeader
+                                            label={col.label}
+                                            sortKey={col.key}
+                                            currentSortKey={sortKey}
+                                            sortDir={sortDir}
+                                            // Cast to sortKey since the component accepts string
+                                            onSort={(key) =>
+                                                handleSort(key as SortKey)
+                                            }
+                                        />
+                                    </th>
+                                ))}
                             </tr>
-                        ) : (
-                            filteredApplications.map((application) => (
-                                <ApplicationListItem
-                                    key={application.id}
-                                    application={application}
-                                />
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                    </table>
+                </div>
+            )}
+
+            <div style={{ flex: 1, overflowY: 'auto', paddingTop: 'var(--space-2)', paddingLeft: pad, paddingRight: pad, paddingBottom: pad }}>
+                {bp !== 'mobile' ? (
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <tbody>
+                            {filteredApplications.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
+                                        <p style={{ color: 'var(--color-text-tertiary)' }}>
+                                            {search
+                                                ? `No results for "${search}".`
+                                                : filter === 'all'
+                                                    ? 'No applications yet. Add your first one!'
+                                                    : `No applications with status "${statusLabels[filter]}".`}
+                                        </p>
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredApplications.map((application) => (
+                                    <ApplicationListItem key={application.id} application={application} bp={bp} />
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                ) : (
+                    <>
+                        {/* Card list for mobile */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                            {filteredApplications.length === 0 ? (
+                                <p style={{ color: 'var(--color-text-tertiary)', textAlign: 'center', padding: 'var(--space-12) 0' }}>
+                                    {search ? `No results for "${search}".` : filter === 'all' ? 'No applications yet. Add your first one!' : `No applications with status "${statusLabels[filter]}".`}
+                                </p>
+                            ) : (
+                                filteredApplications.map((application) => (
+                                    <ApplicationListItem key={application.id} application={application} bp={bp} />
+                                ))
+                            )}
+                        </div>
+                    </>
+                )}
             </div>
 
             <ApplicationDrawer
                 open={drawerOpen}
                 onClose={() => setDrawerOpen(false)}
             />
-        </>
+        </div>
     );
 }

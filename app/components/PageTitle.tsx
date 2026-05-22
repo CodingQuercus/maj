@@ -1,4 +1,8 @@
+"use client";
+
 import { ReactNode } from 'react';
+
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 
 type PageTitleProps = {
     icon: ReactNode;
@@ -12,6 +16,8 @@ export default function PageTitle({
     title,
     noMargin = false,
 }: PageTitleProps) {
+    const bp = useBreakpoint();
+
     return (
         <div
             style={{
@@ -27,7 +33,13 @@ export default function PageTitle({
             >
                 {icon}
             </span>
-            <h1>{title}</h1>
+            <h1
+                style={{
+                    fontSize: bp === 'mobile' ? 'var(--text-xl)' : 'var(--text-3xl)',
+                }}
+            >
+                {title}
+            </h1>
         </div>
     );
 }
