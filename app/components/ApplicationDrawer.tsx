@@ -191,7 +191,6 @@ export default function ApplicationDrawer({
                         display: 'flex',
                         flexDirection: 'column',
                         gap: 'var(--space-4)',
-                        paddingBottom: bp === 'mobile' ? 'calc(64px + var(--space-6))' : 'var(--space-6)',
                     }}
                 >
                     <div>
@@ -289,7 +288,6 @@ export default function ApplicationDrawer({
 
                 <div style={{
                     padding: 'var(--space-4) var(--space-4)',
-                    paddingBottom: bp === 'mobile' ? 'calc(64px + var(--space-4))' : 'var(--space-6)',
                     borderTop: '1px solid var(--color-border)',
                     display: 'flex',
                     flexDirection: 'column',
