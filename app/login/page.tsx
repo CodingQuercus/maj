@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import HomeNav from '../components/HomeNav';
 
+import { loginAsDemo } from '../actions/demo';
+
 export default function LoginPage({
     searchParams,
 }: {
@@ -60,7 +62,7 @@ export default function LoginPage({
 
     return (
         <main
-            className="min-h-screen flex flex-col"
+            className="min-h-100dvh flex flex-col"
             style={{ background: 'var(--color-canvas)' }}
         >
             <HomeNav />
@@ -157,6 +159,13 @@ export default function LoginPage({
                             ? "Don't have an account? Sign up"
                             : 'Already have an account? Sign in'}
                     </button>
+
+                    <hr />
+                    <form action={loginAsDemo}>
+                        <button type="submit" className="btn btn-ghost" style={{ width: '100%' }}>
+                            Try demo
+                        </button>
+                    </form>
                 </div>
             </div>
         </main>
