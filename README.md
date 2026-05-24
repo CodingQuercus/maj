@@ -33,7 +33,4 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-anon-key
 4. Run the development server: `npm run dev`
 
 ## TODO
-
-- [ ] Mobile responsive layout — collapsible sidebar with hamburger menu
-- [ ] Demo account with sample data
 - [ ] Dark mode (CSS variables already set up)
