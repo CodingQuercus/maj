@@ -12,10 +12,9 @@ export default async function AccountPage() {
         data: { user },
     } = await supabase.auth.getUser();
 
+    const isDemoAccount = user?.email === process.env.DEMO_EMAIL;
+
     return (
-        <AccountView 
-            email={user?.email ?? ''} 
-            createdAt={user?.created_at ?? ''} 
-        />
+        <AccountView email={user?.email ?? ''} createdAt={user?.created_at ?? ''} isDemo={isDemoAccount} />
     );
 }

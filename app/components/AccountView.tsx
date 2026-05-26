@@ -9,9 +9,11 @@ import { useBreakpoint } from '@/hooks/useBreakpoint';
 type AccountViewProps = {
     email: string;
     createdAt: string;
+    isDemo: boolean,
 };
 
-export default function AccountView({ email, createdAt }: AccountViewProps) {
+export default function AccountView({ email, createdAt, isDemo }: AccountViewProps) {
+    
     const bp = useBreakpoint();
 
     return (
@@ -108,7 +110,7 @@ export default function AccountView({ email, createdAt }: AccountViewProps) {
                     </div>
                 </div>
 
-                <AccountActions email={email} />
+                <AccountActions email={email} isDemo={isDemo} />
             </div>
         </div>
     );
