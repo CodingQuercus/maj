@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import { JobApplication, WorkType } from '@/lib/types';
 import { BreakPoint } from '@/hooks/useBreakpoint';
 
-import { X, ChevronDown, ChevronsLeftRight } from 'lucide-react';
+import { X, ChevronsLeftRight } from 'lucide-react';
+import ApplicationForm from './ApplicationForm';
 
 type DrawerProps = {
     open: boolean;
@@ -15,30 +16,39 @@ type DrawerProps = {
     bp: BreakPoint;
 };
 
+type FormValues = {
+    title: string;
+    company: string;
+    location: string;
+    workType: WorkType;
+    deadline: string;
+    appliedAt: string;
+    url: string;
+    description: string;
+    notes: string;
+};
+
 export default function ApplicationDrawer({
     open,
     onClose,
     application,
     bp
 }: DrawerProps) {
-    const isEditing = !!application;
 
-    const [title, setTitle] = useState(application?.title ?? '');
-    const [company, setCompany] = useState(application?.company ?? '');
-    const [location, setLocation] = useState(application?.location ?? '');
-    const [workType, setWorkType] = useState<WorkType>(
-        application?.work_type ?? 'hybrid'
-    );
-    const [deadline, setDeadline] = useState(application?.deadline ?? '');
-    const [appliedAt, setAppliedAt] = useState(
-        application?.applied_at?.split('T')[0] ??
-        new Date().toISOString().split('T')[0]
-    );
-    const [url, setUrl] = useState(application?.url ?? '');
-    const [description, setDescription] = useState(
-        application?.description ?? ''
-    );
-    const [notes, setNotes] = useState(application?.notes ?? '');
+    const [values, setValues] = useState<FormValues>({
+        title: application?.title ?? '',
+        company: application?.company ?? '',
+        location: application?.location ?? '',
+        workType: application?.work_type ?? 'hybrid',
+        deadline: application?.deadline ?? '',
+        appliedAt: application?.applied_at?.split('T')[0] ?? new Date().toISOString().split('T')[0],
+        url: application?.url ?? '',
+        description: application?.description ?? '',
+        notes: application?.notes ?? '',
+    });
+
+
+    const isEditing = !!application;
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -58,17 +68,17 @@ export default function ApplicationDrawer({
             const { error } = await supabase
                 .from('job_applications')
                 .update({
-                    title,
-                    company,
-                    location,
-                    work_type: workType,
-                    deadline: deadline || null,
-                    applied_at: appliedAt
-                        ? new Date(appliedAt).toISOString()
+                    title: values.title,
+                    company: values.company,
+                    location: values.location,
+                    work_type: values.workType,
+                    deadline: values.deadline || null,
+                    applied_at: values.appliedAt
+                        ? new Date(values.appliedAt).toISOString()
                         : null,
-                    description: description || null,
-                    notes: notes || null,
-                    url: url || null,
+                    description: values.description || null,
+                    notes: values.notes || null,
+                    url: values.url || null,
                 })
                 .eq('id', application.id);
 
@@ -86,19 +96,19 @@ export default function ApplicationDrawer({
             if (!user) return;
 
             const { error } = await supabase.from('job_applications').insert({
-                title,
-                company,
-                location,
-                work_type: workType,
-                deadline: deadline || null,
-                description: description || null,
-                notes: notes || null,
+                title: values.title,
+                company: values.company,
+                location: values.location,
+                work_type: values.workType,
+                deadline: values.deadline || null,
+                description: values.description || null,
+                notes: values.notes || null,
                 user_id: user.id,
                 status: 'applied',
-                applied_at: appliedAt
-                    ? new Date(appliedAt).toISOString()
+                applied_at: values.appliedAt
+                    ? new Date(values.appliedAt).toISOString()
                     : new Date().toISOString(),
-                url: url || null,
+                url: values.url || null,
             });
 
             if (error) {
@@ -114,15 +124,22 @@ export default function ApplicationDrawer({
         setLoading(false);
     };
 
+    const handleChange = (field: keyof FormValues, value: string) => {
+        setValues(prev => ({ ...prev, [field]: value }));
+    };
+
     const resetForm = () => {
-        setTitle('');
-        setCompany('');
-        setLocation('');
-        setWorkType('hybrid');
-        setDeadline('');
-        setAppliedAt(new Date().toISOString().split('T')[0]);
-        setDescription('');
-        setNotes('');
+        setValues({
+            title: '',
+            company: '',
+            location: '',
+            workType: 'hybrid',
+            deadline: '',
+            appliedAt: new Date().toISOString().split('T')[0],
+            url: '',
+            description: '',
+            notes: '',
+        });
     };
 
     const handleMouseDown = () => {
@@ -248,159 +265,7 @@ export default function ApplicationDrawer({
                         gap: 'var(--space-4)',
                     }}
                 >
-                    <div>
-                        <label htmlFor="title">Job title *</label>
-                        <input
-                            id="title"
-                            value={title}
-                            autoFocus
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="e.g. Frontend Developer"
-                            required
-                            style={{
-                                maxWidth: '480px'
-                            }}
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="company">Company *</label>
-                        <input
-                            id="company"
-                            value={company}
-                            onChange={(e) => setCompany(e.target.value)}
-                            placeholder="e.g. Spotify"
-                            required
-                            style={{
-                                maxWidth: '480px'
-                            }}
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="location">Location</label>
-                        <input
-                            id="location"
-                            value={location}
-                            onChange={(e) => setLocation(e.target.value)}
-                            placeholder="e.g. Stockholm"
-                            style={{
-                                maxWidth: '480px'
-                            }}
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="workType">Work type</label>
-                        <div style={{ position: 'relative', maxWidth: '480px' }}>
-                            <select
-                                id="workType"
-                                value={workType}
-                                onChange={(e) =>
-                                    setWorkType(e.target.value as WorkType)
-                                }
-                            >
-                                <option value="on-site">On-site</option>
-                                <option value="hybrid">Hybrid</option>
-                                <option value="remote">Remote</option>
-                            </select>
-                            <ChevronDown
-                                size={14}
-                                style={{
-                                    position: 'absolute',
-                                    right: 'var(--space-3)',
-                                    top: '50%',
-                                    transform: 'translateY(-50%)',
-                                    color: 'var(--color-text-tertiary)',
-                                    pointerEvents: 'none',
-                                }}
-                            />
-                        </div>
-                    </div>
-                    <div>
-                        <label htmlFor="deadline">Deadline</label>
-                        <input
-                            id="deadline"
-                            type="date"
-                            value={deadline}
-                            onChange={(e) => setDeadline(e.target.value)}
-                            style={{
-                                maxWidth: '480px'
-                            }}
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="appliedAt">Date applied</label>
-                        <input
-                            id="appliedAt"
-                            type="date"
-                            value={appliedAt}
-                            onChange={(e) => setAppliedAt(e.target.value)}
-                            style={{
-                                maxWidth: '480px'
-                            }}
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="url">Job posting URL</label>
-                        <input
-                            id="url"
-                            type="url"
-                            value={url}
-                            onChange={(e) => setUrl(e.target.value)}
-                            placeholder="https://..."
-                            style={{
-                                maxWidth: '480px'
-                            }}
-                        />
-                    </div>
-                    <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-1)' }}>
-                            <label htmlFor="description">Job description</label>
-                        </div>
-                        <textarea
-                            id="description"
-                            ref={(el) => {
-                                if (el) {
-                                    el.style.height = 'auto';
-                                    el.style.height = `${el.scrollHeight}px`;
-                                }
-                            }}
-                            value={description}
-                            onChange={(e) => {
-                                setDescription(e.target.value);
-                                e.target.style.height = 'auto';
-                                e.target.style.height = `${e.target.scrollHeight}px`;
-                            }}
-                            placeholder="Paste the job description here..."
-                            style={{
-                                minHeight: '120px',
-                                resize: 'none',
-                                overflow: 'hidden',
-                            }}
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="notes">Notes</label>
-                        <textarea
-                            id="notes"
-                            value={notes}
-                            placeholder="Your thoughts..."
-                            ref={(el) => {
-                                if (el) {
-                                    el.style.height = 'auto';
-                                    el.style.height = `${el.scrollHeight}px`;
-                                }
-                            }}
-                            onChange={(e) => {
-                                setNotes(e.target.value);
-                                e.target.style.height = 'auto';
-                                e.target.style.height = `${e.target.scrollHeight}px`;
-                            }}
-                            style={{
-                                minHeight: '120px',
-                                resize: 'none',
-                                overflow: 'hidden',
-                            }}
-                        />
-                    </div>
+                    <ApplicationForm values={values} onChange={handleChange} />
                 </form>
 
                 <div style={{
