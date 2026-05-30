@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { JobApplication, WorkType } from '@/lib/types';
 import { BreakPoint } from '@/hooks/useBreakpoint';
 
-import { X } from 'lucide-react';
+import { X, ChevronDown, ChevronsLeftRight } from 'lucide-react';
 
 type DrawerProps = {
     open: boolean;
@@ -19,6 +19,7 @@ export default function ApplicationDrawer({
     open,
     onClose,
     application,
+    bp
 }: DrawerProps) {
     const isEditing = !!application;
 
@@ -40,6 +41,10 @@ export default function ApplicationDrawer({
     const [notes, setNotes] = useState(application?.notes ?? '');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const [drawerWidth, setDrawerWidth] = useState(480);
+    const [handleHovered, setHandleHovered] = useState(false);
+    const isDragging = useRef(false);
 
     const supabase = createClient();
     const router = useRouter();
@@ -120,6 +125,32 @@ export default function ApplicationDrawer({
         setNotes('');
     };
 
+    const handleMouseDown = () => {
+        isDragging.current = true;
+    }
+
+    useEffect(() => {
+
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!isDragging.current) return;
+            const newWidth = window.innerWidth - e.clientX;
+            setDrawerWidth(Math.min(Math.max(newWidth, 480), 700))
+        }
+
+        const handleMouseUp = () => {
+            isDragging.current = false;
+        }
+
+        window.addEventListener('mouseup', handleMouseUp);
+        window.addEventListener('mousemove', handleMouseMove);
+
+        return () => {
+            window.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('mousemove', handleMouseMove);
+        }
+
+    }, []);
+
     return (
         <>
             {open && (
@@ -145,7 +176,7 @@ export default function ApplicationDrawer({
                     top: 0,
                     right: 0,
                     height: '100dvh',
-                    width: 'min(480px, 100vw)',
+                    width: bp === 'mobile' ? '100vw' : `${drawerWidth}px`,
                     background: 'var(--color-white)',
                     borderLeft: '1px solid var(--color-border)',
                     boxShadow: 'var(--shadow-lg)',
@@ -156,6 +187,31 @@ export default function ApplicationDrawer({
                     flexDirection: 'column',
                 }}
             >
+
+                {bp !== 'mobile' && open && (
+                    <div
+                        onMouseDown={handleMouseDown}
+                        style={{
+                            position: 'absolute',
+                            left: '-28px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            cursor: 'col-resize',
+                            color: handleHovered ? 'var(--color-white)' : 'var(--color-accent)',
+                            background: handleHovered ? 'var(--color-accent)' : 'var(--color-surface)',
+                            border: '1px solid var(--color-border)',
+                            borderRadius: 'var(--radius-md)',
+                            padding: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                        }}
+                        onMouseEnter={() => setHandleHovered(true)}
+                        onMouseLeave={() => setHandleHovered(false)}
+                    >
+                        <ChevronsLeftRight size={16} />
+                    </div>
+                )}
+
                 <div
                     style={{
                         display: 'flex',
@@ -201,6 +257,9 @@ export default function ApplicationDrawer({
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="e.g. Frontend Developer"
                             required
+                            style={{
+                                maxWidth: '480px'
+                            }}
                         />
                     </div>
                     <div>
@@ -211,6 +270,9 @@ export default function ApplicationDrawer({
                             onChange={(e) => setCompany(e.target.value)}
                             placeholder="e.g. Spotify"
                             required
+                            style={{
+                                maxWidth: '480px'
+                            }}
                         />
                     </div>
                     <div>
@@ -220,21 +282,37 @@ export default function ApplicationDrawer({
                             value={location}
                             onChange={(e) => setLocation(e.target.value)}
                             placeholder="e.g. Stockholm"
+                            style={{
+                                maxWidth: '480px'
+                            }}
                         />
                     </div>
                     <div>
                         <label htmlFor="workType">Work type</label>
-                        <select
-                            id="workType"
-                            value={workType}
-                            onChange={(e) =>
-                                setWorkType(e.target.value as WorkType)
-                            }
-                        >
-                            <option value="on-site">On-site</option>
-                            <option value="hybrid">Hybrid</option>
-                            <option value="remote">Remote</option>
-                        </select>
+                        <div style={{ position: 'relative', maxWidth: '480px' }}>
+                            <select
+                                id="workType"
+                                value={workType}
+                                onChange={(e) =>
+                                    setWorkType(e.target.value as WorkType)
+                                }
+                            >
+                                <option value="on-site">On-site</option>
+                                <option value="hybrid">Hybrid</option>
+                                <option value="remote">Remote</option>
+                            </select>
+                            <ChevronDown
+                                size={14}
+                                style={{
+                                    position: 'absolute',
+                                    right: 'var(--space-3)',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    color: 'var(--color-text-tertiary)',
+                                    pointerEvents: 'none',
+                                }}
+                            />
+                        </div>
                     </div>
                     <div>
                         <label htmlFor="deadline">Deadline</label>
@@ -243,6 +321,9 @@ export default function ApplicationDrawer({
                             type="date"
                             value={deadline}
                             onChange={(e) => setDeadline(e.target.value)}
+                            style={{
+                                maxWidth: '480px'
+                            }}
                         />
                     </div>
                     <div>
@@ -252,6 +333,9 @@ export default function ApplicationDrawer({
                             type="date"
                             value={appliedAt}
                             onChange={(e) => setAppliedAt(e.target.value)}
+                            style={{
+                                maxWidth: '480px'
+                            }}
                         />
                     </div>
                     <div>
@@ -262,16 +346,35 @@ export default function ApplicationDrawer({
                             value={url}
                             onChange={(e) => setUrl(e.target.value)}
                             placeholder="https://..."
+                            style={{
+                                maxWidth: '480px'
+                            }}
                         />
                     </div>
                     <div>
-                        <label htmlFor="description">Job description</label>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-1)' }}>
+                            <label htmlFor="description">Job description</label>
+                        </div>
                         <textarea
                             id="description"
+                            ref={(el) => {
+                                if (el) {
+                                    el.style.height = 'auto';
+                                    el.style.height = `${el.scrollHeight}px`;
+                                }
+                            }}
                             value={description}
-                            onChange={(e) => setDescription(e.target.value)}
+                            onChange={(e) => {
+                                setDescription(e.target.value);
+                                e.target.style.height = 'auto';
+                                e.target.style.height = `${e.target.scrollHeight}px`;
+                            }}
                             placeholder="Paste the job description here..."
-                            style={{ minHeight: '120px' }}
+                            style={{
+                                minHeight: '120px',
+                                resize: 'none',
+                                overflow: 'hidden',
+                            }}
                         />
                     </div>
                     <div>
@@ -279,8 +382,23 @@ export default function ApplicationDrawer({
                         <textarea
                             id="notes"
                             value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
                             placeholder="Your thoughts..."
+                            ref={(el) => {
+                                if (el) {
+                                    el.style.height = 'auto';
+                                    el.style.height = `${el.scrollHeight}px`;
+                                }
+                            }}
+                            onChange={(e) => {
+                                setNotes(e.target.value);
+                                e.target.style.height = 'auto';
+                                e.target.style.height = `${e.target.scrollHeight}px`;
+                            }}
+                            style={{
+                                minHeight: '120px',
+                                resize: 'none',
+                                overflow: 'hidden',
+                            }}
                         />
                     </div>
                 </form>
@@ -293,7 +411,7 @@ export default function ApplicationDrawer({
                     gap: 'var(--space-2)',
                 }}>
                     {error && <p className="field-error" role="alert">{error}</p>}
-                    <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                    <div style={{ display: 'flex', gap: 'var(--space-2)', maxWidth: '480px' }}>
                         <button type="button" onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>
                             Cancel
                         </button>
