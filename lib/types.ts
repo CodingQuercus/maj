@@ -26,6 +26,7 @@ export type JobApplication = {
     created_at: string | null;
     updated_at: string | null;
     url: string | null; // Link to job posting
+    status_changed_at: string | null;
 };
 
 // Represents a contact linked to a job application
