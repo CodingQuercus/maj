@@ -26,6 +26,7 @@ export default function AccountView({ email, createdAt, isDemo }: AccountViewPro
                 flexShrink: 0,
             }}>
                 <PageTitle icon={<Settings size={bp === 'mobile' ? 24 : 32} />} title="Account" />
+                <hr />
             </div>
 
             <div style={{
@@ -35,12 +36,11 @@ export default function AccountView({ email, createdAt, isDemo }: AccountViewPro
                 paddingLeft: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
                 paddingRight: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
                 paddingBottom: bp === 'mobile' ? '164px' : 'var(--space-8)',
-                maxWidth: '480px',
             }}>
                 {/* User profile information */}
                 <div
                     className="card"
-                    style={{ marginBottom: 'var(--space-4)' }}
+                    style={{ marginBottom: 'var(--space-4)', maxWidth: '480px', }}
                     role="region"
                     aria-label="Profile information"
                 >

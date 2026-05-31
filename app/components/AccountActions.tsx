@@ -41,6 +41,7 @@ export default function AccountActions({ email, isDemo }: AccountActionProps) {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 'var(--space-4)',
+                maxWidth: '480px'
             }}
         >
             {/* Reset password */}
