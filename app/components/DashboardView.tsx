@@ -185,7 +185,7 @@ export default function DashboardView({ applications }: DashboardViewProps) {
                 {/* Total and conversion rate */}
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: bp === 'mobile' ? '1fr' : '1fr 1fr 1fr',
+                    gridTemplateColumns: bp === 'mobile' ? '1fr' : '1fr 1fr',
                     gap: 'var(--space-4)',
                 }}>
                     <StatCard label="Total" value={total} color="var(--color-text-primary)" bp={bp} />
