@@ -407,6 +407,7 @@ export default function ApplicationDetail({
                                 style={{
                                     fontSize: 'var(--text-sm)',
                                     whiteSpace: 'pre-wrap',
+                                    maxWidth: '700px'
                                 }}
                             >
                                 {application.notes}
