@@ -57,7 +57,7 @@ export default function StatusPopover({
         setOpen(false);
         const { error } = await supabase
             .from('job_applications')
-            .update({ status: newStatus, status_changed_at: new Date().toISOString() })
+            .update({ status: newStatus })
             .eq('id', applicationId);
 
         if (error) {

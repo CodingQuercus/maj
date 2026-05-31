@@ -92,7 +92,7 @@ export default function ApplicationDetail({
 
         const { error } = await supabase
             .from('job_applications')
-            .update({ status: newStatus, status_changed_at: new Date().toISOString(), })
+            .update({ status: newStatus })
             .eq('id', application.id);
 
         if (error) {
