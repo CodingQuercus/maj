@@ -162,12 +162,12 @@ export default function ApplicationDetail({
     return (
         <>
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                <div style={{ paddingTop: pad, paddingLeft: pad, paddingRight: pad, paddingBottom: 0, flexShrink: 0, maxWidth: '680px', }}>
+                <div style={{ paddingTop: pad, paddingLeft: pad, paddingRight: pad, paddingBottom: 0}}>
                     <button
                         onClick={() => router.back()}
                         aria-label="Go back to applications"
                         className="btn btn-ghost btn-sm"
-                        style={{ marginBottom: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-6)' }}
+                        style={{ marginBottom: bp === 'mobile' ? 'var(--space-2)' : 'var(--space-3)' }}
                     >
                         <ArrowLeft size={16} />
                         Back
@@ -316,7 +316,6 @@ export default function ApplicationDetail({
                     paddingLeft: pad,
                     paddingRight: pad,
                     paddingBottom: bp === 'mobile' ? '164px' : pad,
-                    maxWidth: '680px'
                 }}>
 
                     {/* Status */}
@@ -378,6 +377,7 @@ export default function ApplicationDetail({
                                 style={{
                                     fontSize: 'var(--text-sm)',
                                     whiteSpace: 'pre-wrap',
+                                    maxWidth: '700px'
                                 }}
                             >
                                 {application.description}
@@ -459,6 +459,7 @@ export default function ApplicationDetail({
                                     background: 'var(--color-surface)',
                                     borderRadius: 'var(--radius-lg)',
                                     marginBottom: 'var(--space-4)',
+                                    maxWidth: '480px'
                                 }}
                             >
                                 <input
