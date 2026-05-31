@@ -157,6 +157,7 @@ export default function Sidebar() {
                 flexDirection: 'column',
                 height: '100vh',
                 paddingTop: 'var(--space-8)',
+                paddingBottom: 'var(--space-8)',
                 paddingLeft: 'var(--space-4)',
                 paddingRight: 'var(--space-4)',
                 transition: 'width 0.2s ease',
