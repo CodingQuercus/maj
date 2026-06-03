@@ -39,7 +39,7 @@ export default function ApplicationsView({
 
     const [drawerOpen, setDrawerOpen] = useState(false);
 
-    const [filter, setFilter] = useState<string>('all');
+    const [filter, setFilter] = useState<string[]>([]);
     const [search, setSearch] = useState('');
 
     const [filterOpen, setFilterOpen] = useState(false);
@@ -59,9 +59,19 @@ export default function ApplicationsView({
         }
     };
 
+    const toggleFilter = (s: string) => {
+        if (s === 'all') {
+            setFilter([]);
+            return;
+        }
+        setFilter(prev =>
+            prev.includes(s) ? prev.filter(f => f !== s) : [...prev, s]
+        );
+    };
+
     // Filter by status and search query, then sort by selected column.
     const filteredApplications = applications
-        .filter((a) => filter === 'all' || a.status === filter)
+        .filter((a) => filter.length === 0 || filter.includes(a.status))
         .filter(
             (a) =>
                 a.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -142,7 +152,7 @@ export default function ApplicationsView({
                                 onClick={() => { setFilterOpen(!filterOpen); setSortOpen(false); }}
                                 aria-expanded={filterOpen}
                             >
-                                <span>Filter: {statusLabels[filter] ?? 'All'}</span>
+                                <span>Filter{filter.length > 0 ? ` (${filter.length})` : ''}</span>
                                 <ChevronDown size={14} />
                             </button>
                             {filterOpen && (
@@ -166,13 +176,13 @@ export default function ApplicationsView({
                                         {statuses.map((s) => (
                                             <button
                                                 key={s}
-                                                onClick={() => { setFilter(s); setFilterOpen(false); }}
+                                                onClick={() => { toggleFilter(s); }}
                                                 className={s !== 'all' ? `badge badge-dot badge-${s}` : 'badge'}
                                                 style={{
                                                     cursor: 'pointer',
                                                     justifyContent: 'flex-start',
-                                                    border: filter === s ? '2px solid currentColor' : '1px solid',
-                                                    opacity: filter === s ? 1 : 0.6,
+                                                    border: (s === 'all' ? filter.length === 0 : filter.includes(s)) ? '2px solid currentColor' : '1px solid',
+                                                    opacity: (s === 'all' ? filter.length === 0 : filter.includes(s)) ? 1 : 0.6,
                                                     padding: '6px 12px',
                                                     width: '100%',
                                                 }}
@@ -245,15 +255,15 @@ export default function ApplicationsView({
                         {statuses.map((s) => (
                             <button
                                 key={s}
-                                onClick={() => setFilter(s)}
+                                onClick={() => toggleFilter(s)}
                                 className={s !== 'all' ? `badge badge-dot badge-${s}` : 'badge'}
                                 style={{
                                     cursor: 'pointer',
-                                    border: filter === s ? '2px solid currentColor' : '1px solid',
-                                    opacity: filter === s ? 1 : 0.5,
+                                    border: (s === 'all' ? filter.length === 0 : filter.includes(s)) ? '2px solid currentColor' : '1px solid',
+                                    opacity: (s === 'all' ? filter.length === 0 : filter.includes(s)) ? 1 : 0.5,
                                     padding: '6px 12px',
                                 }}
-                                aria-pressed={filter === s}
+                                aria-pressed={s === 'all' ? filter.length === 0 : filter.includes(s)}
                             >
                                 {s === 'all' ? `All (${applications.length})` : statusLabels[s]}
                             </button>
@@ -327,9 +337,9 @@ export default function ApplicationsView({
                                         <p style={{ color: 'var(--color-text-tertiary)' }}>
                                             {search
                                                 ? `No results for "${search}".`
-                                                : filter === 'all'
+                                                : filter.length === 0
                                                     ? 'No applications yet. Add your first one!'
-                                                    : `No applications with status "${statusLabels[filter]}".`}
+                                                    : `No applications matching the selected statuses.`}
                                         </p>
                                     </td>
                                 </tr>
@@ -346,7 +356,7 @@ export default function ApplicationsView({
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                             {filteredApplications.length === 0 ? (
                                 <p style={{ color: 'var(--color-text-tertiary)', textAlign: 'center', padding: 'var(--space-12) 0' }}>
-                                    {search ? `No results for "${search}".` : filter === 'all' ? 'No applications yet. Add your first one!' : `No applications with status "${statusLabels[filter]}".`}
+                                    {search ? `No results for "${search}".` : filter.length === 0 ? 'No applications yet. Add your first one!' : `No applications matching the selected statuses.`}
                                 </p>
                             ) : (
                                 filteredApplications.map((application) => (
