@@ -6,6 +6,7 @@ import Image from 'next/image';
 import HomeNav from './components/HomeNav';
 
 import { ClipboardList, LayoutDashboard, FileText } from 'lucide-react';
+import HomeFooter from './components/Footer';
 
 export default async function HomePage() {
     // Check if user is already logged in, redirect to application if so.
@@ -207,6 +208,7 @@ export default async function HomePage() {
                     ))}
                 </div>
             </section>
+            <HomeFooter />
         </main>
     );
 }
