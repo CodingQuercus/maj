@@ -59,8 +59,7 @@ export default function StatusPopover({
                     onClick={stop}
                     onKeyDown={stop}
                     aria-label={`Change status, current: ${STATUS_LABELS[status]}`}
-                    className={`badge badge-dot badge-${status}`}
-                    style={{ cursor: 'pointer' }}
+                    className={`badge badge-dot badge-${status} cursor-pointer`}
                 >
                     {STATUS_LABELS[status]}
                 </button>

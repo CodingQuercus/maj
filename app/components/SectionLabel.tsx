@@ -10,18 +10,8 @@ type SectionLabelProps = {
 // Used to introduce sections in detail views.
 export default function SectionLabel({ icon, label, noMargin }: SectionLabelProps) {
     return (
-        <div
-            style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-2)',
-                marginBottom: noMargin ? 0 : 'var(--space-3)',
-            }}
-        >
-            <span
-                style={{ color: 'var(--color-text-tertiary)' }}
-                aria-hidden="true"
-            >
+        <div className={`flex items-center gap-2 ${noMargin ? '' : 'mb-3'}`}>
+            <span className="text-[var(--color-text-tertiary)]" aria-hidden="true">
                 {icon}
             </span>
             {/* An h2 (the page title is the h1), styled as a small uppercase label. */}
