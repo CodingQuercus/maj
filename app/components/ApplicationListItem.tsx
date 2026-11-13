@@ -1,6 +1,7 @@
 'use client';
 import { type BreakPoint } from '@/hooks/useBreakpoint';
 import { JobApplication } from '@/lib/types';
+import { formatDate } from '@/lib/dates';
 import StatusPopover from './StatusPopover';
 
 import { useRouter } from 'next/navigation';
@@ -16,8 +17,13 @@ export default function ApplicationListItem({
 
     const handleClick = () => router.push(`/applications/${application.id}`);
 
+    // Only react to keys pressed on the row itself, not on controls inside it (e.g. the status menu).
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === ' ') handleClick();
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleClick();
+        }
     };
 
     if (bp === "mobile") {
@@ -45,7 +51,7 @@ export default function ApplicationListItem({
                 <div style={{ display: 'flex', gap: 'var(--space-3)', fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)' }}>
                     {application.location && <span>{application.location}</span>}
                     {application.applied_at && (
-                        <span>{new Date(application.applied_at).toLocaleDateString('sv-SE')}</span>
+                        <span>{formatDate(application.applied_at)}</span>
                     )}
                 </div>
             </div>
@@ -103,9 +109,7 @@ export default function ApplicationListItem({
                 }}
             >
                 {application.applied_at
-                    ? new Date(application.applied_at).toLocaleDateString(
-                        'sv-SE'
-                    )
+                    ? formatDate(application.applied_at)
                     : '—'}
             </td>
 

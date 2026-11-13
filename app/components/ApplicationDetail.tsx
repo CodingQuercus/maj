@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { JobApplication, Status, Contact } from '@/lib/types';
+import { formatDate } from '@/lib/dates';
 
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 
@@ -24,6 +25,21 @@ import {
     ExternalLink,
 } from 'lucide-react';
 
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import ApplicationDrawer from './ApplicationDrawer';
 import SectionLabel from './SectionLabel';
 
@@ -61,8 +77,12 @@ export default function ApplicationDetail({
 }: ApplicationDetailProps) {
     const [status, setStatus] = useState<Status>(application.status);
     const [deleting, setDeleting] = useState(false);
+    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [contacts, setContacts] = useState<Contact[]>([]);
+    const [contactsLoading, setContactsLoading] = useState(true);
+    const [savingContact, setSavingContact] = useState(false);
+    const [deletingContactId, setDeletingContactId] = useState<string | null>(null);
     const [addingContact, setAddingContact] = useState(false);
     const [contactName, setContactName] = useState('');
     const [contactEmail, setContactEmail] = useState('');
@@ -76,11 +96,13 @@ export default function ApplicationDetail({
 
     useEffect(() => {
         const fetchContacts = async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('contacts')
                 .select('*')
                 .eq('job_application_id', application.id);
+            if (error) toast.error('Could not load contacts.');
             if (data) setContacts(data);
+            setContactsLoading(false);
         };
         fetchContacts();
     }, [application.id, supabase]);
@@ -97,14 +119,13 @@ export default function ApplicationDetail({
 
         if (error) {
             setStatus(previous);
+            toast.error('Could not update status. Please try again.');
         } else {
             router.refresh();
         }
     };
 
     const handleDelete = async () => {
-        if (!confirm('Are you sure you want to delete this application?'))
-            return;
         setDeleting(true);
         setDeleteError(null);
         const { error } = await supabase
@@ -115,8 +136,10 @@ export default function ApplicationDetail({
         if (error) {
             setDeleteError('Could not delete application. Please try again.');
             setDeleting(false);
+            setConfirmDeleteOpen(false);
             return;
         }
+        toast.success('Application deleted');
         router.push('/applications');
         router.refresh();
     };
@@ -124,6 +147,7 @@ export default function ApplicationDetail({
     const handleAddContact = async () => {
         setContactError(null);
         if (!contactName.trim()) return;
+        setSavingContact(true);
         const { data, error } = await supabase
             .from('contacts')
             .insert({
@@ -134,11 +158,13 @@ export default function ApplicationDetail({
             })
             .select()
             .single();
+        setSavingContact(false);
 
         if (error) {
             setContactError('Could not add contact. Please try again.')
             return
         }
+        toast.success('Contact added');
         setContacts([...contacts, data]);
         setContactName('');
         setContactEmail('');
@@ -149,12 +175,15 @@ export default function ApplicationDetail({
 
     const handleDeleteContact = async (id: string) => {
         setContactError(null);
+        setDeletingContactId(id);
         const { error } = await supabase.from('contacts').delete().eq('id', id);
+        setDeletingContactId(null);
         if (error) {
-            setContactError('Could not delete contact. Please try again.');
+            toast.error('Could not delete contact. Please try again.');
             return
         }
         setContacts(contacts.filter((c) => c.id !== id));
+        toast.success('Contact removed');
     };
 
     const pad = bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)';
@@ -163,15 +192,16 @@ export default function ApplicationDetail({
         <>
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <div style={{ paddingTop: pad, paddingLeft: pad, paddingRight: pad, paddingBottom: 0}}>
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => router.back()}
                         aria-label="Go back to applications"
-                        className="btn btn-ghost btn-sm"
                         style={{ marginBottom: bp === 'mobile' ? 'var(--space-2)' : 'var(--space-3)' }}
                     >
                         <ArrowLeft size={16} />
                         Back
-                    </button>
+                    </Button>
 
                     {/* Header */}
                     <div
@@ -193,14 +223,14 @@ export default function ApplicationDetail({
                                 <h1 style={{ fontSize: bp === 'mobile' ? 'var(--text-xl)' : undefined }}>
                                     {application.title}
                                 </h1>
-                                <button
-                                    className="btn btn-secondary btn-sm"
+                                <Button
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() => setDrawerOpen(true)}
-                                    style={{ flexShrink: 0 }}
                                 >
                                     <Pencil size={14} />
                                     Edit
-                                </button>
+                                </Button>
                             </div>
                             {/* Metadata for a job application */}
                             <div
@@ -282,9 +312,7 @@ export default function ApplicationDetail({
                                     >
                                         <Calendar size={12} />
                                         Applied{' '}
-                                        {new Date(
-                                            application.applied_at
-                                        ).toLocaleDateString('sv-SE')}
+                                        {formatDate(application.applied_at)}
                                     </span>
                                 )}
                                 {application.deadline && (
@@ -299,9 +327,7 @@ export default function ApplicationDetail({
                                     >
                                         <Calendar size={12} />
                                         Deadline{' '}
-                                        {new Date(
-                                            application.deadline
-                                        ).toLocaleDateString('sv-SE')}
+                                        {formatDate(application.deadline)}
                                     </span>
                                 )}
                             </div>
@@ -360,16 +386,21 @@ export default function ApplicationDetail({
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' }}>
                             <SectionLabel icon={<FileText size={16} />} label="Job description" noMargin />
                             {application.url && (
-                                <Link
-                                    href={application.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="btn btn-ghost btn-sm"
-                                    style={{ color: 'var(--color-accent)', fontSize: 'var(--text-sm)' }}
+                                <Button
+                                    asChild
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-primary hover:text-primary"
                                 >
-                                    <ExternalLink size={16} />
-                                    View posting
-                                </Link>
+                                    <Link
+                                        href={application.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        <ExternalLink size={16} />
+                                        View posting
+                                    </Link>
+                                </Button>
                             )}
                         </div>
                         {application.description ? (
@@ -441,13 +472,15 @@ export default function ApplicationDetail({
                                 label="Contacts"
                                 noMargin
                             />
-                            <button
-                                className="btn btn-ghost btn-sm"
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => setAddingContact(!addingContact)}
+                                aria-expanded={addingContact}
                             >
                                 <Plus size={14} />
                                 Add
-                            </button>
+                            </Button>
                         </div>
 
                         {addingContact && (
@@ -463,13 +496,13 @@ export default function ApplicationDetail({
                                     maxWidth: '480px'
                                 }}
                             >
-                                <input
+                                <Input
                                     placeholder="Name *"
                                     value={contactName}
                                     aria-label="Contact name"
                                     onChange={(e) => setContactName(e.target.value)}
                                 />
-                                <input
+                                <Input
                                     placeholder="Email"
                                     aria-label="Contact email"
                                     value={contactEmail}
@@ -477,7 +510,7 @@ export default function ApplicationDetail({
                                         setContactEmail(e.target.value)
                                     }
                                 />
-                                <input
+                                <Input
                                     placeholder="Role (e.g. Recruiter)"
                                     aria-label="Contact role"
                                     value={contactRole}
@@ -490,23 +523,37 @@ export default function ApplicationDetail({
                                         gap: 'var(--space-2)',
                                     }}
                                 >
-                                    <button
-                                        className="btn btn-primary btn-sm"
+                                    <Button
+                                        size="sm"
                                         onClick={handleAddContact}
+                                        loading={savingContact}
                                     >
-                                        Save
-                                    </button>
-                                    <button
-                                        className="btn btn-ghost btn-sm"
+                                        {savingContact ? 'Saving…' : 'Save'}
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
                                         onClick={() => setAddingContact(false)}
                                     >
                                         Cancel
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
                         )}
 
-                        {contacts.length === 0 && !addingContact && (
+                        {/* Placeholder rows while contacts load, instead of a premature "No contacts added." */}
+                        {contactsLoading && (
+                            <div
+                                aria-busy="true"
+                                aria-label="Loading contacts"
+                                style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}
+                            >
+                                <Skeleton className="h-[58px] rounded-lg" />
+                                <Skeleton className="h-[58px] rounded-lg" />
+                            </div>
+                        )}
+
+                        {!contactsLoading && contacts.length === 0 && !addingContact && (
                             <p
                                 style={{
                                     fontSize: 'var(--text-sm)',
@@ -567,18 +614,22 @@ export default function ApplicationDetail({
                                             </p>
                                         )}
                                     </div>
-                                    <button
-                                        className="btn btn-ghost btn-icon btn-sm"
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
                                         aria-label={`Delete contact ${contact.name}`}
                                         onClick={() =>
                                             handleDeleteContact(contact.id)
                                         }
+                                        loading={deletingContactId === contact.id}
                                     >
-                                        <Trash2
-                                            size={14}
-                                            color="var(--color-danger)"
-                                        />
-                                    </button>
+                                        {deletingContactId !== contact.id && (
+                                            <Trash2
+                                                size={14}
+                                                color="var(--color-danger)"
+                                            />
+                                        )}
+                                    </Button>
                                 </div>
                             ))}
                         </div>
@@ -597,13 +648,36 @@ export default function ApplicationDetail({
                         }}
                     >
                         {deleteError && <p className="field-error" role="alert">{deleteError}</p>}
-                        <button
-                            onClick={handleDelete}
-                            disabled={deleting}
-                            className="btn btn-danger btn-sm"
+                        <AlertDialog
+                            open={confirmDeleteOpen}
+                            // Stay open while deleting so the spinner stays visible.
+                            onOpenChange={(next) => !deleting && setConfirmDeleteOpen(next)}
                         >
-                            {deleting ? 'Deleting...' : 'Delete application'}
-                        </button>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="sm">
+                                    Delete application
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete this application?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        {`${application.title} at ${application.company} will be permanently deleted. This can't be undone.`}
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                                    {/* A plain Button rather than AlertDialogAction, which would close the dialog before the delete finishes. */}
+                                    <Button
+                                        variant="destructive"
+                                        onClick={handleDelete}
+                                        loading={deleting}
+                                    >
+                                        {deleting ? 'Deleting…' : 'Delete application'}
+                                    </Button>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 </div>
             </div>
@@ -612,7 +686,6 @@ export default function ApplicationDetail({
                 open={drawerOpen}
                 onClose={() => setDrawerOpen(false)}
                 application={application}
-                bp={bp}
             />
         </>
     );

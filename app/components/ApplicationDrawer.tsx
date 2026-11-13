@@ -1,19 +1,21 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { JobApplication, WorkType } from '@/lib/types';
-import { BreakPoint } from '@/hooks/useBreakpoint';
+import { todayLocal } from '@/lib/dates';
 
-import { X, ChevronsLeftRight } from 'lucide-react';
+import { X } from 'lucide-react';
 import ApplicationForm from './ApplicationForm';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetClose, SheetContent, SheetTitle } from '@/components/ui/sheet';
 
 type DrawerProps = {
     open: boolean;
     onClose: () => void;
     application?: JobApplication;
-    bp: BreakPoint;
 };
 
 type FormValues = {
@@ -32,7 +34,6 @@ export default function ApplicationDrawer({
     open,
     onClose,
     application,
-    bp
 }: DrawerProps) {
 
     const [values, setValues] = useState<FormValues>({
@@ -41,7 +42,7 @@ export default function ApplicationDrawer({
         location: application?.location ?? '',
         workType: application?.work_type ?? 'hybrid',
         deadline: application?.deadline ?? '',
-        appliedAt: application?.applied_at?.split('T')[0] ?? new Date().toISOString().split('T')[0],
+        appliedAt: application?.applied_at?.split('T')[0] ?? todayLocal(),
         url: application?.url ?? '',
         description: application?.description ?? '',
         notes: application?.notes ?? '',
@@ -52,9 +53,8 @@ export default function ApplicationDrawer({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const [drawerWidth, setDrawerWidth] = useState(480);
-    const [handleHovered, setHandleHovered] = useState(false);
-    const isDragging = useRef(false);
+    const formRef = useRef<HTMLFormElement>(null);
+    const openerRef = useRef<HTMLElement | null>(null);
 
     const supabase = createClient();
     const router = useRouter();
@@ -89,11 +89,16 @@ export default function ApplicationDrawer({
             }
             router.refresh();
             onClose();
+            toast.success('Changes saved');
         } else {
             const {
                 data: { user },
             } = await supabase.auth.getUser();
-            if (!user) return;
+            if (!user) {
+                setError('Your session has expired. Please sign in again.');
+                setLoading(false);
+                return;
+            }
 
             const { error } = await supabase.from('job_applications').insert({
                 title: values.title,
@@ -107,7 +112,7 @@ export default function ApplicationDrawer({
                 status: 'applied',
                 applied_at: values.appliedAt
                     ? new Date(values.appliedAt).toISOString()
-                    : new Date().toISOString(),
+                    : new Date(todayLocal()).toISOString(),
                 url: values.url || null,
             });
 
@@ -119,6 +124,7 @@ export default function ApplicationDrawer({
             router.refresh();
             onClose();
             resetForm();
+            toast.success('Application added');
         }
 
         setLoading(false);
@@ -135,100 +141,38 @@ export default function ApplicationDrawer({
             location: '',
             workType: 'hybrid',
             deadline: '',
-            appliedAt: new Date().toISOString().split('T')[0],
+            appliedAt: todayLocal(),
             url: '',
             description: '',
             notes: '',
         });
     };
 
-    const handleMouseDown = () => {
-        isDragging.current = true;
-    }
-
-    useEffect(() => {
-
-        const handleMouseMove = (e: MouseEvent) => {
-            if (!isDragging.current) return;
-            const newWidth = window.innerWidth - e.clientX;
-            setDrawerWidth(Math.min(Math.max(newWidth, 480), 700))
-        }
-
-        const handleMouseUp = () => {
-            isDragging.current = false;
-        }
-
-        window.addEventListener('mouseup', handleMouseUp);
-        window.addEventListener('mousemove', handleMouseMove);
-
-        return () => {
-            window.removeEventListener('mouseup', handleMouseUp);
-            window.removeEventListener('mousemove', handleMouseMove);
-        }
-
-    }, []);
-
     return (
-        <>
-            {open && (
-                <div
-                    onClick={onClose}
-                    aria-hidden="true"
-                    style={{
-                        position: 'fixed',
-                        inset: 0,
-                        background: 'rgba(0, 0, 0, 0.2)',
-                        zIndex: 40,
-                        transition: 'opacity var(--transition-base)',
-                    }}
-                />
-            )}
-
-            <div
-                role="dialog"
-                aria-modal="true"
-                aria-label={isEditing ? 'Edit application' : 'New application'}
-                style={{
-                    position: 'fixed',
-                    top: 0,
-                    right: 0,
-                    height: '100dvh',
-                    width: bp === 'mobile' ? '100vw' : `${drawerWidth}px`,
-                    background: 'var(--color-white)',
-                    borderLeft: '1px solid var(--color-border)',
-                    boxShadow: 'var(--shadow-lg)',
-                    zIndex: 50,
-                    transform: open ? 'translateX(0)' : 'translateX(100%)',
-                    transition: 'transform var(--transition-slow)',
-                    display: 'flex',
-                    flexDirection: 'column',
+        // Radix (via shadcn's Sheet) handles the overlay, focus trap, Escape, scroll lock,
+        // returning focus to the opener and keeping the closed drawer out of the tab order.
+        <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
+            <SheetContent
+                side="right"
+                showCloseButton={false}
+                aria-describedby={undefined}
+                // Focus the first form field instead of the close button when opening,
+                // and remember what opened the drawer (focus hasn't moved yet at this point).
+                onOpenAutoFocus={(e) => {
+                    e.preventDefault();
+                    openerRef.current = document.activeElement as HTMLElement | null;
+                    formRef.current
+                        ?.querySelector<HTMLElement>('input, select, textarea, button')
+                        ?.focus({ preventScroll: true });
                 }}
+                // The drawer is opened from plain buttons rather than a SheetTrigger, so Radix
+                // has no trigger to return focus to. Return it to the opener ourselves.
+                onCloseAutoFocus={(e) => {
+                    e.preventDefault();
+                    openerRef.current?.focus({ preventScroll: true });
+                }}
+                className="w-full gap-0 sm:max-w-[600px]"
             >
-
-                {bp !== 'mobile' && open && (
-                    <div
-                        onMouseDown={handleMouseDown}
-                        style={{
-                            position: 'absolute',
-                            left: '-28px',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            cursor: 'col-resize',
-                            color: handleHovered ? 'var(--color-white)' : 'var(--color-accent)',
-                            background: handleHovered ? 'var(--color-accent)' : 'var(--color-surface)',
-                            border: '1px solid var(--color-border)',
-                            borderRadius: 'var(--radius-md)',
-                            padding: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                        }}
-                        onMouseEnter={() => setHandleHovered(true)}
-                        onMouseLeave={() => setHandleHovered(false)}
-                    >
-                        <ChevronsLeftRight size={16} />
-                    </div>
-                )}
-
                 <div
                     style={{
                         display: 'flex',
@@ -238,20 +182,19 @@ export default function ApplicationDrawer({
                         borderBottom: '1px solid var(--color-border)',
                     }}
                 >
-                    <h2 style={{ fontSize: 'var(--text-lg)' }}>
+                    <SheetTitle style={{ fontSize: 'var(--text-lg)' }}>
                         {isEditing ? 'Edit application' : 'New application'}
-                    </h2>
-                    <button
-                        aria-label="Close drawer"
-                        className="btn btn-ghost btn-icon"
-                        onClick={onClose}
-                    >
-                        <X size={16} />
-                    </button>
+                    </SheetTitle>
+                    <SheetClose asChild>
+                        <Button variant="ghost" size="icon" aria-label="Close drawer">
+                            <X size={16} />
+                        </Button>
+                    </SheetClose>
                 </div>
 
                 <form
                     id="application-form"
+                    ref={formRef}
                     onSubmit={handleSubmit}
                     aria-label={
                         isEditing ? 'Edit application form' : 'New application'
@@ -277,15 +220,17 @@ export default function ApplicationDrawer({
                 }}>
                     {error && <p className="field-error" role="alert">{error}</p>}
                     <div style={{ display: 'flex', gap: 'var(--space-2)', maxWidth: '480px' }}>
-                        <button type="button" onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>
-                            Cancel
-                        </button>
-                        <button type="submit" form="application-form" disabled={loading} className="btn btn-primary" style={{ flex: 1 }}>
-                            {loading ? 'Saving...' : isEditing ? 'Save changes' : 'Save application'}
-                        </button>
+                        <SheetClose asChild>
+                            <Button type="button" variant="outline" className="flex-1">
+                                Cancel
+                            </Button>
+                        </SheetClose>
+                        <Button type="submit" form="application-form" loading={loading} className="flex-1">
+                            {loading ? 'Saving…' : isEditing ? 'Save changes' : 'Save application'}
+                        </Button>
                     </div>
                 </div>
-            </div>
-        </>
+            </SheetContent>
+        </Sheet>
     );
 }

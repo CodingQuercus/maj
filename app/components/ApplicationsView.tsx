@@ -13,6 +13,17 @@ import SortableColumnHeader from './SortableColumnHeader';
 
 import { ClipboardList, Plus, ChevronDown } from 'lucide-react';
 import PageTitle from './PageTitle';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 type ApplicationListProps = {
     applications: JobApplication[];
@@ -20,6 +31,24 @@ type ApplicationListProps = {
 
 type SortKey = 'title' | 'company' | 'status' | 'location' | 'applied_at';
 type SortDir = 'asc' | 'desc';
+
+// Short names for the mobile "Sort:" button.
+const sortKeyLabels: Record<SortKey, string> = {
+    title: 'Role',
+    company: 'Company',
+    status: 'Status',
+    location: 'Location',
+    applied_at: 'Date',
+};
+
+// Choices in the mobile sort menu.
+const sortOptions: { label: string; key: SortKey; dir: SortDir }[] = [
+    { label: 'Date (newest)', key: 'applied_at', dir: 'desc' },
+    { label: 'Date (oldest)', key: 'applied_at', dir: 'asc' },
+    { label: 'Role (A–Z)', key: 'title', dir: 'asc' },
+    { label: 'Company (A–Z)', key: 'company', dir: 'asc' },
+    { label: 'Status', key: 'status', dir: 'asc' },
+];
 
 const statusLabels: Record<string, string> = {
     all: 'All',
@@ -42,8 +71,6 @@ export default function ApplicationsView({
     const [filter, setFilter] = useState<string[]>([]);
     const [search, setSearch] = useState('');
 
-    const [filterOpen, setFilterOpen] = useState(false);
-    const [sortOpen, setSortOpen] = useState(false);
 
     const [sortKey, setSortKey] = useState<SortKey>('applied_at');
     const [sortDir, setSortDir] = useState<SortDir>('desc');
@@ -111,14 +138,14 @@ export default function ApplicationsView({
                     }}
                 >
                     <PageTitle icon={<ClipboardList size={bp === 'mobile' ? 24 : 32} />} title="Applications" noMargin />
-                    <button
+                    <Button
                         aria-label="Add new application"
-                        className="btn btn-primary"
+                        size={bp === 'mobile' ? 'icon' : 'default'}
                         onClick={() => setDrawerOpen(true)}
                     >
                         <Plus size={16} />
                         {bp !== 'mobile' && 'New application'}
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Search by role or company */}
@@ -131,123 +158,75 @@ export default function ApplicationsView({
                         gap: 'var(--space-4)',
                     }}
                 >
-                    <input
+                    <Input
                         aria-label="Search applications"
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search for role or company..."
-                        className="input-search"
+                        // pl-9 (36px) leaves room for the search icon from .input-search.
+                        className="input-search pl-9"
                         style={{ maxWidth: bp === 'mobile' ? '100%' : '320px' }}
                     />
                 </div>
 
                 {bp === 'mobile' ? (
                     <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
-                        {/* Filter popover */}
-                        <div style={{ position: 'relative', flex: 1 }}>
-                            <button
-                                className="btn btn-secondary btn-sm"
-                                style={{ width: '100%', justifyContent: 'space-between' }}
-                                onClick={() => { setFilterOpen(!filterOpen); setSortOpen(false); }}
-                                aria-expanded={filterOpen}
-                            >
-                                <span>Filter{filter.length > 0 ? ` (${filter.length})` : ''}</span>
-                                <ChevronDown size={14} />
-                            </button>
-                            {filterOpen && (
-                                <>
-                                    <div onClick={() => setFilterOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: 'calc(100% + 4px)',
-                                        left: 0,
-                                        right: 0,
-                                        background: 'var(--color-white)',
-                                        border: '1px solid var(--color-border)',
-                                        borderRadius: 'var(--radius-lg)',
-                                        boxShadow: 'var(--shadow-md)',
-                                        zIndex: 20,
-                                        padding: 'var(--space-2)',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: 'var(--space-1)',
-                                    }}>
-                                        {statuses.map((s) => (
-                                            <button
-                                                key={s}
-                                                onClick={() => { toggleFilter(s); }}
-                                                className={s !== 'all' ? `badge badge-dot badge-${s}` : 'badge'}
-                                                style={{
-                                                    cursor: 'pointer',
-                                                    justifyContent: 'flex-start',
-                                                    border: (s === 'all' ? filter.length === 0 : filter.includes(s)) ? '2px solid currentColor' : '1px solid',
-                                                    opacity: (s === 'all' ? filter.length === 0 : filter.includes(s)) ? 1 : 0.6,
-                                                    padding: '6px 12px',
-                                                    width: '100%',
-                                                }}
-                                            >
-                                                {s === 'all' ? `All (${applications.length})` : statusLabels[s]}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                        {/* Filter menu: several statuses can be selected; it stays open while toggling. */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="flex-1 justify-between">
+                                    <span>Filter{filter.length > 0 ? ` (${filter.length})` : ''}</span>
+                                    <ChevronDown size={14} />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-(--radix-dropdown-menu-trigger-width)">
+                                <DropdownMenuCheckboxItem
+                                    checked={filter.length === 0}
+                                    onCheckedChange={() => toggleFilter('all')}
+                                    onSelect={(e) => e.preventDefault()}
+                                >
+                                    All ({applications.length})
+                                </DropdownMenuCheckboxItem>
+                                <DropdownMenuSeparator />
+                                {statuses.filter((s) => s !== 'all').map((s) => (
+                                    <DropdownMenuCheckboxItem
+                                        key={s}
+                                        checked={filter.includes(s)}
+                                        onCheckedChange={() => toggleFilter(s)}
+                                        onSelect={(e) => e.preventDefault()}
+                                    >
+                                        <span className={`badge badge-dot badge-${s}`}>{statusLabels[s]}</span>
+                                    </DropdownMenuCheckboxItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
 
-                        {/* Sort popover */}
-                        <div style={{ position: 'relative', flex: 1 }}>
-                            <button
-                                className="btn btn-secondary btn-sm"
-                                style={{ width: '100%', justifyContent: 'space-between' }}
-                                onClick={() => { setSortOpen(!sortOpen); setFilterOpen(false); }}
-                                aria-expanded={sortOpen}
-                            >
-                                <span>Sort: {sortKey === 'applied_at' ? 'Date' : sortKey === 'title' ? 'Role' : 'Company'}</span>
-                                <ChevronDown size={14} />
-                            </button>
-                            {sortOpen && (
-                                <>
-                                    <div onClick={() => setSortOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: 'calc(100% + 4px)',
-                                        left: 0,
-                                        right: 0,
-                                        background: 'var(--color-white)',
-                                        border: '1px solid var(--color-border)',
-                                        borderRadius: 'var(--radius-lg)',
-                                        boxShadow: 'var(--shadow-md)',
-                                        zIndex: 20,
-                                        padding: 'var(--space-2)',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: 'var(--space-1)',
-                                    }}>
-                                        {[
-                                            { label: 'Date (newest)', key: 'applied_at' as SortKey, dir: 'desc' as SortDir },
-                                            { label: 'Date (oldest)', key: 'applied_at' as SortKey, dir: 'asc' as SortDir },
-                                            { label: 'Role (A–Z)', key: 'title' as SortKey, dir: 'asc' as SortDir },
-                                            { label: 'Company (A–Z)', key: 'company' as SortKey, dir: 'asc' as SortDir },
-                                            { label: 'Status', key: 'status' as SortKey, dir: 'asc' as SortDir },
-                                        ].map((opt) => (
-                                            <button
-                                                key={opt.label}
-                                                onClick={() => { setSortKey(opt.key); setSortDir(opt.dir); setSortOpen(false); }}
-                                                className="btn btn-ghost btn-sm"
-                                                style={{
-                                                    justifyContent: 'flex-start',
-                                                    fontWeight: sortKey === opt.key && sortDir === opt.dir ? '600' : '400',
-                                                    color: sortKey === opt.key && sortDir === opt.dir ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-                                                }}
-                                            >
-                                                {opt.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                        {/* Sort menu */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="flex-1 justify-between">
+                                    <span>Sort: {sortKeyLabels[sortKey]}</span>
+                                    <ChevronDown size={14} />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-(--radix-dropdown-menu-trigger-width)">
+                                <DropdownMenuRadioGroup
+                                    value={`${sortKey}:${sortDir}`}
+                                    onValueChange={(value) => {
+                                        const [key, dir] = value.split(':') as [SortKey, SortDir];
+                                        setSortKey(key);
+                                        setSortDir(dir);
+                                    }}
+                                >
+                                    {sortOptions.map((opt) => (
+                                        <DropdownMenuRadioItem key={opt.label} value={`${opt.key}:${opt.dir}`}>
+                                            {opt.label}
+                                        </DropdownMenuRadioItem>
+                                    ))}
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 ) : (
                     /* Filter applications by status */
@@ -371,7 +350,6 @@ export default function ApplicationsView({
             <ApplicationDrawer
                 open={drawerOpen}
                 onClose={() => setDrawerOpen(false)}
-                bp={bp}
             />
         </div>
     );

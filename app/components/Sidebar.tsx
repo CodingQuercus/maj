@@ -6,6 +6,9 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+
+import { Spinner } from '@/components/ui/spinner';
 
 import { useBreakpoint } from "@/hooks/useBreakpoint"
 
@@ -20,11 +23,26 @@ export default function Sidebar() {
     const router = useRouter();
     const supabase = createClient();
 
+    const [signingOut, setSigningOut] = useState(false);
+
     const handleSignOut = async () => {
-        await supabase.auth.signOut();
+        setSigningOut(true);
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            setSigningOut(false);
+            toast.error('Could not sign out. Please try again.');
+            return;
+        }
         router.push('/');
         router.refresh();
     };
+
+    // Swaps the sign-out icon for a spinner while signing out.
+    const signOutIcon = signingOut ? (
+        <Spinner role={undefined} aria-label={undefined} aria-hidden="true" className="size-[18px]" />
+    ) : (
+        <LogOut size={18} />
+    );
 
     const links = [
         {
@@ -124,6 +142,8 @@ export default function Sidebar() {
                     type="button"
                     onClick={handleSignOut}
                     aria-label="Sign out"
+                    disabled={signingOut}
+                    aria-busy={signingOut || undefined}
                     style={{
                         display: 'flex',
                         flexDirection: 'column',
@@ -138,7 +158,7 @@ export default function Sidebar() {
                         flex: 1,
                     }}
                 >
-                    <LogOut size={18} />
+                    {signOutIcon}
                     <span style={{ fontSize: '10px' }}>Sign out</span>
                 </button>
             </nav>
@@ -237,6 +257,8 @@ export default function Sidebar() {
                 <button
                     type="button"
                     onClick={handleSignOut}
+                    disabled={signingOut}
+                    aria-busy={signingOut || undefined}
                     title={bp === 'tablet' ? 'Sign out' : undefined}
                     aria-label={bp === 'tablet' ? 'Sign out' : undefined}
                     style={navItem(false, hoveredItem === 'button')}
@@ -244,7 +266,7 @@ export default function Sidebar() {
                     onMouseLeave={() => setHoveredItem(null)}
                 >
                     <span style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }}>
-                        <LogOut size={18} />
+                        {signOutIcon}
                     </span>
                     {bp === 'desktop' && 'Sign out'}
                 </button>
