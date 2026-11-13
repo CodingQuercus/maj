@@ -3,27 +3,32 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-
-import { Spinner } from '@/components/ui/spinner';
-
-import { useBreakpoint } from "@/hooks/useBreakpoint"
-
 import { ClipboardList, LayoutDashboard, Settings, LogOut } from 'lucide-react';
 
+import { createClient } from '@/lib/supabase/client';
+import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/lib/utils';
 
+const links = [
+    { href: '/applications', label: 'Applications', icon: ClipboardList },
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+];
+
+const accountLink = { href: '/account', label: 'Account', icon: Settings };
+
+// Sidebar on tablet (icons only) and desktop (icons + labels), bottom bar on phones.
+// Both are rendered and CSS picks one, so the right layout shows from the first paint.
 export default function Sidebar() {
-    const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-
-    const bp = useBreakpoint();
     const pathname = usePathname();
     const router = useRouter();
     const supabase = createClient();
-
     const [signingOut, setSigningOut] = useState(false);
+
+    // A section stays active on its sub-pages (e.g. /applications/123).
+    const isActive = (href: string) =>
+        pathname === href || pathname.startsWith(`${href}/`);
 
     const handleSignOut = async () => {
         setSigningOut(true);
@@ -41,236 +46,129 @@ export default function Sidebar() {
     const signOutIcon = signingOut ? (
         <Spinner role={undefined} aria-label={undefined} aria-hidden="true" className="size-[18px]" />
     ) : (
-        <LogOut size={18} />
+        <LogOut size={18} aria-hidden="true" />
     );
 
-    const links = [
-        {
-            href: '/applications',
-            label: 'Applications',
-            icon: <ClipboardList size={18} />,
-        },
-        {
-            href: '/dashboard',
-            label: 'Dashboard',
-            icon: <LayoutDashboard size={18} />,
-        },
-    ];
-
-    const allItems = [
-        ...links,
-        { href: '/account', label: 'Account', icon: <Settings size={18} /> },
-    ];
-
-    const navItem = (active: boolean, hovered: boolean) => ({
-        display: 'flex',
-        alignItems: 'center',
-        gap: bp === 'tablet' ? '0' : 'var(--space-3)',
-        justifyContent: bp === 'tablet' ? 'center' : 'flex-start',
-        padding: 'var(--space-3)',
-        borderRadius: 'var(--radius-lg)',
-        fontSize: 'var(--text-sm)',
-        fontWeight: active ? '600' : '400',
-        textDecoration: 'none',
-        transition: 'background var(--transition-fast)',
-        background: active
-            ? 'var(--color-white)'
-            : hovered
-            ? 'var(--color-overlay)'
-            : 'transparent',
-        color: active ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-        boxShadow: active ? 'var(--shadow-xs)' : 'none',
-        border: 'none',
-        cursor: 'pointer',
-        width: '100%',
-        textAlign: 'left' as const,
-        position: 'relative' as const,
-    });
-
-
-    /* If client device is mobile, return bottom navbar */
-    if (bp === 'mobile') {
-        return (
-            <nav
-                aria-label="Main navigation"
-                style={{
-                    position: 'fixed',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: '64px',
-                    background: 'var(--color-surface)',
-                    borderTop: '1px solid var(--color-border)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-around',
-                    zIndex: 10,
-                    paddingBottom: 'env(safe-area-inset-bottom)',
-                }}
-            >
-                {allItems.map((item) => {
-                    const active = pathname === item.href;
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            aria-current={active ? 'page' : undefined}
-                            aria-label={item.label}
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: '4px',
-                                textDecoration: 'none',
-                                padding: 'var(--space-2)',
-                                borderRadius: 'var(--radius-lg)',
-                                color: active
-                                    ? 'var(--color-accent)'
-                                    : 'var(--color-text-tertiary)',
-                                flex: 1,
-                            }}
-                        >
-                            {item.icon}
-                            <span style={{ fontSize: 'var(--text-xs)', fontWeight: active ? '600' : '400' }}>
-                                {item.label}
-                            </span>
-                        </Link>
-                    );
-                })}
-                {/* Sign out */}
-                <button
-                    type="button"
-                    onClick={handleSignOut}
-                    aria-label="Sign out"
-                    disabled={signingOut}
-                    aria-busy={signingOut || undefined}
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '4px',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: 'var(--space-2)',
-                        borderRadius: 'var(--radius-lg)',
-                        color: 'var(--color-text-tertiary)',
-                        flex: 1,
-                    }}
-                >
-                    {signOutIcon}
-                    <span style={{ fontSize: 'var(--text-xs)' }}>Sign out</span>
-                </button>
-            </nav>
+    // Sidebar item: centred icon on tablet, icon + label from lg.
+    const sideItem = (active: boolean) =>
+        cn(
+            'flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg p-3 text-sm text-[var(--color-text-secondary)] no-underline transition-colors hover:bg-accent hover:text-[var(--color-text-secondary)] lg:justify-start',
+            active &&
+                'bg-[var(--color-white)] font-semibold text-foreground shadow-[var(--shadow-xs)] hover:bg-[var(--color-white)] hover:text-foreground'
         );
-    }
 
+    // Label hidden visually on tablet but still read by screen readers.
+    const sideLabel = 'sr-only lg:not-sr-only';
+
+    // Bottom bar item on phones.
+    const barItem = (active: boolean) =>
+        cn(
+            'flex flex-1 cursor-pointer flex-col items-center gap-1 rounded-lg p-2 text-xs text-[var(--color-text-tertiary)] no-underline hover:text-[var(--color-text-tertiary)]',
+            active && 'font-semibold text-primary hover:text-primary'
+        );
 
     return (
-        <aside
-            aria-label="Main navigation"
-            style={{
-                width: bp === 'tablet' ? '64px' : 'var(--sidebar-width)',
-                background: 'var(--color-surface)',
-                borderRight: '1px solid var(--color-border)',
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100vh',
-                paddingTop: 'var(--space-8)',
-                paddingBottom: 'var(--space-8)',
-                paddingLeft: 'var(--space-4)',
-                paddingRight: 'var(--space-4)',
-                transition: 'width 0.2s ease',
-                flexShrink: 0,
-            }}
-        >
-            {/* Logo and application name */}
-            <Link
-                href="/applications"
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: bp === 'tablet' ? 'center' : 'flex-start',
-                    gap: 'var(--space-2)',
-                    textDecoration: 'none',
-                    marginBottom: 'var(--space-4)',
-                }}
-            >
-                <Image src="/maj-logo.svg" alt="Maj" width={28} height={28} style={{ height: 'auto' }} />
-                {bp === 'desktop' && (
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: 'var(--text-md)', fontWeight: '700', color: 'var(--color-text-primary)', lineHeight: 1.2 }}>
-                            Maj
-                        </span>
-                        <span style={{ fontSize: 'var(--text-xs)', fontWeight: '500', color: 'var(--color-text-secondary)', letterSpacing: 'var(--tracking-tight)' }}>
-                            My Application Journal
-                        </span>
-                    </div>
-                )}
-            </Link>
-
-
-            {/* Main navigation links */}
+        <>
+            {/* Phones: fixed bottom bar */}
             <nav
-                aria-label="App navigation"
-                style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', flex: 1 }}
+                aria-label="Main navigation"
+                className="fixed inset-x-0 bottom-0 z-10 flex h-[calc(64px+env(safe-area-inset-bottom))] items-center justify-around border-t border-border bg-muted pb-[env(safe-area-inset-bottom)] sm:hidden"
             >
-                {links.map((link) => {
-                    const active = pathname === link.href;
-                    const hovered = hoveredItem === link.href;
-                    return (
-                        <Link
-                            key={link.href}
-                            href={link.href}
-                            title={bp === 'tablet' ? link.label : undefined}
-                            aria-label={bp === 'tablet' ? link.label : undefined}
-                            aria-current={active ? 'page' : undefined}
-                            style={navItem(active, hovered)}
-                            onMouseEnter={() => setHoveredItem(link.href)}
-                            onMouseLeave={() => setHoveredItem(null)}
-                        >
-                            <span style={{ color: active ? 'var(--color-accent)' : 'var(--color-text-tertiary)', flexShrink: 0 }}>
-                                {link.icon}
-                            </span>
-                            {bp === 'desktop' && link.label}
-                        </Link>
-                    );
-                })}
-            </nav>
-
-            {/* Account and sign out */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-3)' }}>
-                <Link
-                    href="/account"
-                    title={bp === 'tablet' ? 'Account' : undefined}
-                    aria-label={bp === 'tablet' ? 'Account' : undefined}
-                    style={navItem(pathname === '/account', hoveredItem === 'account')}
-                    onMouseEnter={() => setHoveredItem('account')}
-                    onMouseLeave={() => setHoveredItem(null)}
-                >
-                    <span style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }}>
-                        <Settings size={18} />
-                    </span>
-                    {bp === 'desktop' && 'Account'}
-                </Link>
-
+                {[...links, accountLink].map(({ href, label, icon: Icon }) => (
+                    <Link
+                        key={href}
+                        href={href}
+                        aria-current={isActive(href) ? 'page' : undefined}
+                        className={barItem(isActive(href))}
+                    >
+                        <Icon size={18} aria-hidden="true" />
+                        {label}
+                    </Link>
+                ))}
                 <button
                     type="button"
                     onClick={handleSignOut}
                     disabled={signingOut}
                     aria-busy={signingOut || undefined}
-                    title={bp === 'tablet' ? 'Sign out' : undefined}
-                    aria-label={bp === 'tablet' ? 'Sign out' : undefined}
-                    style={navItem(false, hoveredItem === 'button')}
-                    onMouseEnter={() => setHoveredItem('button')}
-                    onMouseLeave={() => setHoveredItem(null)}
+                    className={barItem(false)}
                 >
-                    <span style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }}>
-                        {signOutIcon}
-                    </span>
-                    {bp === 'desktop' && 'Sign out'}
+                    {signOutIcon}
+                    Sign out
                 </button>
-            </div>
-        </aside>
+            </nav>
+
+            {/* Tablet and desktop: sticky sidebar */}
+            <aside
+                aria-label="Main navigation"
+                className="sticky top-0 hidden h-dvh w-16 shrink-0 flex-col border-r border-border bg-muted px-2 py-8 sm:flex lg:w-[var(--sidebar-width)] lg:px-4"
+            >
+                <Link
+                    href="/applications"
+                    className="mb-4 flex items-center justify-center gap-2 no-underline lg:justify-start"
+                >
+                    <Image src="/maj-logo.svg" alt="Maj" width={28} height={28} style={{ height: 'auto' }} />
+                    <span className="hidden flex-col lg:flex">
+                        <span className="text-[length:var(--text-md)] leading-tight font-bold text-foreground">
+                            Maj
+                        </span>
+                        <span className="text-xs font-medium tracking-[var(--tracking-tight)] text-[var(--color-text-secondary)]">
+                            My Application Journal
+                        </span>
+                    </span>
+                </Link>
+
+                <nav aria-label="App navigation" className="flex flex-1 flex-col gap-1">
+                    {links.map(({ href, label, icon: Icon }) => (
+                        <Link
+                            key={href}
+                            href={href}
+                            title={label}
+                            aria-current={isActive(href) ? 'page' : undefined}
+                            className={sideItem(isActive(href))}
+                        >
+                            <Icon
+                                size={18}
+                                aria-hidden="true"
+                                className={cn(
+                                    'shrink-0',
+                                    isActive(href) ? 'text-primary' : 'text-[var(--color-text-tertiary)]'
+                                )}
+                            />
+                            <span className={sideLabel}>{label}</span>
+                        </Link>
+                    ))}
+                </nav>
+
+                <div className="flex flex-col gap-1 border-t border-border pt-3">
+                    <Link
+                        href={accountLink.href}
+                        title={accountLink.label}
+                        aria-current={isActive(accountLink.href) ? 'page' : undefined}
+                        className={sideItem(isActive(accountLink.href))}
+                    >
+                        <Settings
+                            size={18}
+                            aria-hidden="true"
+                            className={cn(
+                                'shrink-0',
+                                isActive(accountLink.href) ? 'text-primary' : 'text-[var(--color-text-tertiary)]'
+                            )}
+                        />
+                        <span className={sideLabel}>{accountLink.label}</span>
+                    </Link>
+                    <button
+                        type="button"
+                        onClick={handleSignOut}
+                        disabled={signingOut}
+                        aria-busy={signingOut || undefined}
+                        title="Sign out"
+                        className={sideItem(false)}
+                    >
+                        <span className="shrink-0 text-[var(--color-text-tertiary)]">{signOutIcon}</span>
+                        <span className={sideLabel}>Sign out</span>
+                    </button>
+                </div>
+            </aside>
+        </>
     );
 }

@@ -766,14 +766,6 @@ button.badge {
         --text-base: 1rem;
     }
 
-    .dashboard-main {
-        padding-bottom: calc(64px + env(safe-area-inset-bottom));
-        padding-left: var(--space-4);
-        padding-right: var(--space-4);
-        padding-top: var(--space-4);
-        overflow-y: scroll;
-    }
-
     .home-nav {
         padding: var(--space-4);
     }

@@ -6,7 +6,9 @@ export default function DashboardLayout({
     children: React.ReactNode;
 }) {
     return (
-        <div className="flex h-screen">
+        // The page itself scrolls (no inner scroll container), so mobile browsers can
+        // collapse their toolbars and tapping the status bar scrolls to the top.
+        <div className="min-h-dvh sm:flex">
             {/* Lets keyboard users jump past the navigation; visible only when focused. */}
             <a
                 href="#main-content"
@@ -18,7 +20,8 @@ export default function DashboardLayout({
             <main
                 id="main-content"
                 tabIndex={-1}
-                className="flex-1 overflow-y-auto outline-none dashboard-main"
+                // Bottom padding keeps content clear of the fixed bottom bar on phones.
+                className="min-w-0 flex-1 pb-[calc(64px+env(safe-area-inset-bottom))] outline-none sm:pb-0"
             >
                 {children}
             </main>
