@@ -1,8 +1,4 @@
-"use client";
-
 import { ReactNode } from 'react';
-
-import { useBreakpoint } from '@/hooks/useBreakpoint';
 
 type PageTitleProps = {
     icon: ReactNode;
@@ -10,36 +6,14 @@ type PageTitleProps = {
     noMargin?: boolean; // set to true when parent controls spacing.
 };
 
-// Reusable page title component.
-export default function PageTitle({
-    icon,
-    title,
-    noMargin = false,
-}: PageTitleProps) {
-    const bp = useBreakpoint();
-
+// Page title with icon. Sizes follow the breakpoint in CSS (24px icon on phones, 32px above).
+export default function PageTitle({ icon, title, noMargin = false }: PageTitleProps) {
     return (
-        <div
-            style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-2)',
-                marginBottom: noMargin ? 0 : bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
-            }}
-        >
-            <span
-                aria-hidden="true"
-                style={{ color: 'var(--color-text-primary)' }}
-            >
+        <div className={`flex items-center gap-2 ${noMargin ? '' : 'mb-4 sm:mb-8'}`}>
+            <span aria-hidden="true" className="text-foreground [&_svg]:size-6 sm:[&_svg]:size-8">
                 {icon}
             </span>
-            <h1
-                style={{
-                    fontSize: bp === 'mobile' ? 'var(--text-xl)' : 'var(--text-3xl)',
-                }}
-            >
-                {title}
-            </h1>
+            <h1 className="text-xl sm:text-3xl">{title}</h1>
         </div>
     );
 }
