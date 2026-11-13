@@ -1,12 +1,73 @@
-import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 
+import { createClient } from '@/lib/supabase/server';
+import { Button } from '@/components/ui/button';
+import DemoButton from './components/DemoButton';
 import HomeNav from './components/HomeNav';
-
-import { ClipboardList, LayoutDashboard, FileText } from 'lucide-react';
 import HomeFooter from './components/Footer';
+import styles from './home.module.css';
+
+// Sample entries for the journal illustration. Companies are made up.
+const sampleEntries = [
+    {
+        role: 'Frontend Developer',
+        company: 'Nordljus',
+        date: '2026-11-10',
+        status: 'interview',
+        label: 'Interview',
+    },
+    {
+        role: 'UX Engineer',
+        company: 'Fjällsta AB',
+        date: '2026-11-07',
+        status: 'assessment',
+        label: 'Assessment',
+    },
+    {
+        role: 'Product Designer',
+        company: 'Brygga Studio',
+        date: '2026-11-05',
+        status: 'applied',
+        label: 'Applied',
+    },
+    {
+        role: 'Fullstack Developer',
+        company: 'Lindholmen Labs',
+        date: '2026-10-28',
+        status: 'offer',
+        label: 'Offer',
+    },
+    {
+        role: 'Junior Developer',
+        company: 'Kvarn & Co',
+        date: '2026-10-21',
+        status: 'rejected',
+        label: 'Rejected',
+    },
+];
+
+const stages = [
+    { status: 'applied', label: 'Applied' },
+    { status: 'assessment', label: 'Assessment' },
+    { status: 'interview', label: 'Interview' },
+    { status: 'offer', label: 'Offer' },
+];
+
+const features = [
+    {
+        title: 'Track applications',
+        desc: 'Log every job you apply to with status, notes and contact information.',
+    },
+    {
+        title: 'Visualize progress',
+        desc: 'See your job search at a glance with a live dashboard.',
+    },
+    {
+        title: 'Keep everything in one place',
+        desc: 'Job description, notes, deadlines and status — all per application.',
+    },
+];
 
 export default async function HomePage() {
     // Check if user is already logged in, redirect to application if so.
@@ -17,197 +78,157 @@ export default async function HomePage() {
     if (user) redirect('/applications');
 
     return (
-        <main
-            style={{
-                minHeight: '100vh',
-                background: 'var(--color-canvas)',
-                display: 'flex',
-                flexDirection: 'column',
-            }}
-        >
-            {/* Top navigation and sign in link */}
+        <main className={styles.page}>
             <HomeNav />
 
-            {/* Hero section */}
-            <section
-                style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    textAlign: 'center',
-                    padding: 'var(--space-16) var(--space-8)',
-                    gap: 'var(--space-6)',
-                }}
-            >
-                <div
-                    style={{
-                        display: 'flex',
-                        gap: 'var(--space-4)',
-                        alignItems: 'center',
-                        marginBottom: 'var(--space-8)',
-                    }}
-                >
-                    <Image
-                        src="/maj-logo.svg"
-                        alt="Maj"
-                        width={128}
-                        height={128}
-                        style={{ height: 'auto' }}
-                        className='hero-logo'
-                    />
-                    <div
-                        style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'flex-start',
-                            lineHeight: 1.2,
-                        }}
-                    >
-                        <span
-                            className="hero-title"
-                            style={{
-                                fontSize: 'var(--text-7xl)',
-                                fontWeight: '700',
-                                color: 'var(--color-text-primary)',
-                            }}
-                        >
-                            Maj
-                        </span>
-                        <span
-                            style={{
-                                fontSize: 'var(--text-xl)',
-                                fontWeight: '500',
-                                color: 'var(--color-text-secondary)',
-                                letterSpacing: 'var(--tracking-light)'
-                            }}
-                        >
-                            My Application Journal
-                        </span>
-                    </div>
-                </div>
-
-                {/* Headline and subtext */}
-                <div
-                    style={{
-                        maxWidth: '700px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 'var(--space-4)',
-                    }}
-                >
+            {/* Hero: headline on the left, journal illustration on the right */}
+            <section className={styles.hero} aria-labelledby="hero-heading">
+                <div className={styles.heroText}>
                     <h1
-                        className='hero-text'
-                        style={{
-                            fontSize: 'var(--text-4xl)',
-                            letterSpacing: 'var(--tracking-tight)',
-                            lineHeight: '1.1',
-                        }}
+                        id="hero-heading"
+                        className={`${styles.headline} ${styles.reveal}`}
+                        style={{ '--delay': '0ms' } as React.CSSProperties}
                     >
-                        Never lose track of an application again.
+                        Never lose track of an application <em>again.</em>
                     </h1>
                     <p
-                        className='hero-paragraph'
-                        style={{
-                            fontSize: 'var(--text-lg)',
-                            color: 'var(--color-text-secondary)',
-                            lineHeight: 'var(--leading-relaxed)',
-                        }}
+                        className={`${styles.lede} ${styles.reveal}`}
+                        style={{ '--delay': '100ms' } as React.CSSProperties}
                     >
                         Log where you&apos;ve applied, update statuses as things
                         move, and keep notes on every opportunity.
                     </p>
-                </div>
-
-                {/* CTA Buttons */}
-                <div
-                    style={{
-                        display: 'flex',
-                        gap: 'var(--space-3)',
-                        flexWrap: 'wrap',
-                        justifyContent: 'center',
-                    }}
-                >
-                    <Link
-                        href="/login?mode=signup"
-                        className="btn btn-primary btn-lg"
+                    <div
+                        className={`${styles.actions} ${styles.reveal}`}
+                        style={{ '--delay': '200ms' } as React.CSSProperties}
                     >
-                        Get started
-                    </Link>
-                    <Link href="/login" className="btn btn-secondary btn-lg">
-                        Sign in
-                    </Link>
+                        <Button asChild size="lg">
+                            <Link href="/login?mode=signup">Get started</Link>
+                        </Button>
+                        <DemoButton variant="outline" size="lg" />
+                    </div>
+                    <p
+                        className={`${styles.signIn} ${styles.reveal}`}
+                        style={{ '--delay': '260ms' } as React.CSSProperties}
+                    >
+                        Already have an account?{' '}
+                        <Link href="/login">Sign in</Link>
+                    </p>
                 </div>
 
-                {/* Feature highlights */}
-                <div
-                    className='feature-grid'
-                    style={{
-                        display: 'grid',
-                        gap: 'var(--space-6)',
-                        maxWidth: '720px',
-                        width: '100%',
-                        marginTop: 'var(--space-8)',
-                        borderTop: '1px solid var(--color-border-soft)',
-                        marginBottom: 'var(--space-8)',
-                        borderBottom: '1px solid var(--color-border-soft)',
-                        paddingTop: 'var(--space-8)',
-                        paddingBottom: 'var(--space-8)',
-                    }}
-                >
-                    {[
-                        {
-                            icon: <ClipboardList size={24} />,
-                            title: 'Track applications',
-                            desc: 'Log every job you apply to with status, notes and contact information.',
-                        },
-                        {
-                            icon: <LayoutDashboard size={24} />,
-                            title: 'Visualize progress',
-                            desc: 'See your job search at a glance with a live dashboard.',
-                        },
-                        {
-                            icon: <FileText size={24} />,
-                            title: 'Keep everything in one place',
-                            desc: 'Job description, notes, deadlines and status — all per application.',
-                        },
-                    ].map((f) => (
-                        <div
-                            key={f.title}
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: 'var(--space-3)',
-                                textAlign: 'center',
-                            }}
-                        >
-                            <span style={{ color: 'var(--color-accent)' }}>
-                                {f.icon}
-                            </span>
-                            <p
-                                style={{
-                                    fontSize: 'var(--text-md)',
-                                    fontWeight: '600',
-                                    color: 'var(--color-text-primary)',
-                                }}
-                            >
-                                {f.title}
-                            </p>
-                            <p
-                                style={{
-                                    fontSize: 'var(--text-base)',
-                                    color: 'var(--color-text-tertiary)',
-                                    lineHeight: 'var(--leading-normal)',
-                                }}
-                            >
-                                {f.desc}
-                            </p>
+                {/* Decorative illustration of the app; hidden from screen readers. */}
+                <div className={styles.illustration} aria-hidden="true">
+                    <div className={styles.journal}>
+                        <div className={styles.spine} />
+                        <div className={styles.journalPage}>
+                            <div className={styles.journalHeader}>
+                                <span className={styles.journalTitle}>
+                                    Applications
+                                </span>
+                                <span className={styles.journalMonth}>
+                                    Nov 2026
+                                </span>
+                            </div>
+                            <ul className={styles.entries}>
+                                {sampleEntries.map((entry, i) => (
+                                    <li
+                                        key={entry.role}
+                                        className={styles.entry}
+                                        style={
+                                            {
+                                                '--delay': `${450 + i * 110}ms`,
+                                            } as React.CSSProperties
+                                        }
+                                    >
+                                        <div className={styles.entryMain}>
+                                            <span className={styles.entryRole}>
+                                                {entry.role}
+                                            </span>
+                                            <span className={styles.entryMeta}>
+                                                {entry.company} · {entry.date}
+                                            </span>
+                                        </div>
+                                        <span
+                                            className={`badge badge-dot badge-${entry.status}`}
+                                        >
+                                            {entry.label}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                            <div className={styles.journalFooter}>
+                                <span>
+                                    <strong>12</strong> applied
+                                </span>
+                                <span>
+                                    <strong>3</strong> interviews
+                                </span>
+                                <span>
+                                    <strong>1</strong> offer
+                                </span>
+                            </div>
                         </div>
-                    ))}
+                    </div>
+                    <div className={styles.note}>
+                        <span className={styles.noteLabel}>Thu 10:00</span>
+                        Interview at Nordljus — bring portfolio, ask about the
+                        team.
+                    </div>
                 </div>
             </section>
+
+            {/* Features, styled as numbered journal entries */}
+            <section className={styles.steps} aria-label="Features">
+                <ul className={styles.stepList}>
+                    {features.map((feature, i) => (
+                        <li key={feature.title} className={styles.step}>
+                            <span
+                                className={styles.stepNumber}
+                                aria-hidden="true"
+                            >
+                                {String(i + 1).padStart(2, '0')}
+                            </span>
+                            <h2 className={styles.stepTitle}>
+                                {feature.title}
+                            </h2>
+                            <p className={styles.stepDesc}>{feature.desc}</p>
+                            {i === 0 && (
+                                <div
+                                    className={styles.pipeline}
+                                    aria-hidden="true"
+                                >
+                                    {stages.map((s) => (
+                                        <span
+                                            key={s.status}
+                                            className={`badge badge-dot badge-${s.status}`}
+                                        >
+                                            {s.label}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+            </section>
+
+            {/* Closing call to action on a notebook-cover band */}
+            <section className={styles.cover} aria-labelledby="cover-heading">
+                <h2 id="cover-heading" className={styles.coverTitle}>
+                    Stay organized, <em>stay focused.</em>
+                </h2>
+                <div className={styles.coverActions}>
+                    <Button asChild size="lg" className={styles.coverPrimary}>
+                        <Link href="/login?mode=signup">Get started</Link>
+                    </Button>
+                    <DemoButton
+                        variant="outline"
+                        size="lg"
+                        className={styles.coverGhost}
+                    />
+                </div>
+            </section>
+
             <HomeFooter />
         </main>
     );
