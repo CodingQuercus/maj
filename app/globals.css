@@ -765,8 +765,4 @@ button.badge {
     :root {
         --text-base: 1rem;
     }
-
-    .home-nav {
-        padding: var(--space-4);
-    }
 }

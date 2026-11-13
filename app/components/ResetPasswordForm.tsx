@@ -34,11 +34,7 @@ export default function ResetPasswordForm() {
         <form
             onSubmit={handleSubmit}
             aria-label="Set new password form"
-            style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 'var(--space-4)',
-            }}
+            className="flex flex-col gap-4"
         >
             <div>
                 <Label htmlFor="new-password">New password</Label>

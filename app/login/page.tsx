@@ -3,7 +3,7 @@
 import { useState, use, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import HomeNav from '../components/HomeNav';
+import AuthCard from '../components/AuthCard';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -141,151 +141,103 @@ export default function LoginPage({
     };
 
     return (
-        <main
-            className="min-h-dvh flex flex-col"
-            style={{ background: 'var(--color-canvas)' }}
-        >
-            <HomeNav />
-            <div
-                style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 'var(--space-8) var(--space-4)',
-                }}
+        <AuthCard title={headings[mode]}>
+            {mode === 'reset' && (
+                <p className="-mt-4 mb-6 text-sm text-[var(--color-text-secondary)]">
+                    Enter your email and we&apos;ll send you a link to choose a
+                    new password.
+                </p>
+            )}
+
+            <form
+                onSubmit={handleLogin}
+                className="flex flex-col gap-4"
+                aria-label={formLabels[mode]}
             >
-                <div
-                    className="card"
-                    style={{
-                        width: '100%',
-                        maxWidth: '380px',
-                        margin: '0 var(--space-4)',
-                    }}
-                >
-                    <h1 style={{ marginBottom: 'var(--space-6)' }}>
-                        {headings[mode]}
-                    </h1>
-                    {mode === 'reset' && (
-                        <p
-                            style={{
-                                fontSize: 'var(--text-sm)',
-                                color: 'var(--color-text-secondary)',
-                                marginTop: 'calc(-1 * var(--space-4))',
-                                marginBottom: 'var(--space-6)',
-                            }}
-                        >
-                            Enter your email and we&apos;ll send you a link to
-                            choose a new password.
-                        </p>
-                    )}
-
-                    <form
-                        onSubmit={handleLogin}
-                        style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 'var(--space-4)',
-                        }}
-                        aria-label={formLabels[mode]}
-                    >
-                        <div>
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                ref={emailRef}
-                                type="email"
-                                value={email}
-                                autoComplete="email"
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="you@example.com"
-                                required
-                            />
-                        </div>
-                        {mode !== 'reset' && (
-                            <div>
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'baseline',
-                                    }}
-                                >
-                                    <Label htmlFor="password">Password</Label>
-                                    {mode === 'login' && (
-                                        <button
-                                            type="button"
-                                            onClick={() => switchMode('reset')}
-                                            className="text-link"
-                                        >
-                                            Forgot password?
-                                        </button>
-                                    )}
-                                </div>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    value={password}
-                                    // Helps password managers distinguish between login and signup.
-                                    autoComplete={
-                                        mode === 'login'
-                                            ? 'current-password'
-                                            : 'new-password'
-                                    }
-                                    onChange={(e) =>
-                                        setPassword(e.target.value)
-                                    }
-                                    placeholder="••••••••"
-                                    required
-                                />
-                            </div>
-                        )}
-
-                        {/* Error message announced to screen readers via role="alert" */}
-                        {error && (
-                            <p className="field-error" role="alert">
-                                {error}
-                            </p>
-                        )}
-                        {notice && (
-                            <p
-                                role="status"
-                                style={{
-                                    fontSize: 'var(--text-sm)',
-                                    color: 'var(--color-success)',
-                                }}
-                            >
-                                {notice}
-                            </p>
-                        )}
-
-                        <Button type="submit" size="lg" loading={loading}>
-                            {loading ? pendingLabels[mode] : submitLabels[mode]}
-                        </Button>
-                    </form>
-
-                    <hr />
-
-                    {/* Toggle between login and signup; reset mode goes back to login */}
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        className="w-full"
-                        onClick={() =>
-                            switchMode(mode === 'login' ? 'signup' : 'login')
-                        }
-                    >
-                        {mode === 'login'
-                            ? "Don't have an account? Sign up"
-                            : mode === 'signup'
-                              ? 'Already have an account? Sign in'
-                              : 'Back to sign in'}
-                    </Button>
-
-                    <hr />
-                    <DemoButton variant="ghost" className="w-full" />
+                <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                        id="email"
+                        ref={emailRef}
+                        type="email"
+                        value={email}
+                        autoComplete="email"
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        required
+                    />
                 </div>
-            </div>
-        </main>
+                {mode !== 'reset' && (
+                    <div>
+                        <div className="flex items-baseline justify-between">
+                            <Label htmlFor="password">Password</Label>
+                            {mode === 'login' && (
+                                <button
+                                    type="button"
+                                    onClick={() => switchMode('reset')}
+                                    className="text-link"
+                                >
+                                    Forgot password?
+                                </button>
+                            )}
+                        </div>
+                        <Input
+                            id="password"
+                            type="password"
+                            value={password}
+                            // Helps password managers distinguish between login and signup.
+                            autoComplete={
+                                mode === 'login'
+                                    ? 'current-password'
+                                    : 'new-password'
+                            }
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="••••••••"
+                            required
+                        />
+                    </div>
+                )}
+
+                {/* Error message announced to screen readers via role="alert" */}
+                {error && (
+                    <p className="field-error" role="alert">
+                        {error}
+                    </p>
+                )}
+                {notice && (
+                    <p
+                        role="status"
+                        className="text-sm text-[var(--color-success)]"
+                    >
+                        {notice}
+                    </p>
+                )}
+
+                <Button type="submit" size="lg" loading={loading}>
+                    {loading ? pendingLabels[mode] : submitLabels[mode]}
+                </Button>
+            </form>
+
+            <hr />
+
+            {/* Toggle between login and signup; reset mode goes back to login */}
+            <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() =>
+                    switchMode(mode === 'login' ? 'signup' : 'login')
+                }
+            >
+                {mode === 'login'
+                    ? "Don't have an account? Sign up"
+                    : mode === 'signup'
+                      ? 'Already have an account? Sign in'
+                      : 'Back to sign in'}
+            </Button>
+
+            <hr />
+            <DemoButton variant="ghost" className="w-full" />
+        </AuthCard>
     );
 }
