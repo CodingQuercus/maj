@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Status } from '@/lib/types';
+import { STATUSES, STATUS_LABELS } from '@/lib/status';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -14,24 +15,6 @@ import {
     DropdownMenuRadioItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-const statusOptions: Status[] = [
-    'applied',
-    'assessment',
-    'interview',
-    'offer',
-    'rejected',
-    'withdrawn',
-];
-
-const statusLabels: Record<Status, string> = {
-    applied: 'Applied',
-    assessment: 'Assessment',
-    interview: 'Interview',
-    offer: 'Offer',
-    rejected: 'Rejected',
-    withdrawn: 'Withdrawn',
-};
 
 type StatusPopoverProps = {
     applicationId: string;
@@ -75,11 +58,11 @@ export default function StatusPopover({
                     type="button"
                     onClick={stop}
                     onKeyDown={stop}
-                    aria-label={`Change status, current: ${statusLabels[status]}`}
+                    aria-label={`Change status, current: ${STATUS_LABELS[status]}`}
                     className={`badge badge-dot badge-${status}`}
                     style={{ cursor: 'pointer' }}
                 >
-                    {statusLabels[status]}
+                    {STATUS_LABELS[status]}
                 </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" onClick={stop} onKeyDown={stop}>
@@ -88,10 +71,10 @@ export default function StatusPopover({
                     value={status}
                     onValueChange={(value) => handleSelect(value as Status)}
                 >
-                    {statusOptions.map((s) => (
+                    {STATUSES.map((s) => (
                         <DropdownMenuRadioItem key={s} value={s}>
                             <span className={`badge badge-dot badge-${s}`}>
-                                {statusLabels[s]}
+                                {STATUS_LABELS[s]}
                             </span>
                         </DropdownMenuRadioItem>
                     ))}

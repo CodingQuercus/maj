@@ -8,6 +8,7 @@ import { JobApplication, Status, Contact } from '@/lib/types';
 import { formatDate } from '@/lib/dates';
 
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { STATUSES, STATUS_LABELS, WORK_TYPE_LABELS } from '@/lib/status';
 
 import {
     ArrowLeft,
@@ -45,31 +46,6 @@ import SectionLabel from './SectionLabel';
 
 type ApplicationDetailProps = {
     application: JobApplication;
-};
-
-const statusOptions: Status[] = [
-    'applied',
-    'assessment',
-    'interview',
-    'offer',
-    'rejected',
-    'withdrawn',
-];
-
-const statusLabels: Record<string, string> = {
-    all: 'All',
-    applied: 'Applied',
-    assessment: 'Assessment',
-    interview: 'Interview',
-    offer: 'Offer',
-    rejected: 'Rejected',
-    withdrawn: 'Withdrawn',
-};
-
-const workTypeLabels: Record<string, string> = {
-    'on-site': 'On-site',
-    hybrid: 'Hybrid',
-    remote: 'Remote',
 };
 
 export default function ApplicationDetail({
@@ -288,7 +264,7 @@ export default function ApplicationDetail({
                                             size={14}
                                             color="var(--color-text-tertiary)"
                                         />
-                                        {workTypeLabels[application.work_type]}
+                                        {WORK_TYPE_LABELS[application.work_type]}
                                     </span>
                                 )}
                             </div>
@@ -357,7 +333,7 @@ export default function ApplicationDetail({
                                 flexWrap: 'wrap',
                             }}
                         >
-                            {statusOptions.map((s) => (
+                            {STATUSES.map((s) => (
                                 <button
                                     key={s}
                                     onClick={() => handleStatusChange(s)}
@@ -373,7 +349,7 @@ export default function ApplicationDetail({
                                         padding: '6px 12px',
                                     }}
                                 >
-                                    {statusLabels[s]}
+                                    {STATUS_LABELS[s]}
                                 </button>
                             ))}
                         </div>

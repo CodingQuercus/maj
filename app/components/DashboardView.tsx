@@ -13,6 +13,7 @@ import {
     CartesianGrid,
 } from 'recharts';
 import { JobApplication, Status } from '@/lib/types';
+import { STATUSES, STATUS_COLORS, STATUS_LABELS } from '@/lib/status';
 import { formatDate } from '@/lib/dates';
 import { LayoutDashboard } from 'lucide-react';
 
@@ -22,26 +23,6 @@ import PageTitle from './PageTitle';
 
 type DashboardViewProps = {
     applications: JobApplication[];
-};
-
-// Colors per status
-const statusColors: Record<Status, string> = {
-    applied: '#64748b',
-    assessment: '#0284c7',
-    interview: '#d97706',
-    offer: '#16a34a',
-    rejected: '#dc2626',
-    withdrawn: '#7c3aed',
-};
-
-// Labels for status
-const statusLabels: Record<Status, string> = {
-    applied: 'Applied',
-    assessment: 'Assessment',
-    interview: 'Interview',
-    offer: 'Offer',
-    rejected: 'Rejected',
-    withdrawn: 'Withdrawn',
 };
 
 type StatCardProps = {
@@ -99,12 +80,12 @@ export default function DashboardView({ applications }: DashboardViewProps) {
     const processRate = total > 0 ? Math.round((advanced / total) * 100) : 0;
 
     // Only include those that have atleast one application
-    const chartData = (Object.keys(statusColors) as Status[])
+    const chartData = STATUSES
         .filter((s) => statusCounts[s] > 0)
         .map((s) => ({
-            name: statusLabels[s],
+            name: STATUS_LABELS[s],
             value: statusCounts[s],
-            color: statusColors[s],
+            color: STATUS_COLORS[s],
         }));
 
     // Group applications by week
@@ -128,32 +109,32 @@ export default function DashboardView({ applications }: DashboardViewProps) {
         {
             label: 'Applied',
             value: statusCounts.applied ?? 0,
-            color: statusColors.applied,
+            color: STATUS_COLORS.applied,
         },
         {
             label: 'Assessment',
             value: statusCounts.assessment ?? 0,
-            color: statusColors.assessment,
+            color: STATUS_COLORS.assessment,
         },
         {
             label: 'Interview',
             value: statusCounts.interview ?? 0,
-            color: statusColors.interview,
+            color: STATUS_COLORS.interview,
         },
         {
             label: 'Offer',
             value: statusCounts.offer ?? 0,
-            color: statusColors.offer,
+            color: STATUS_COLORS.offer,
         },
         {
             label: 'Rejected',
             value: statusCounts.rejected ?? 0,
-            color: statusColors.rejected,
+            color: STATUS_COLORS.rejected,
         },
         {
             label: 'Withdrawn',
             value: statusCounts.withdrawn ?? 0,
-            color: statusColors.withdrawn,
+            color: STATUS_COLORS.withdrawn,
         }
     ];
 

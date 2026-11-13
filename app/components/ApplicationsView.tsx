@@ -6,7 +6,8 @@ import { useBreakpoint } from '@/hooks/useBreakpoint';
 
 import ApplicationDrawer from './ApplicationDrawer';
 import ApplicationListItem from './ApplicationListItem';
-import { JobApplication } from '@/lib/types';
+import { JobApplication, Status } from '@/lib/types';
+import { STATUSES, STATUS_LABELS } from '@/lib/status';
 
 import SortableColumnHeader from './SortableColumnHeader';
 
@@ -49,16 +50,6 @@ const sortOptions: { label: string; key: SortKey; dir: SortDir }[] = [
     { label: 'Company (A–Z)', key: 'company', dir: 'asc' },
     { label: 'Status', key: 'status', dir: 'asc' },
 ];
-
-const statusLabels: Record<string, string> = {
-    all: 'All',
-    applied: 'Applied',
-    assessment: 'Assessment',
-    interview: 'Interview',
-    offer: 'Offer',
-    rejected: 'Rejected',
-    withdrawn: 'Withdrawn',
-};
 
 export default function ApplicationsView({
     applications,
@@ -112,15 +103,7 @@ export default function ApplicationsView({
             return 0;
         });
 
-    const statuses = [
-        'all',
-        'applied',
-        'assessment',
-        'interview',
-        'offer',
-        'rejected',
-        'withdrawn',
-    ];
+    const statuses = ['all', ...STATUSES];
 
     const pad = bp === 'mobile' ? 'var(--space-3)' : 'var(--space-8)';
 
@@ -196,7 +179,7 @@ export default function ApplicationsView({
                                         onCheckedChange={() => toggleFilter(s)}
                                         onSelect={(e) => e.preventDefault()}
                                     >
-                                        <span className={`badge badge-dot badge-${s}`}>{statusLabels[s]}</span>
+                                        <span className={`badge badge-dot badge-${s}`}>{STATUS_LABELS[s as Status]}</span>
                                     </DropdownMenuCheckboxItem>
                                 ))}
                             </DropdownMenuContent>
@@ -244,7 +227,7 @@ export default function ApplicationsView({
                                 }}
                                 aria-pressed={s === 'all' ? filter.length === 0 : filter.includes(s)}
                             >
-                                {s === 'all' ? `All (${applications.length})` : statusLabels[s]}
+                                {s === 'all' ? `All (${applications.length})` : STATUS_LABELS[s as Status]}
                             </button>
                         ))}
                     </div>
