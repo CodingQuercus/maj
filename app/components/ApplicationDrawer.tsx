@@ -168,16 +168,8 @@ export default function ApplicationDrawer({
                 }}
                 className="w-full gap-0 sm:max-w-[600px]"
             >
-                <div
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: 'var(--space-4)',
-                        borderBottom: '1px solid var(--color-border)',
-                    }}
-                >
-                    <SheetTitle style={{ fontSize: 'var(--text-lg)' }}>
+                <div className="flex items-center justify-between border-b border-border p-4">
+                    <SheetTitle className="text-lg">
                         {isEditing ? 'Edit application' : 'New application'}
                     </SheetTitle>
                     <SheetClose asChild>
@@ -194,27 +186,14 @@ export default function ApplicationDrawer({
                     aria-label={
                         isEditing ? 'Edit application form' : 'New application'
                     }
-                    style={{
-                        flex: 1,
-                        overflowY: 'auto',
-                        padding: 'var(--space-4)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 'var(--space-4)',
-                    }}
+                    className="flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-4"
                 >
                     <ApplicationForm values={values} onChange={handleChange} />
                 </form>
 
-                <div style={{
-                    padding: 'var(--space-4) var(--space-4)',
-                    borderTop: '1px solid var(--color-border)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 'var(--space-2)',
-                }}>
+                <div className="flex flex-col gap-2 border-t border-border p-4">
                     {error && <p className="field-error" role="alert">{error}</p>}
-                    <div style={{ display: 'flex', gap: 'var(--space-2)', maxWidth: '480px' }}>
+                    <div className="flex max-w-[480px] gap-2">
                         <SheetClose asChild>
                             <Button type="button" variant="outline" className="flex-1">
                                 Cancel
