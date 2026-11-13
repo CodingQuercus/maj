@@ -30,23 +30,26 @@ type FormValues = {
     notes: string;
 };
 
+// Form values for an existing application, or an empty form for a new one.
+const initialValues = (application?: JobApplication): FormValues => ({
+    title: application?.title ?? '',
+    company: application?.company ?? '',
+    location: application?.location ?? '',
+    workType: application?.work_type ?? 'hybrid',
+    deadline: application?.deadline ?? '',
+    appliedAt: application?.applied_at?.split('T')[0] ?? todayLocal(),
+    url: application?.url ?? '',
+    description: application?.description ?? '',
+    notes: application?.notes ?? '',
+});
+
 export default function ApplicationDrawer({
     open,
     onClose,
     application,
 }: DrawerProps) {
 
-    const [values, setValues] = useState<FormValues>({
-        title: application?.title ?? '',
-        company: application?.company ?? '',
-        location: application?.location ?? '',
-        workType: application?.work_type ?? 'hybrid',
-        deadline: application?.deadline ?? '',
-        appliedAt: application?.applied_at?.split('T')[0] ?? todayLocal(),
-        url: application?.url ?? '',
-        description: application?.description ?? '',
-        notes: application?.notes ?? '',
-    });
+    const [values, setValues] = useState<FormValues>(() => initialValues(application));
 
 
     const isEditing = !!application;
@@ -134,19 +137,7 @@ export default function ApplicationDrawer({
         setValues(prev => ({ ...prev, [field]: value }));
     };
 
-    const resetForm = () => {
-        setValues({
-            title: '',
-            company: '',
-            location: '',
-            workType: 'hybrid',
-            deadline: '',
-            appliedAt: todayLocal(),
-            url: '',
-            description: '',
-            notes: '',
-        });
-    };
+    const resetForm = () => setValues(initialValues());
 
     return (
         // Radix (via shadcn's Sheet) handles the overlay, focus trap, Escape, scroll lock,
@@ -160,6 +151,10 @@ export default function ApplicationDrawer({
                 // and remember what opened the drawer (focus hasn't moved yet at this point).
                 onOpenAutoFocus={(e) => {
                     e.preventDefault();
+                    // Editing always starts from the saved values, so changes from a cancelled
+                    // edit don't linger. A new-application draft is kept until it is saved.
+                    if (application) setValues(initialValues(application));
+                    setError(null);
                     openerRef.current = document.activeElement as HTMLElement | null;
                     formRef.current
                         ?.querySelector<HTMLElement>('input, select, textarea, button')

@@ -9,6 +9,7 @@ import { formatDate } from '@/lib/dates';
 
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { STATUSES, STATUS_LABELS, WORK_TYPE_LABELS } from '@/lib/status';
+import { lastApplicationsUrl } from '@/lib/navigation';
 
 import {
     ArrowLeft,
@@ -104,7 +105,7 @@ export default function ApplicationDetail({
             return;
         }
         toast.success('Application deleted');
-        router.push('/applications');
+        router.push(lastApplicationsUrl());
         router.refresh();
     };
 
@@ -146,8 +147,33 @@ export default function ApplicationDetail({
             toast.error('Could not delete contact. Please try again.');
             return
         }
+        const removed = contacts.find((c) => c.id === id);
         setContacts(contacts.filter((c) => c.id !== id));
-        toast.success('Contact removed');
+        toast.success('Contact removed', {
+            // Longer than the default 4s so there is time to reach the Undo button.
+            duration: 8000,
+            // Re-creates the contact with its original id and date, so it returns to the same place.
+            action: removed && {
+                label: 'Undo',
+                onClick: () => restoreContact(removed),
+            },
+        });
+    };
+
+    const restoreContact = async (contact: Contact) => {
+        const { data, error } = await supabase
+            .from('contacts')
+            .insert(contact)
+            .select()
+            .single();
+        if (error) {
+            toast.error('Could not restore the contact. Please add it again.');
+            return;
+        }
+        setContacts((prev) =>
+            [...prev, data].sort((a, b) => a.created_at.localeCompare(b.created_at))
+        );
+        toast.success('Contact restored');
     };
 
     const pad = bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)';
@@ -156,15 +182,25 @@ export default function ApplicationDetail({
         <>
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <div style={{ paddingTop: pad, paddingLeft: pad, paddingRight: pad, paddingBottom: 0}}>
+                    {/* A real link to the list (works when opened from a shared link too). A plain
+                        click returns to the list with the filters the user left it with. */}
                     <Button
+                        asChild
                         variant="ghost"
                         size="sm"
-                        onClick={() => router.back()}
-                        aria-label="Go back to applications"
                         style={{ marginBottom: bp === 'mobile' ? 'var(--space-2)' : 'var(--space-3)' }}
                     >
-                        <ArrowLeft size={16} />
-                        Back
+                        <Link
+                            href="/applications"
+                            onClick={(e) => {
+                                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                                e.preventDefault();
+                                router.push(lastApplicationsUrl());
+                            }}
+                        >
+                            <ArrowLeft size={16} aria-hidden="true" />
+                            Back to applications
+                        </Link>
                     </Button>
 
                     {/* Header */}
@@ -326,16 +362,7 @@ export default function ApplicationDetail({
                                     key={s}
                                     onClick={() => handleStatusChange(s)}
                                     aria-pressed={status === s}
-                                    className={`badge badge-dot badge-${s}`}
-                                    style={{
-                                        cursor: 'pointer',
-                                        border:
-                                            status === s
-                                                ? '2px solid currentColor'
-                                                : '1px solid',
-                                        opacity: status === s ? 1 : 0.45,
-                                        padding: '6px 12px',
-                                    }}
+                                    className={`badge badge-dot badge-toggle badge-${s}`}
                                 >
                                     {STATUS_LABELS[s]}
                                 </button>
@@ -467,6 +494,10 @@ export default function ApplicationDetail({
                                     onChange={(e) => setContactName(e.target.value)}
                                 />
                                 <Input
+                                    type="email"
+                                    // The contact's address, not the user's: keep the browser from autofilling it.
+                                    autoComplete="off"
+                                    spellCheck={false}
                                     placeholder="Email"
                                     aria-label="Contact email"
                                     value={contactEmail}

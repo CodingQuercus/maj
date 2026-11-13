@@ -565,6 +565,40 @@ button.badge {
     border-color: #ddd6fe;
 }
 
+/* Toggleable badges (status picker on an application, status filter chips).
+   Unselected ones use neutral colours at full opacity instead of a faded status colour,
+   which kept the text below readable contrast; the dot keeps the status colour. */
+.badge-toggle {
+    cursor: pointer;
+    padding: 6px 12px;
+    transition:
+        border-color var(--transition-fast),
+        color var(--transition-fast);
+}
+
+.badge-toggle[aria-pressed='true'] {
+    border: 2px solid currentColor;
+    padding: 5px 11px;
+}
+
+.badge-toggle[aria-pressed='false'] {
+    color: var(--color-text-secondary);
+    background: var(--color-white);
+    border-color: var(--color-border);
+}
+
+.badge-toggle[aria-pressed='false']:hover {
+    color: var(--color-text-primary);
+    border-color: var(--color-border-hard);
+}
+
+.badge-toggle[aria-pressed='false'].badge-applied::before { background: var(--status-applied); }
+.badge-toggle[aria-pressed='false'].badge-assessment::before { background: var(--status-assessment); }
+.badge-toggle[aria-pressed='false'].badge-interview::before { background: var(--status-interview); }
+.badge-toggle[aria-pressed='false'].badge-offer::before { background: var(--status-offer); }
+.badge-toggle[aria-pressed='false'].badge-rejected::before { background: var(--status-rejected); }
+.badge-toggle[aria-pressed='false'].badge-withdrawn::before { background: var(--status-withdrawn); }
+
 /* Inline text button, e.g. "Forgot password?" next to a label. */
 .text-link {
     background: none;

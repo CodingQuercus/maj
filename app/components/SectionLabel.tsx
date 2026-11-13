@@ -24,7 +24,10 @@ export default function SectionLabel({ icon, label, noMargin }: SectionLabelProp
             >
                 {icon}
             </span>
-            <h6>{label}</h6>
+            {/* An h2 (the page title is the h1), styled as a small uppercase label. */}
+            <h2 className="text-sm font-medium tracking-[var(--tracking-widest)] text-[var(--color-text-tertiary)] uppercase">
+                {label}
+            </h2>
         </div>
     );
 }

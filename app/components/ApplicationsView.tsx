@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { useBreakpoint } from '@/hooks/useBreakpoint';
@@ -9,6 +9,7 @@ import ApplicationDrawer from './ApplicationDrawer';
 import ApplicationListItem from './ApplicationListItem';
 import { JobApplication, Status } from '@/lib/types';
 import { STATUSES, STATUS_LABELS, isStatus } from '@/lib/status';
+import { rememberApplicationsUrl } from '@/lib/navigation';
 
 import SortableColumnHeader from './SortableColumnHeader';
 
@@ -90,8 +91,15 @@ export default function ApplicationsView({
             else params.delete(key);
         }
         const query = params.toString();
-        window.history.replaceState(null, '', query ? `?${query}` : window.location.pathname);
+        const url = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+        window.history.replaceState(null, '', url);
+        rememberApplicationsUrl(url);
     };
+
+    // Remember the URL the list was opened with too (e.g. from a shared link).
+    useEffect(() => {
+        rememberApplicationsUrl(window.location.pathname + window.location.search);
+    }, []);
 
     const setSearch = (value: string) => {
         setSearchText(value);
@@ -205,7 +213,7 @@ export default function ApplicationsView({
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search for role or company..."
+                        placeholder="Search for role or company…"
                         // pl-9 (36px) leaves room for the search icon from .input-search.
                         className="input-search pl-9"
                         style={{ maxWidth: bp === 'mobile' ? '100%' : '320px' }}
@@ -276,13 +284,7 @@ export default function ApplicationsView({
                             <button
                                 key={s}
                                 onClick={() => toggleFilter(s)}
-                                className={s !== 'all' ? `badge badge-dot badge-${s}` : 'badge'}
-                                style={{
-                                    cursor: 'pointer',
-                                    border: (s === 'all' ? filter.length === 0 : filter.includes(s as Status)) ? '2px solid currentColor' : '1px solid',
-                                    opacity: (s === 'all' ? filter.length === 0 : filter.includes(s as Status)) ? 1 : 0.5,
-                                    padding: '6px 12px',
-                                }}
+                                className={s !== 'all' ? `badge badge-dot badge-toggle badge-${s}` : 'badge badge-toggle'}
                                 aria-pressed={s === 'all' ? filter.length === 0 : filter.includes(s as Status)}
                             >
                                 {s === 'all' ? `All (${applications.length})` : STATUS_LABELS[s as Status]}

@@ -120,7 +120,7 @@ export default function ApplicationForm({
                     type="url"
                     value={values.url}
                     onChange={(e) => onChange('url', e.target.value)}
-                    placeholder="https://..."
+                    placeholder="https://…"
                     className={shortField}
                 />
             </div>
@@ -134,7 +134,7 @@ export default function ApplicationForm({
                         onChange('description', e.target.value);
                         autoGrow(e.target);
                     }}
-                    placeholder="Paste the job description here..."
+                    placeholder="Paste the job description here…"
                     className="min-h-[120px] resize-none overflow-hidden"
                 />
             </div>
@@ -148,7 +148,7 @@ export default function ApplicationForm({
                         onChange('notes', e.target.value);
                         autoGrow(e.target);
                     }}
-                    placeholder="Your thoughts..."
+                    placeholder="Your thoughts…"
                     className="min-h-[120px] resize-none overflow-hidden"
                 />
             </div>
