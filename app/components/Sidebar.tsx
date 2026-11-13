@@ -131,7 +131,7 @@ export default function Sidebar() {
                             }}
                         >
                             {item.icon}
-                            <span style={{ fontSize: '10px', fontWeight: active ? '600' : '400' }}>
+                            <span style={{ fontSize: 'var(--text-xs)', fontWeight: active ? '600' : '400' }}>
                                 {item.label}
                             </span>
                         </Link>
@@ -159,7 +159,7 @@ export default function Sidebar() {
                     }}
                 >
                     {signOutIcon}
-                    <span style={{ fontSize: '10px' }}>Sign out</span>
+                    <span style={{ fontSize: 'var(--text-xs)' }}>Sign out</span>
                 </button>
             </nav>
         );

@@ -236,7 +236,7 @@ export default function DashboardView({ applications }: DashboardViewProps) {
                                     </Pie>
                                     <Tooltip
                                         formatter={(value, name) => [value, name]}
-                                        contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '13px' }}
+                                        contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: 'var(--text-sm)' }}
                                     />
                                 </PieChart>
                             </ResponsiveContainer>
@@ -261,9 +261,9 @@ export default function DashboardView({ applications }: DashboardViewProps) {
                                 <ResponsiveContainer width="100%" height={bp === 'mobile' ? 220 : 300}>
                                     <AreaChart data={areaData}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-soft)" vertical={false} />
-                                        <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="var(--color-text-tertiary)" tickFormatter={(value) => value.slice(5)} />
-                                        <YAxis allowDecimals={false} tick={{ fontSize: 11 }} stroke="var(--color-text-tertiary)" />
-                                        <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '13px' }} />
+                                        <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="var(--color-text-tertiary)" tickFormatter={(value) => value.slice(5)} />
+                                        <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="var(--color-text-tertiary)" />
+                                        <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: 'var(--text-sm)' }} />
                                         <defs>
                                             <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
                                                 <stop offset="60%" stopColor="var(--color-accent)" stopOpacity={0.6} />

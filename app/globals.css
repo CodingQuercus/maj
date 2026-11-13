@@ -76,12 +76,12 @@
     /* Typography */
     --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
 
-    --text-xs: 0.6875rem;
-    /* 11px */
-    --text-sm: 0.8125rem;
-    /* 13px */
+    --text-xs: 0.75rem;
+    /* 12px — the smallest size used (meta text, badges) */
+    --text-sm: 0.875rem;
+    /* 14px — most UI text */
     --text-base: 0.9375rem;
-    /* 15px — DM Sans reads better at 15px*/
+    /* 15px — DM Sans reads better at 15px. 16px on mobile, see below. */
     --text-md: 1rem;
     /* 16px */
     --text-lg: 1.125rem;
@@ -506,10 +506,17 @@
     font-weight: 500;
     letter-spacing: 0.01em;
     padding: 2px 8px;
+    /* (button.badge below makes clickable badges a comfortable size) */
     border-radius: var(--radius-full);
     border: 1px solid;
     line-height: 1.5;
     white-space: nowrap;
+}
+
+/* Badges that are buttons (status picker, filters) need a larger click target. */
+button.badge {
+    min-height: 28px;
+    padding-inline: 10px;
 }
 
 .badge-dot::before {
@@ -719,6 +726,12 @@
 
 /* MEDIA */
 @media (max-width: 639px) {
+    /* 16px body and form text on phones: iOS Safari zooms in on focused fields
+       with text smaller than 16px. */
+    :root {
+        --text-base: 1rem;
+    }
+
     .dashboard-main {
         padding-bottom: calc(64px + env(safe-area-inset-bottom));
         padding-left: var(--space-4);

@@ -25,14 +25,15 @@ const buttonVariants = cva(
                 link: 'h-auto px-0 text-[var(--color-accent-text)] underline-offset-4 hover:underline',
             },
             size: {
-                default: 'h-[34px] px-4',
-                xs: 'h-[26px] rounded-sm px-2 text-xs',
-                sm: 'h-[30px] px-3',
-                lg: 'h-[42px] px-6 text-[length:var(--text-md)]',
-                icon: 'size-[34px]',
-                'icon-xs': 'size-[26px] rounded-sm',
-                'icon-sm': 'size-[30px]',
-                'icon-lg': 'size-[42px]',
+                // Control heights shared with Input/Select: sm 32, default 36, lg 44.
+                default: 'h-9 px-4',
+                xs: 'h-7 rounded-sm px-2 text-xs',
+                sm: 'h-8 px-3',
+                lg: 'h-11 px-6 text-[length:var(--text-md)]',
+                icon: 'size-9',
+                'icon-xs': 'size-7 rounded-sm',
+                'icon-sm': 'size-8',
+                'icon-lg': 'size-11',
             },
         },
         defaultVariants: {
