@@ -13,6 +13,7 @@ import {
     CartesianGrid,
 } from 'recharts';
 import { JobApplication, Status } from '@/lib/types';
+import { formatDate } from '@/lib/dates';
 import { LayoutDashboard } from 'lucide-react';
 
 import { useBreakpoint, BreakPoint } from '@/hooks/useBreakpoint';
@@ -109,9 +110,7 @@ export default function DashboardView({ applications }: DashboardViewProps) {
     // Group applications by week
     const dailyData = applications.reduce((acc, app) => {
         if (!app.applied_at) return acc;
-        // get date
-        const date = new Date(app.applied_at);
-        const day = date.toLocaleDateString('sv-SE');
+        const day = formatDate(app.applied_at);
         acc[day] = (acc[day] ?? 0) + 1;
         return acc;
     }, {} as Record<string, number>);
