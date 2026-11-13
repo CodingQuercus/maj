@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 
 import ApplicationDrawer from './ApplicationDrawer';
 import ApplicationListItem from './ApplicationListItem';
 import { JobApplication, Status } from '@/lib/types';
-import { STATUSES, STATUS_LABELS } from '@/lib/status';
+import { STATUSES, STATUS_LABELS, isStatus } from '@/lib/status';
 
 import SortableColumnHeader from './SortableColumnHeader';
 
@@ -32,6 +33,12 @@ type ApplicationListProps = {
 
 type SortKey = 'title' | 'company' | 'status' | 'location' | 'applied_at';
 type SortDir = 'asc' | 'desc';
+
+const SORT_KEYS: SortKey[] = ['title', 'company', 'status', 'location', 'applied_at'];
+
+function isSortKey(value: string | null): value is SortKey {
+    return value !== null && (SORT_KEYS as string[]).includes(value);
+}
 
 // Short names for the mobile "Sort:" button.
 const sortKeyLabels: Record<SortKey, string> = {
@@ -59,32 +66,61 @@ export default function ApplicationsView({
 
     const [drawerOpen, setDrawerOpen] = useState(false);
 
-    const [filter, setFilter] = useState<string[]>([]);
-    const [search, setSearch] = useState('');
+    // Filters, sort and search live in the URL (?status=interview,offer&sort=company&dir=asc&q=dev),
+    // so they survive reloads, the back button and shared links. replaceState updates the URL
+    // without a server round trip, and useSearchParams picks up the change.
+    const searchParams = useSearchParams();
+    const filter: Status[] = (searchParams.get('status') ?? '').split(',').filter(isStatus);
+    const sortParam = searchParams.get('sort');
+    const sortKey: SortKey = isSortKey(sortParam) ? sortParam : 'applied_at';
+    const dirParam = searchParams.get('dir');
+    const sortDir: SortDir =
+        dirParam === 'asc' || dirParam === 'desc'
+            ? dirParam
+            : sortKey === 'applied_at'
+              ? 'desc'
+              : 'asc';
+    // The search text is also kept locally so typing stays instant; it is mirrored to ?q=.
+    const [search, setSearchText] = useState(searchParams.get('q') ?? '');
 
+    const updateParams = (changes: Record<string, string | null>) => {
+        const params = new URLSearchParams(searchParams.toString());
+        for (const [key, value] of Object.entries(changes)) {
+            if (value) params.set(key, value);
+            else params.delete(key);
+        }
+        const query = params.toString();
+        window.history.replaceState(null, '', query ? `?${query}` : window.location.pathname);
+    };
 
-    const [sortKey, setSortKey] = useState<SortKey>('applied_at');
-    const [sortDir, setSortDir] = useState<SortDir>('desc');
+    const setSearch = (value: string) => {
+        setSearchText(value);
+        updateParams({ q: value.trim() ? value : null });
+    };
 
+    // Newest first is the default and is left out of the URL.
+    const setSort = (key: SortKey, dir: SortDir) => {
+        const isDefault = key === 'applied_at' && dir === 'desc';
+        updateParams({ sort: isDefault ? null : key, dir: isDefault ? null : dir });
+    };
 
-    // Toggle sort direction if same key, otherwise sort key by new key ascending.
+    // Toggle sort direction if same key, otherwise sort by the new key ascending.
     const handleSort = (key: SortKey) => {
         if (sortKey === key) {
-            setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+            setSort(key, sortDir === 'asc' ? 'desc' : 'asc');
         } else {
-            setSortKey(key);
-            setSortDir('asc');
+            setSort(key, 'asc');
         }
     };
 
     const toggleFilter = (s: string) => {
-        if (s === 'all') {
-            setFilter([]);
+        if (!isStatus(s)) {
+            // "All" clears the status filter.
+            updateParams({ status: null });
             return;
         }
-        setFilter(prev =>
-            prev.includes(s) ? prev.filter(f => f !== s) : [...prev, s]
-        );
+        const next = filter.includes(s) ? filter.filter((f) => f !== s) : [...filter, s];
+        updateParams({ status: next.length > 0 ? next.join(',') : null });
     };
 
     // Filter by status and search query, then sort by selected column.
@@ -175,7 +211,7 @@ export default function ApplicationsView({
                                 {statuses.filter((s) => s !== 'all').map((s) => (
                                     <DropdownMenuCheckboxItem
                                         key={s}
-                                        checked={filter.includes(s)}
+                                        checked={filter.includes(s as Status)}
                                         onCheckedChange={() => toggleFilter(s)}
                                         onSelect={(e) => e.preventDefault()}
                                     >
@@ -198,8 +234,7 @@ export default function ApplicationsView({
                                     value={`${sortKey}:${sortDir}`}
                                     onValueChange={(value) => {
                                         const [key, dir] = value.split(':') as [SortKey, SortDir];
-                                        setSortKey(key);
-                                        setSortDir(dir);
+                                        setSort(key, dir);
                                     }}
                                 >
                                     {sortOptions.map((opt) => (
@@ -221,11 +256,11 @@ export default function ApplicationsView({
                                 className={s !== 'all' ? `badge badge-dot badge-${s}` : 'badge'}
                                 style={{
                                     cursor: 'pointer',
-                                    border: (s === 'all' ? filter.length === 0 : filter.includes(s)) ? '2px solid currentColor' : '1px solid',
-                                    opacity: (s === 'all' ? filter.length === 0 : filter.includes(s)) ? 1 : 0.5,
+                                    border: (s === 'all' ? filter.length === 0 : filter.includes(s as Status)) ? '2px solid currentColor' : '1px solid',
+                                    opacity: (s === 'all' ? filter.length === 0 : filter.includes(s as Status)) ? 1 : 0.5,
                                     padding: '6px 12px',
                                 }}
-                                aria-pressed={s === 'all' ? filter.length === 0 : filter.includes(s)}
+                                aria-pressed={s === 'all' ? filter.length === 0 : filter.includes(s as Status)}
                             >
                                 {s === 'all' ? `All (${applications.length})` : STATUS_LABELS[s as Status]}
                             </button>
