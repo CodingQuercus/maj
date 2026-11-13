@@ -7,6 +7,7 @@ import { deleteAccount, requestPasswordReset } from '@/app/actions/account';
 import { Check } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -45,113 +46,65 @@ export default function AccountActions({ email, isDemo }: AccountActionProps) {
         setResetSent(true);
     };
 
+    const card = 'rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-xs)]';
+    const muted = 'text-sm text-[var(--color-text-tertiary)]';
+
     return (
-        <div
-            style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 'var(--space-4)',
-                maxWidth: '480px'
-            }}
-        >
+        <div className="flex max-w-[480px] flex-col gap-4">
             {/* Reset password */}
-            <div className="card" role="region" aria-label="Password settings">
-                <h2
-                    style={{
-                        fontSize: 'var(--text-md)',
-                        marginBottom: 'var(--space-2)',
-                    }}
-                >
+            <section className={card} aria-labelledby="password-heading">
+                <h2 id="password-heading" className="mb-2 text-[length:var(--text-md)]">
                     Password
                 </h2>
-                <p
-                    style={{
-                        fontSize: 'var(--text-sm)',
-                        color: 'var(--color-text-tertiary)',
-                        marginBottom: 'var(--space-4)',
-                    }}
-                >
-                    Send a password reset link to your email.
-                </p>
+                <p className={`mb-4 ${muted}`}>Send a password reset link to your email.</p>
                 {isDemo ? (
-                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-tertiary)' }}>
-                        Password reset is not available in the demo.
-                    </p>
+                    <p className={muted}>Password reset is not available in the demo.</p>
                 ) : resetSent ? (
-                    <p
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 'var(--space-2)',
-                            fontSize: 'var(--text-sm)',
-                            color: 'var(--color-success)',
-                        }}
-                        role="alert"
-                    >
-                        <Check size={'var(--text-sm)'} />
+                    <p className="flex items-center gap-2 text-sm text-[var(--color-success)]" role="status">
+                        <Check size={14} aria-hidden="true" />
                         Reset link sent to {email}
                     </p>
                 ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                        {resetError && <p className="field-error" role="alert">{resetError}</p>}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleResetPassword}
-                            loading={resetting}
-                        >
+                    <div className="flex flex-col gap-2">
+                        {resetError && (
+                            <p className="field-error" role="alert">
+                                {resetError}
+                            </p>
+                        )}
+                        <Button variant="outline" size="sm" onClick={handleResetPassword} loading={resetting}>
                             {resetting ? 'Sending…' : 'Send reset link'}
                         </Button>
                     </div>
                 )}
-            </div>
+            </section>
 
             {/* Delete account */}
-            <div
-                className="card"
-                style={{ borderColor: 'var(--color-danger-border)' }}
-                role="region"
-                aria-label="Danger zone"
+            <section
+                className={cn(card, 'border-[var(--color-danger-border)]')}
+                aria-labelledby="danger-heading"
             >
-                <h2
-                    style={{
-                        fontSize: 'var(--text-md)',
-                        marginBottom: 'var(--space-2)',
-                    }}
-                >
+                <h2 id="danger-heading" className="mb-2 text-[length:var(--text-md)]">
                     Danger zone
                 </h2>
-                <p
-                    style={{
-                        fontSize: 'var(--text-sm)',
-                        color: 'var(--color-text-tertiary)',
-                        marginBottom: 'var(--space-4)',
-                    }}
-                >
-                    Permanently delete your account and all your data. This
-                    cannot be undone.
+                <p className={`mb-4 ${muted}`}>
+                    Permanently delete your account and all your data. This cannot be undone.
                 </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                    {isDemo ? (
-                        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-tertiary)' }}>
-                            Account deletion is not available in the demo.
-                        </p>
-                    ) : (
-                        <AlertDialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive" size="sm">
-                                    Delete account
-                                </Button>
-                            </AlertDialogTrigger>
-                            <DeleteAccountDialogContent />
-                        </AlertDialog>
-                    )}
-                </div>
-            </div>
+                {isDemo ? (
+                    <p className={muted}>Account deletion is not available in the demo.</p>
+                ) : (
+                    <AlertDialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm">
+                                Delete account
+                            </Button>
+                        </AlertDialogTrigger>
+                        <DeleteAccountDialogContent />
+                    </AlertDialog>
+                )}
+            </section>
         </div>
     );
 }
-
 
 // Contents of the delete-account confirmation. Mounted only while the dialog is open,
 // so the typed confirmation resets each time.
