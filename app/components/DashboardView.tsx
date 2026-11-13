@@ -17,8 +17,6 @@ import { STATUSES, STATUS_COLORS, STATUS_LABELS } from '@/lib/status';
 import { formatDate } from '@/lib/dates';
 import { LayoutDashboard } from 'lucide-react';
 
-import { useBreakpoint, BreakPoint } from '@/hooks/useBreakpoint';
-
 import PageTitle from './PageTitle';
 
 type DashboardViewProps = {
@@ -29,42 +27,36 @@ type StatCardProps = {
     label: string;
     value: string | number;
     color: string;
-    bp?: BreakPoint,
 };
 
-function StatCard({ label, value, color, bp }: StatCardProps) {
+// Card styling shared by the stat cards and chart cards.
+const card = 'rounded-xl border border-border bg-card shadow-[var(--shadow-xs)]';
+
+function StatCard({ label, value, color }: StatCardProps) {
     return (
         <div
-            className="card"
-            style={{ textAlign: 'center', padding: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-6)' }}
+            className={`${card} p-3 text-center sm:p-6`}
             role="region"
             aria-label={`${label}: ${value}`}
         >
-            <div style={{
-                fontSize: 'var(--text-3xl)',
-                fontWeight: '700',
-                color,
-                marginBottom: 'var(--space-1)',
-            }}>
+            <div className="mb-1 text-3xl font-bold tabular-nums" style={{ color }}>
                 {value}
             </div>
-            <div style={{
-                fontSize: 'var(--text-xs)',
-                color: 'var(--color-text-tertiary)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                fontWeight: '500',
-            }}>
+            <div className="text-xs font-medium tracking-[0.08em] text-[var(--color-text-tertiary)] uppercase">
                 {label}
             </div>
         </div>
     );
 }
 
+// Tooltip styling for both charts.
+const tooltipStyle = {
+    borderRadius: '8px',
+    border: '1px solid var(--color-border)',
+    fontSize: 'var(--text-sm)',
+};
+
 export default function DashboardView({ applications }: DashboardViewProps) {
-
-    const bp = useBreakpoint();
-
     const total = applications.length;
 
     // Count applications per status
@@ -100,171 +92,110 @@ export default function DashboardView({ applications }: DashboardViewProps) {
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([day, count]) => ({ day, count }));
 
-    const statCards = [
-        {
-            label: 'Total',
-            value: total,
-            color: 'var(--color-text-primary)'
-        },
-        {
-            label: 'Applied',
-            value: statusCounts.applied ?? 0,
-            color: STATUS_COLORS.applied,
-        },
-        {
-            label: 'Assessment',
-            value: statusCounts.assessment ?? 0,
-            color: STATUS_COLORS.assessment,
-        },
-        {
-            label: 'Interview',
-            value: statusCounts.interview ?? 0,
-            color: STATUS_COLORS.interview,
-        },
-        {
-            label: 'Offer',
-            value: statusCounts.offer ?? 0,
-            color: STATUS_COLORS.offer,
-        },
-        {
-            label: 'Rejected',
-            value: statusCounts.rejected ?? 0,
-            color: STATUS_COLORS.rejected,
-        },
-        {
-            label: 'Withdrawn',
-            value: statusCounts.withdrawn ?? 0,
-            color: STATUS_COLORS.withdrawn,
-        }
-    ];
+    // One card per status, in pipeline order.
+    const statCards = STATUSES.map((s) => ({
+        label: STATUS_LABELS[s],
+        value: statusCounts[s] ?? 0,
+        color: STATUS_COLORS[s],
+    }));
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div className="p-4 sm:p-8">
+            <PageTitle icon={<LayoutDashboard />} title="Dashboard" />
+            <hr />
 
-            <div style={{
-                paddingTop: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
-                paddingLeft: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
-                paddingRight: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
-                paddingBottom: 0,
-                flexShrink: 0,
-            }}>
-                <PageTitle icon={<LayoutDashboard size={bp === 'mobile' ? 24 : 32} />} title="Dashboard" />
-                <hr />
-            </div>
-
-            <div style={{
-                flex: 1,
-                overflowY: 'auto',
-                paddingLeft: bp === 'mobile' ? 'var(--space-2)' : 'var(--space-8)',
-                paddingRight: bp === 'mobile' ? 'var(--space-2)' : 'var(--space-8)',
-                paddingBottom: bp === 'mobile' ? '164px' : 'var(--space-8)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-4)',
-            }}>
-                {/* Total and conversion rate */}
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: bp === 'mobile' ? '1fr' : '1fr 1fr',
-                    gap: 'var(--space-4)',
-                }}>
-                    <StatCard label="Total" value={total} color="var(--color-text-primary)" bp={bp} />
-                    <StatCard label="In process" value={`${processRate}%`} color="var(--color-accent)" bp={bp} />
+            <div className="flex flex-col gap-3 sm:gap-4">
+                {/* Total and share of applications that moved past "applied" */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <StatCard label="Total" value={total} color="var(--color-text-primary)" />
+                    <StatCard label="In process" value={`${processRate}%`} color="var(--color-accent)" />
                 </div>
-                {/* Stats cards, one per tracked status plus a total*/}
-                <div
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                        gap: 'var(--space-4)',
-                    }}
-                >
-                    {statCards.filter(c => c.label !== 'Total').map((card) => (
-                        <StatCard key={card.label} label={card.label} value={card.value} color={card.color} bp={bp} />
+
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 sm:gap-4">
+                    {statCards.map((card) => (
+                        <StatCard key={card.label} {...card} />
                     ))}
                 </div>
 
-                {/* Donut chart, only shown if there is data */}
                 {total === 0 ? (
-                    <div className="panel" style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
-                        <p style={{ color: 'var(--color-text-tertiary)' }}>No data yet. Add your first application!</p>
+                    <div className="rounded-lg border border-[var(--color-border-soft)] bg-muted p-12 text-center">
+                        <p className="text-[var(--color-text-tertiary)]">No data yet. Add your first application!</p>
                     </div>
                 ) : (
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: bp === 'desktop' ? '1fr 1fr' : '1fr',
-                        gap: 'var(--space-4)',
-                    }}>
-                        <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', }}>
-                            <h2 style={{ fontSize: 'var(--text-md)', marginBottom: 'var(--space-2)' }}>
-                                Breakdown of applications
-                            </h2>
-                            <ResponsiveContainer width="100%" height={bp === 'mobile' ? 220 : 300}>
-                                <PieChart>
-                                    <Pie
-                                        data={chartData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={bp === 'mobile' ? 55 : 80}
-                                        outerRadius={bp === 'mobile' ? 90 : 120}
-                                        cornerRadius="2%"
-                                        paddingAngle={3}
-                                        dataKey="value"
-                                    >
-                                        {chartData.map((entry, index) => (
-                                            <Cell key={index} fill={entry.color} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip
-                                        formatter={(value, name) => [value, name]}
-                                        contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: 'var(--text-sm)' }}
-                                    />
-                                </PieChart>
-                            </ResponsiveContainer>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginTop: 'var(--space-1)' }}>
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                        {/* Donut chart */}
+                        <div className={`${card} p-6`}>
+                            <h2 className="mb-2 text-[length:var(--text-md)]">Breakdown of applications</h2>
+                            {/* Chart height follows the breakpoint; radii are relative to it. */}
+                            <div className="h-[220px] sm:h-[300px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={chartData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius="55%"
+                                            outerRadius="82%"
+                                            cornerRadius="2%"
+                                            paddingAngle={3}
+                                            dataKey="value"
+                                        >
+                                            {chartData.map((entry) => (
+                                                <Cell key={entry.name} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip formatter={(value, name) => [value, name]} contentStyle={tooltipStyle} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                            <ul className="mt-1 flex flex-wrap gap-2">
                                 {chartData.map((entry) => (
-                                    <div key={entry.name} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
-                                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: entry.color, flexShrink: 0 }} />
-                                        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+                                    <li key={entry.name} className="flex items-center gap-1">
+                                        <span
+                                            aria-hidden="true"
+                                            className="size-2 shrink-0 rounded-full"
+                                            style={{ background: entry.color }}
+                                        />
+                                        <span className="text-xs text-[var(--color-text-secondary)]">
                                             {entry.name} ({entry.value})
                                         </span>
-                                    </div>
+                                    </li>
                                 ))}
-                            </div>
+                            </ul>
                         </div>
 
                         {/* Area chart */}
                         {areaData.length > 1 ? (
-                            <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
-                                <h2 style={{ fontSize: 'var(--text-md)', marginBottom: 'var(--space-2)' }}>
-                                    Applications over time
-                                </h2>
-                                <ResponsiveContainer width="100%" height={bp === 'mobile' ? 220 : 300}>
-                                    <AreaChart data={areaData}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-soft)" vertical={false} />
-                                        <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="var(--color-text-tertiary)" tickFormatter={(value) => value.slice(5)} />
-                                        <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="var(--color-text-tertiary)" />
-                                        <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: 'var(--text-sm)' }} />
-                                        <defs>
-                                            <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="60%" stopColor="var(--color-accent)" stopOpacity={0.6} />
-                                                <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <Area
-                                            type="natural"
-                                            dataKey="count"
-                                            stroke="var(--color-accent)"
-                                            strokeWidth={3}
-                                            fill="url(#colorCount)"
-                                            name="Applications"
-                                        />
-                                    </AreaChart>
-                                </ResponsiveContainer>
+                            <div className={`${card} p-6`}>
+                                <h2 className="mb-2 text-[length:var(--text-md)]">Applications over time</h2>
+                                <div className="h-[220px] sm:h-[300px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={areaData}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-soft)" vertical={false} />
+                                            <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="var(--color-text-tertiary)" tickFormatter={(value) => value.slice(5)} />
+                                            <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="var(--color-text-tertiary)" />
+                                            <Tooltip contentStyle={tooltipStyle} />
+                                            <defs>
+                                                <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="60%" stopColor="var(--color-accent)" stopOpacity={0.6} />
+                                                    <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <Area
+                                                type="natural"
+                                                dataKey="count"
+                                                stroke="var(--color-accent)"
+                                                strokeWidth={3}
+                                                fill="url(#colorCount)"
+                                                name="Applications"
+                                            />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
                             </div>
                         ) : (
-                            <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <p style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--text-sm)' }}>
+                            <div className={`${card} flex items-center justify-center p-6`}>
+                                <p className="text-sm text-[var(--color-text-tertiary)]">
                                     Add more applications over time to see the trend.
                                 </p>
                             </div>
