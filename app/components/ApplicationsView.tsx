@@ -143,6 +143,29 @@ export default function ApplicationsView({
 
     const pad = bp === 'mobile' ? 'var(--space-3)' : 'var(--space-8)';
 
+    // Table columns; location is hidden on tablet to leave room for the rest.
+    const columns: { label: string; key: SortKey; width: string }[] =
+        bp === 'tablet'
+            ? [
+                  { label: 'Role', key: 'title', width: '35%' },
+                  { label: 'Company', key: 'company', width: '26%' },
+                  { label: 'Applied', key: 'applied_at', width: '18%' },
+                  { label: 'Status', key: 'status', width: '21%' },
+              ]
+            : [
+                  { label: 'Role', key: 'title', width: '30%' },
+                  { label: 'Company', key: 'company', width: '23%' },
+                  { label: 'Location', key: 'location', width: '15%' },
+                  { label: 'Applied', key: 'applied_at', width: '15%' },
+                  { label: 'Status', key: 'status', width: '17%' },
+              ];
+
+    const emptyMessage = search
+        ? `No results for “${search}”.`
+        : filter.length === 0
+          ? 'No applications yet. Add your first one!'
+          : 'No applications match the selected statuses.';
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
@@ -269,75 +292,53 @@ export default function ApplicationsView({
                 )}
             </div>
 
-            {/* Application table with sortable columns */}
-            {bp !== 'mobile' && (
-                <div style={{ paddingLeft: pad, paddingRight: pad }}>
-
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            {/* Scrollable list. Tablet/desktop: one table with a sticky header, so screen readers
+                keep the column headers associated with the cells. Mobile: a list of cards. */}
+            <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                paddingLeft: pad,
+                paddingRight: pad,
+                paddingBottom: bp === 'mobile' ? '164px' : pad
+            }}>
+                {bp !== 'mobile' ? (
+                    <table className="w-full table-fixed border-collapse">
+                        <caption className="sr-only">Applications</caption>
+                        <colgroup>
+                            {columns.map((col) => (
+                                <col key={col.key} style={{ width: col.width }} />
+                            ))}
+                        </colgroup>
                         <thead>
-                            <tr
-                                style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: bp === 'tablet' ? '2fr 1.5fr 1fr 1.2fr' : '2fr 1.5fr 1fr 1fr 1fr',
-                                    padding: 'var(--space-2) var(--space-4)',
-                                    borderBottom: '1px solid var(--color-border)',
-                                }}
-                            >
-                                {(
-                                    [
-                                        { label: 'Role', key: 'title' },
-                                        { label: 'Company', key: 'company' },
-                                        ...(bp !== 'tablet' ? [{ label: 'Location', key: 'location' }] : []),
-                                        { label: 'Applied', key: 'applied_at' },
-                                        { label: 'Status', key: 'status' },
-                                    ] as { label: string; key: SortKey }[]
-                                ).map((col) => (
+                            <tr>
+                                {columns.map((col) => (
                                     <th
                                         key={col.key}
-                                        style={{
-                                            textAlign: 'left',
-                                            fontWeight: 'normal',
-                                        }}
+                                        scope="col"
+                                        aria-sort={
+                                            sortKey === col.key
+                                                ? sortDir === 'asc' ? 'ascending' : 'descending'
+                                                : undefined
+                                        }
+                                        className="sticky top-0 z-20 border-b border-border bg-background px-4 py-2 text-left font-normal"
                                     >
                                         <SortableColumnHeader
                                             label={col.label}
                                             sortKey={col.key}
                                             currentSortKey={sortKey}
                                             sortDir={sortDir}
-                                            // Cast to sortKey since the component accepts string
-                                            onSort={(key) =>
-                                                handleSort(key as SortKey)
-                                            }
+                                            // Cast to SortKey since the component accepts string
+                                            onSort={(key) => handleSort(key as SortKey)}
                                         />
                                     </th>
                                 ))}
                             </tr>
                         </thead>
-                    </table>
-                </div>
-            )}
-
-            <div style={{
-                flex: 1,
-                overflowY: 'auto',
-                paddingTop: 'var(--space-2)',
-                paddingLeft: pad,
-                paddingRight: pad,
-                paddingBottom: bp === 'mobile' ? '164px' : pad
-            }}>
-                {bp !== 'mobile' ? (
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <tbody>
                             {filteredApplications.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
-                                        <p style={{ color: 'var(--color-text-tertiary)' }}>
-                                            {search
-                                                ? `No results for "${search}".`
-                                                : filter.length === 0
-                                                    ? 'No applications yet. Add your first one!'
-                                                    : `No applications matching the selected statuses.`}
-                                        </p>
+                                    <td colSpan={columns.length} className="p-12 text-center">
+                                        <p style={{ color: 'var(--color-text-tertiary)' }}>{emptyMessage}</p>
                                     </td>
                                 </tr>
                             ) : (
@@ -347,21 +348,16 @@ export default function ApplicationsView({
                             )}
                         </tbody>
                     </table>
+                ) : filteredApplications.length === 0 ? (
+                    <p style={{ color: 'var(--color-text-tertiary)', textAlign: 'center', padding: 'var(--space-12) 0' }}>
+                        {emptyMessage}
+                    </p>
                 ) : (
-                    <>
-                        {/* Card list for mobile */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                            {filteredApplications.length === 0 ? (
-                                <p style={{ color: 'var(--color-text-tertiary)', textAlign: 'center', padding: 'var(--space-12) 0' }}>
-                                    {search ? `No results for "${search}".` : filter.length === 0 ? 'No applications yet. Add your first one!' : `No applications matching the selected statuses.`}
-                                </p>
-                            ) : (
-                                filteredApplications.map((application) => (
-                                    <ApplicationListItem key={application.id} application={application} bp={bp} />
-                                ))
-                            )}
-                        </div>
-                    </>
+                    <ul className="flex flex-col gap-3" aria-label="Applications">
+                        {filteredApplications.map((application) => (
+                            <ApplicationListItem key={application.id} application={application} bp={bp} />
+                        ))}
+                    </ul>
                 )}
             </div>
 
