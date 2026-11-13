@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Prettier cache
 .prettiercache
+
+# Claude Code worktrees (parallel sessions)
+.claude/worktrees/
