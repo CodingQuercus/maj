@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
@@ -30,7 +30,6 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -46,17 +45,19 @@ import SectionLabel from './SectionLabel';
 
 type ApplicationDetailProps = {
     application: JobApplication;
+    // Loaded on the server together with the application.
+    initialContacts: Contact[];
 };
 
 export default function ApplicationDetail({
     application,
+    initialContacts,
 }: ApplicationDetailProps) {
     const [status, setStatus] = useState<Status>(application.status);
     const [deleting, setDeleting] = useState(false);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
-    const [contacts, setContacts] = useState<Contact[]>([]);
-    const [contactsLoading, setContactsLoading] = useState(true);
+    const [contacts, setContacts] = useState<Contact[]>(initialContacts);
     const [savingContact, setSavingContact] = useState(false);
     const [deletingContactId, setDeletingContactId] = useState<string | null>(null);
     const [addingContact, setAddingContact] = useState(false);
@@ -69,19 +70,6 @@ export default function ApplicationDetail({
     const bp = useBreakpoint();
     const router = useRouter();
     const supabase = useMemo(() => createClient(), []);
-
-    useEffect(() => {
-        const fetchContacts = async () => {
-            const { data, error } = await supabase
-                .from('contacts')
-                .select('*')
-                .eq('job_application_id', application.id);
-            if (error) toast.error('Could not load contacts.');
-            if (data) setContacts(data);
-            setContactsLoading(false);
-        };
-        fetchContacts();
-    }, [application.id, supabase]);
 
     const handleStatusChange = async (newStatus: Status) => {
         const previous = status;
@@ -517,19 +505,7 @@ export default function ApplicationDetail({
                             </div>
                         )}
 
-                        {/* Placeholder rows while contacts load, instead of a premature "No contacts added." */}
-                        {contactsLoading && (
-                            <div
-                                aria-busy="true"
-                                aria-label="Loading contacts"
-                                style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}
-                            >
-                                <Skeleton className="h-[58px] rounded-lg" />
-                                <Skeleton className="h-[58px] rounded-lg" />
-                            </div>
-                        )}
-
-                        {!contactsLoading && contacts.length === 0 && !addingContact && (
+                        {contacts.length === 0 && !addingContact && (
                             <p
                                 style={{
                                     fontSize: 'var(--text-sm)',
