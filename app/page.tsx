@@ -13,35 +13,35 @@ const sampleEntries = [
     {
         role: 'Frontend Developer',
         company: 'Nordljus',
-        date: '2026-11-10',
+        date: '2026-05-28',
         status: 'interview',
         label: 'Interview',
     },
     {
         role: 'UX Engineer',
         company: 'Fjällsta AB',
-        date: '2026-11-07',
+        date: '2026-05-22',
         status: 'assessment',
         label: 'Assessment',
     },
     {
         role: 'Product Designer',
         company: 'Brygga Studio',
-        date: '2026-11-05',
+        date: '2026-05-19',
         status: 'applied',
         label: 'Applied',
     },
     {
         role: 'Fullstack Developer',
         company: 'Lindholmen Labs',
-        date: '2026-10-28',
+        date: '2026-05-12',
         status: 'offer',
         label: 'Offer',
     },
     {
         role: 'Junior Developer',
         company: 'Kvarn & Co',
-        date: '2026-10-21',
+        date: '2026-05-06',
         status: 'rejected',
         label: 'Rejected',
     },
@@ -126,7 +126,7 @@ export default async function HomePage() {
                                     Applications
                                 </span>
                                 <span className={styles.journalMonth}>
-                                    Nov 2026
+                                    May 2026
                                 </span>
                             </div>
                             <ul className={styles.entries}>
