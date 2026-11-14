@@ -33,10 +33,6 @@ export function formatDate(value: string): string {
     return dateKey(value);
 }
 
-// Compact format for chart axes: "11-14".
-export function formatShortDate(value: string): string {
-    return dateKey(value).slice(5);
-}
 
 // Whole days from today to the given date (negative when it has passed).
 export function daysUntil(value: string): number {
