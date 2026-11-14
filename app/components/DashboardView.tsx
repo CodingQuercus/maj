@@ -14,7 +14,7 @@ import {
 } from 'recharts';
 import { JobApplication, Status } from '@/lib/types';
 import { STATUSES, STATUS_COLORS, STATUS_LABELS } from '@/lib/status';
-import { formatDate } from '@/lib/dates';
+import { dateKey, formatDate, formatShortDate } from '@/lib/dates';
 import { LayoutDashboard } from 'lucide-react';
 
 import PageTitle from './PageTitle';
@@ -83,7 +83,7 @@ export default function DashboardView({ applications }: DashboardViewProps) {
     // Group applications by week
     const dailyData = applications.reduce((acc, app) => {
         if (!app.applied_at) return acc;
-        const day = formatDate(app.applied_at);
+        const day = dateKey(app.applied_at);
         acc[day] = (acc[day] ?? 0) + 1;
         return acc;
     }, {} as Record<string, number>);
@@ -172,9 +172,9 @@ export default function DashboardView({ applications }: DashboardViewProps) {
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart data={areaData}>
                                             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-soft)" vertical={false} />
-                                            <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="var(--color-text-tertiary)" tickFormatter={(value) => value.slice(5)} />
+                                            <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="var(--color-text-tertiary)" tickFormatter={formatShortDate} />
                                             <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="var(--color-text-tertiary)" />
-                                            <Tooltip contentStyle={tooltipStyle} />
+                                            <Tooltip contentStyle={tooltipStyle} labelFormatter={(label) => formatDate(String(label))} />
                                             <defs>
                                                 <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
                                                     <stop offset="60%" stopColor="var(--color-accent)" stopOpacity={0.6} />

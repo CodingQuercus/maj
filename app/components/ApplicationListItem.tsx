@@ -75,7 +75,7 @@ export function ApplicationRow({ application }: ApplicationItemProps) {
             <td className="hidden truncate px-4 py-3 text-sm text-[var(--color-text-tertiary)] lg:table-cell">
                 {application.location ?? '—'}
             </td>
-            <td className="px-4 py-3 text-sm text-[var(--color-text-tertiary)] tabular-nums">
+            <td className="px-4 py-3 text-sm whitespace-nowrap text-[var(--color-text-tertiary)] tabular-nums">
                 {appliedAt(application)}
             </td>
             <td className="relative z-10 px-4 py-3">

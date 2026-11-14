@@ -147,11 +147,11 @@ export default function ApplicationsView({
 
     // Table columns. Location only shows from lg; the widths adapt to match.
     const columns: { label: string; key: SortKey; className: string }[] = [
-        { label: 'Role', key: 'title', className: 'w-[35%] lg:w-[30%]' },
-        { label: 'Company', key: 'company', className: 'w-[26%] lg:w-[23%]' },
+        { label: 'Role', key: 'title', className: 'w-[32%] lg:w-[29%]' },
+        { label: 'Company', key: 'company', className: 'w-[25%] lg:w-[22%]' },
         { label: 'Location', key: 'location', className: 'hidden lg:table-cell lg:w-[15%]' },
         // "Date applied", not "Applied", which is also a status.
-        { label: 'Date applied', key: 'applied_at', className: 'w-[18%] lg:w-[15%]' },
+        { label: 'Date applied', key: 'applied_at', className: 'w-[22%] lg:w-[17%]' },
         { label: 'Status', key: 'status', className: 'w-[21%] lg:w-[17%]' },
     ];
 
@@ -287,7 +287,7 @@ export default function ApplicationsView({
                                         ? sortDir === 'asc' ? 'ascending' : 'descending'
                                         : undefined
                                 }
-                                className={`sticky top-0 z-20 border-b border-border bg-background px-4 py-2 text-left font-normal ${col.className}`}
+                                className={`sticky top-0 z-20 border-b border-border bg-background px-4 py-2 text-left font-normal whitespace-nowrap ${col.className}`}
                             >
                                 <SortableColumnHeader
                                     label={col.label}

@@ -10,7 +10,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
-import { todayLocal } from '@/lib/dates';
+import { formatDate, parseDateKey, toDateKey, todayLocal } from '@/lib/dates';
 import { cn } from '@/lib/utils';
 
 type DatePickerProps = {
@@ -26,23 +26,6 @@ type DatePickerProps = {
     className?: string;
 };
 
-// "2026-11-14" <-> Date at local midnight (avoids the UTC shift of new Date("2026-11-14")).
-const toDate = (value: string) => {
-    if (!value) return undefined;
-    const [y, m, d] = value.split('-').map(Number);
-    return new Date(y, m - 1, d);
-};
-const toValue = (date: Date) =>
-    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-
-// English, unambiguous display: "14 Nov 2026". The native date input followed the OS
-// language instead ("åååå-mm-dd", "Rensa", "I dag" in an English app).
-const displayFormat = new Intl.DateTimeFormat('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-});
-
 // Date field: a button showing the date, opening a calendar in a popover.
 export default function DatePicker({
     id,
@@ -54,8 +37,10 @@ export default function DatePicker({
     className,
 }: DatePickerProps) {
     const [open, setOpen] = useState(false);
-    const selected = toDate(value);
-    const display = selected ? displayFormat.format(selected) : '';
+    const selected = value ? parseDateKey(value) : undefined;
+    // The native date input followed the OS language ("åååå-mm-dd" in an English app);
+    // this uses the app's own format, e.g. "2026-11-14".
+    const display = value ? formatDate(value) : '';
 
     const pick = (next: string) => {
         onChange(next);
@@ -111,7 +96,7 @@ export default function DatePicker({
                     mode="single"
                     selected={selected}
                     defaultMonth={selected}
-                    onSelect={(date) => date && pick(toValue(date))}
+                    onSelect={(date) => date && pick(toDateKey(date))}
                     weekStartsOn={1}
                 />
                 <div className="flex justify-between border-t border-border p-2">
