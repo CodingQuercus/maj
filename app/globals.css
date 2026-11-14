@@ -25,8 +25,8 @@
     /* Headings, important labels */
     --color-text-secondary: #52525a;
     /* Body copy, descriptions */
-    --color-text-tertiary: #8a8a94;
-    /* Placeholders, meta info */
+    --color-text-tertiary: #6b6b75;
+    /* Meta info. #6b6b75 keeps 4.5:1 on all light backgrounds (was #8a8a94, ~3.2:1). */
     --color-text-disabled: #b4b4be;
     /* Disabled states */
 
@@ -72,6 +72,15 @@
     /* Red */
     --status-withdrawn: #7c3aed;
     /* Violet */
+
+    /* Darker status shades for badge text, so 12px labels keep 4.5:1 on their tinted
+       backgrounds. The base colours above stay for dots, borders and charts. */
+    --status-applied-text: #475569;
+    --status-assessment-text: #0369a1;
+    --status-interview-text: #b45309;
+    --status-offer-text: #15803d;
+    --status-rejected-text: #b91c1c;
+    --status-withdrawn-text: #6d28d9;
 
     /* Typography */
     --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -495,37 +504,37 @@ button.badge {
 
 .badge-applied {
     background: #f1f5f9;
-    color: var(--status-applied);
+    color: var(--status-applied-text);
     border-color: #cbd5e1;
 }
 
 .badge-assessment {
     background: var(--color-info-subtle);
-    color: var(--color-info);
+    color: var(--status-assessment-text);
     border-color: var(--color-info-border);
 }
 
 .badge-interview {
     background: var(--color-warning-subtle);
-    color: var(--status-interview);
+    color: var(--status-interview-text);
     border-color: var(--color-warning-border);
 }
 
 .badge-offer {
     background: var(--color-success-subtle);
-    color: var(--status-offer);
+    color: var(--status-offer-text);
     border-color: var(--color-success-border);
 }
 
 .badge-rejected {
     background: var(--color-danger-subtle);
-    color: var(--status-rejected);
+    color: var(--status-rejected-text);
     border-color: var(--color-danger-border);
 }
 
 .badge-withdrawn {
     background: #f5f3ff;
-    color: var(--status-withdrawn);
+    color: var(--status-withdrawn-text);
     border-color: #ddd6fe;
 }
 
