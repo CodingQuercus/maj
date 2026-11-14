@@ -4,6 +4,7 @@ import { WorkType } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import DatePicker from './DatePicker';
 import {
     Select,
     SelectContent,
@@ -36,8 +37,8 @@ const autoGrow = (el: HTMLTextAreaElement | null) => {
     el.style.height = `${el.scrollHeight}px`;
 };
 
-// Short fields stay at a readable width even in a wide drawer.
-const shortField = 'max-w-[480px]';
+// Two related fields side by side from sm up, stacked on phones.
+const pair = 'grid grid-cols-1 gap-4 sm:grid-cols-2';
 
 export default function ApplicationForm({
     values,
@@ -53,7 +54,6 @@ export default function ApplicationForm({
                     onChange={(e) => onChange('title', e.target.value)}
                     placeholder="e.g. Frontend Developer"
                     required
-                    className={shortField}
                 />
             </div>
             <div>
@@ -64,54 +64,56 @@ export default function ApplicationForm({
                     onChange={(e) => onChange('company', e.target.value)}
                     placeholder="e.g. Spotify"
                     required
-                    className={shortField}
                 />
             </div>
-            <div>
-                <Label htmlFor="location">Location</Label>
-                <Input
-                    id="location"
-                    value={values.location}
-                    onChange={(e) => onChange('location', e.target.value)}
-                    placeholder="e.g. Stockholm"
-                    className={shortField}
-                />
+            <div className={pair}>
+                <div>
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                        id="location"
+                        value={values.location}
+                        onChange={(e) => onChange('location', e.target.value)}
+                        placeholder="e.g. Stockholm"
+                    />
+                </div>
+                <div>
+                    <Label htmlFor="workType">Work type</Label>
+                    <Select
+                        value={values.workType}
+                        onValueChange={(value) => onChange('workType', value)}
+                    >
+                        <SelectTrigger id="workType" className="w-full">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="on-site">On-site</SelectItem>
+                            <SelectItem value="hybrid">Hybrid</SelectItem>
+                            <SelectItem value="remote">Remote</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
-            <div>
-                <Label htmlFor="workType">Work type</Label>
-                <Select
-                    value={values.workType}
-                    onValueChange={(value) => onChange('workType', value)}
-                >
-                    <SelectTrigger id="workType" className={`w-full ${shortField}`}>
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="on-site">On-site</SelectItem>
-                        <SelectItem value="hybrid">Hybrid</SelectItem>
-                        <SelectItem value="remote">Remote</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-            <div>
-                <Label htmlFor="deadline">Deadline</Label>
-                <Input
-                    id="deadline"
-                    type="date"
-                    value={values.deadline}
-                    onChange={(e) => onChange('deadline', e.target.value)}
-                    className={shortField}
-                />
-            </div>
-            <div>
-                <Label htmlFor="appliedAt">Date applied</Label>
-                <Input
-                    id="appliedAt"
-                    type="date"
-                    value={values.appliedAt}
-                    onChange={(e) => onChange('appliedAt', e.target.value)}
-                    className={shortField}
-                />
+            <div className={pair}>
+                <div>
+                    <Label htmlFor="appliedAt">Date applied</Label>
+                    <DatePicker
+                        id="appliedAt"
+                        label="Date applied"
+                        value={values.appliedAt}
+                        onChange={(value) => onChange('appliedAt', value)}
+                    />
+                </div>
+                <div>
+                    <Label htmlFor="deadline">Deadline</Label>
+                    <DatePicker
+                        id="deadline"
+                        label="Deadline"
+                        value={values.deadline}
+                        onChange={(value) => onChange('deadline', value)}
+                        placeholder="No deadline"
+                        clearable
+                    />
+                </div>
             </div>
             <div>
                 <Label htmlFor="url">Job posting URL</Label>
@@ -121,7 +123,6 @@ export default function ApplicationForm({
                     value={values.url}
                     onChange={(e) => onChange('url', e.target.value)}
                     placeholder="https://…"
-                    className={shortField}
                 />
             </div>
             <div>

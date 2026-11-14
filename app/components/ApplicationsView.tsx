@@ -150,7 +150,8 @@ export default function ApplicationsView({
         { label: 'Role', key: 'title', className: 'w-[35%] lg:w-[30%]' },
         { label: 'Company', key: 'company', className: 'w-[26%] lg:w-[23%]' },
         { label: 'Location', key: 'location', className: 'hidden lg:table-cell lg:w-[15%]' },
-        { label: 'Applied', key: 'applied_at', className: 'w-[18%] lg:w-[15%]' },
+        // "Date applied", not "Applied", which is also a status.
+        { label: 'Date applied', key: 'applied_at', className: 'w-[18%] lg:w-[15%]' },
         { label: 'Status', key: 'status', className: 'w-[21%] lg:w-[17%]' },
     ];
 

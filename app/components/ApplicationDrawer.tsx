@@ -193,7 +193,7 @@ export default function ApplicationDrawer({
 
                 <div className="flex flex-col gap-2 border-t border-border p-4">
                     {error && <p className="field-error" role="alert">{error}</p>}
-                    <div className="flex max-w-[480px] gap-2">
+                    <div className="flex gap-2">
                         <SheetClose asChild>
                             <Button type="button" variant="outline" className="flex-1">
                                 Cancel
