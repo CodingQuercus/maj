@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-
 import ApplicationDrawer from './ApplicationDrawer';
 import { ApplicationCard, ApplicationRow } from './ApplicationListItem';
 import { JobApplication, Status } from '@/lib/types';
@@ -12,7 +11,6 @@ import { cn } from '@/lib/utils';
 import { rememberApplicationsUrl } from '@/lib/navigation';
 
 import SortableColumnHeader from './SortableColumnHeader';
-
 
 import { ClipboardList, Plus, ChevronDown } from 'lucide-react';
 import PageTitle from './PageTitle';
@@ -36,7 +34,13 @@ type ApplicationListProps = {
 type SortKey = 'title' | 'company' | 'status' | 'location' | 'applied_at';
 type SortDir = 'asc' | 'desc';
 
-const SORT_KEYS: SortKey[] = ['title', 'company', 'status', 'location', 'applied_at'];
+const SORT_KEYS: SortKey[] = [
+    'title',
+    'company',
+    'status',
+    'location',
+    'applied_at',
+];
 
 function isSortKey(value: string | null): value is SortKey {
     return value !== null && (SORT_KEYS as string[]).includes(value);
@@ -63,15 +67,15 @@ const sortOptions: { label: string; key: SortKey; dir: SortDir }[] = [
 export default function ApplicationsView({
     applications,
 }: ApplicationListProps) {
-
-
     const [drawerOpen, setDrawerOpen] = useState(false);
 
     // Filters, sort and search live in the URL (?status=interview,offer&sort=company&dir=asc&q=dev),
     // so they survive reloads, the back button and shared links. replaceState updates the URL
     // without a server round trip, and useSearchParams picks up the change.
     const searchParams = useSearchParams();
-    const filter: Status[] = (searchParams.get('status') ?? '').split(',').filter(isStatus);
+    const filter: Status[] = (searchParams.get('status') ?? '')
+        .split(',')
+        .filter(isStatus);
     const sortParam = searchParams.get('sort');
     const sortKey: SortKey = isSortKey(sortParam) ? sortParam : 'applied_at';
     const dirParam = searchParams.get('dir');
@@ -91,14 +95,18 @@ export default function ApplicationsView({
             else params.delete(key);
         }
         const query = params.toString();
-        const url = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+        const url = query
+            ? `${window.location.pathname}?${query}`
+            : window.location.pathname;
         window.history.replaceState(null, '', url);
         rememberApplicationsUrl(url);
     };
 
     // Remember the URL the list was opened with too (e.g. from a shared link).
     useEffect(() => {
-        rememberApplicationsUrl(window.location.pathname + window.location.search);
+        rememberApplicationsUrl(
+            window.location.pathname + window.location.search
+        );
     }, []);
 
     const setSearch = (value: string) => {
@@ -109,7 +117,10 @@ export default function ApplicationsView({
     // Newest first is the default and is left out of the URL.
     const setSort = (key: SortKey, dir: SortDir) => {
         const isDefault = key === 'applied_at' && dir === 'desc';
-        updateParams({ sort: isDefault ? null : key, dir: isDefault ? null : dir });
+        updateParams({
+            sort: isDefault ? null : key,
+            dir: isDefault ? null : dir,
+        });
     };
 
     // Toggle sort direction if same key, otherwise sort by the new key ascending.
@@ -127,7 +138,9 @@ export default function ApplicationsView({
             updateParams({ status: null });
             return;
         }
-        const next = filter.includes(s) ? filter.filter((f) => f !== s) : [...filter, s];
+        const next = filter.includes(s)
+            ? filter.filter((f) => f !== s)
+            : [...filter, s];
         updateParams({ status: next.length > 0 ? next.join(',') : null });
     };
 
@@ -148,13 +161,20 @@ export default function ApplicationsView({
         });
 
     // Table columns. Location only shows from lg; the widths adapt to match.
+    // Table columns. All are always shown; the table scrolls sideways when the screen is
+    // narrower than its minimum width, with the Role column pinned on the left.
     const columns: { label: string; key: SortKey; className: string }[] = [
-        { label: 'Role', key: 'title', className: 'w-[32%] lg:w-[29%]' },
-        { label: 'Company', key: 'company', className: 'w-[25%] lg:w-[22%]' },
-        { label: 'Location', key: 'location', className: 'hidden lg:table-cell lg:w-[15%]' },
+        {
+            label: 'Role',
+            key: 'title',
+            className:
+                'sticky left-0 z-20 w-[30%] bg-background shadow-[inset_-1px_0_0_var(--color-border-soft)]',
+        },
+        { label: 'Company', key: 'company', className: 'w-[22%]' },
+        { label: 'Location', key: 'location', className: 'w-[16%]' },
         // "Date applied", not "Applied", which is also a status.
-        { label: 'Date applied', key: 'applied_at', className: 'w-[22%] lg:w-[17%]' },
-        { label: 'Status', key: 'status', className: 'w-[21%] lg:w-[17%]' },
+        { label: 'Date applied', key: 'applied_at', className: 'w-[15%]' },
+        { label: 'Status', key: 'status', className: 'w-[17%]' },
     ];
 
     const emptyMessage = search
@@ -166,17 +186,24 @@ export default function ApplicationsView({
     const isEmpty = filteredApplications.length === 0;
 
     // Number of applications per status, shown on the filter chips.
-    const statusCounts = applications.reduce<Partial<Record<Status, number>>>((acc, a) => {
-        acc[a.status] = (acc[a.status] ?? 0) + 1;
-        return acc;
-    }, {});
+    const statusCounts = applications.reduce<Partial<Record<Status, number>>>(
+        (acc, a) => {
+            acc[a.status] = (acc[a.status] ?? 0) + 1;
+            return acc;
+        },
+        {}
+    );
 
     return (
         // Phones get cards and a sort menu; sm and up get a sortable table. Both are
         // rendered and breakpoints pick one, so there is no layout flash on load.
         <div className="p-4 sm:p-8">
             <div className="mb-3 flex items-center justify-between sm:mb-4">
-                <PageTitle icon={<ClipboardList />} title="Applications" noMargin />
+                <PageTitle
+                    icon={<ClipboardList />}
+                    title="Applications"
+                    noMargin
+                />
                 <div className="flex gap-2">
                     <ExportMenu applications={applications} />
                     <Button
@@ -186,7 +213,9 @@ export default function ApplicationsView({
                         onClick={() => setDrawerOpen(true)}
                     >
                         <Plus size={16} aria-hidden="true" />
-                        <span className="hidden sm:inline">New application</span>
+                        <span className="hidden sm:inline">
+                            New application
+                        </span>
                     </Button>
                 </div>
             </div>
@@ -219,12 +248,20 @@ export default function ApplicationsView({
                                         'All statuses'
                                     ) : (
                                         <>
-                                            <span aria-hidden="true" className="flex -space-x-0.5">
+                                            <span
+                                                aria-hidden="true"
+                                                className="flex -space-x-0.5"
+                                            >
                                                 {filter.map((s) => (
                                                     <span
                                                         key={s}
                                                         className="size-2 rounded-full ring-2 ring-[var(--color-white)]"
-                                                        style={{ background: STATUS_COLORS[s] }}
+                                                        style={{
+                                                            background:
+                                                                STATUS_COLORS[
+                                                                    s
+                                                                ],
+                                                        }}
                                                     />
                                                 ))}
                                             </span>
@@ -258,7 +295,11 @@ export default function ApplicationsView({
                                     onCheckedChange={() => toggleFilter(s)}
                                     onSelect={(e) => e.preventDefault()}
                                 >
-                                    <span className={`badge badge-dot badge-${s}`}>{STATUS_LABELS[s]}</span>
+                                    <span
+                                        className={`badge badge-dot badge-${s}`}
+                                    >
+                                        {STATUS_LABELS[s]}
+                                    </span>
                                     <span className="ml-auto text-xs text-[var(--color-text-tertiary)] tabular-nums">
                                         {statusCounts[s] ?? 0}
                                     </span>
@@ -270,21 +311,33 @@ export default function ApplicationsView({
                     {/* Phones: sort menu (the table headers sort from sm up) */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="flex-1 justify-between sm:hidden">
+                            <Button
+                                variant="outline"
+                                className="flex-1 justify-between sm:hidden"
+                            >
                                 <span>Sort: {sortKeyLabels[sortKey]}</span>
                                 <ChevronDown size={14} aria-hidden="true" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-(--radix-dropdown-menu-trigger-width)">
+                        <DropdownMenuContent
+                            align="end"
+                            className="w-(--radix-dropdown-menu-trigger-width)"
+                        >
                             <DropdownMenuRadioGroup
                                 value={`${sortKey}:${sortDir}`}
                                 onValueChange={(value) => {
-                                    const [key, dir] = value.split(':') as [SortKey, SortDir];
+                                    const [key, dir] = value.split(':') as [
+                                        SortKey,
+                                        SortDir,
+                                    ];
                                     setSort(key, dir);
                                 }}
                             >
                                 {sortOptions.map((opt) => (
-                                    <DropdownMenuRadioItem key={opt.label} value={`${opt.key}:${opt.dir}`}>
+                                    <DropdownMenuRadioItem
+                                        key={opt.label}
+                                        value={`${opt.key}:${opt.dir}`}
+                                    >
                                         {opt.label}
                                     </DropdownMenuRadioItem>
                                 ))}
@@ -296,58 +349,86 @@ export default function ApplicationsView({
 
             {/* Phones: cards */}
             {isEmpty ? (
-                <p className="py-12 text-center text-[var(--color-text-tertiary)] sm:hidden">{emptyMessage}</p>
+                <p className="py-12 text-center text-[var(--color-text-tertiary)] sm:hidden">
+                    {emptyMessage}
+                </p>
             ) : (
-                <ul className="flex flex-col gap-3 sm:hidden" aria-label="Applications">
+                <ul
+                    className="flex flex-col gap-3 sm:hidden"
+                    aria-label="Applications"
+                >
                     {filteredApplications.map((application) => (
-                        <ApplicationCard key={application.id} application={application} />
+                        <ApplicationCard
+                            key={application.id}
+                            application={application}
+                        />
                     ))}
                 </ul>
             )}
 
-            {/* sm and up: one table with a sticky header, so screen readers keep the column
-                headers associated with the cells. */}
-            <table className="hidden w-full table-fixed border-collapse sm:table">
-                <caption className="sr-only">Applications</caption>
-                <thead>
-                    <tr>
-                        {columns.map((col) => (
-                            <th
-                                key={col.key}
-                                scope="col"
-                                aria-sort={
-                                    sortKey === col.key
-                                        ? sortDir === 'asc' ? 'ascending' : 'descending'
-                                        : undefined
-                                }
-                                className={`sticky top-0 z-20 border-b border-border bg-background px-4 py-2 text-left font-normal whitespace-nowrap ${col.className}`}
-                            >
-                                <SortableColumnHeader
-                                    label={col.label}
-                                    sortKey={col.key}
-                                    currentSortKey={sortKey}
-                                    sortDir={sortDir}
-                                    // Cast to SortKey since the component accepts string
-                                    onSort={(key) => handleSort(key as SortKey)}
-                                />
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {isEmpty ? (
+            {/* sm and up: one table (so screen readers keep column headers associated with the
+                cells) that scrolls sideways below its minimum width. The region is focusable so
+                keyboard users can scroll it too. */}
+            <div
+                role="region"
+                aria-label="Applications table"
+                tabIndex={0}
+                className="hidden overflow-x-auto rounded-sm outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--color-accent-border)] sm:block"
+            >
+                <table className="w-full min-w-[720px] table-fixed border-collapse">
+                    <caption className="sr-only">Applications</caption>
+                    <thead>
                         <tr>
-                            <td colSpan={columns.length} className="p-12 text-center">
-                                <p className="text-[var(--color-text-tertiary)]">{emptyMessage}</p>
-                            </td>
+                            {columns.map((col) => (
+                                <th
+                                    key={col.key}
+                                    scope="col"
+                                    aria-sort={
+                                        sortKey === col.key
+                                            ? sortDir === 'asc'
+                                                ? 'ascending'
+                                                : 'descending'
+                                            : undefined
+                                    }
+                                    className={`border-b border-border bg-background px-4 py-2 text-left font-normal whitespace-nowrap ${col.className}`}
+                                >
+                                    <SortableColumnHeader
+                                        label={col.label}
+                                        sortKey={col.key}
+                                        currentSortKey={sortKey}
+                                        sortDir={sortDir}
+                                        // Cast to SortKey since the component accepts string
+                                        onSort={(key) =>
+                                            handleSort(key as SortKey)
+                                        }
+                                    />
+                                </th>
+                            ))}
                         </tr>
-                    ) : (
-                        filteredApplications.map((application) => (
-                            <ApplicationRow key={application.id} application={application} />
-                        ))
-                    )}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {isEmpty ? (
+                            <tr>
+                                <td
+                                    colSpan={columns.length}
+                                    className="p-12 text-center"
+                                >
+                                    <p className="text-[var(--color-text-tertiary)]">
+                                        {emptyMessage}
+                                    </p>
+                                </td>
+                            </tr>
+                        ) : (
+                            filteredApplications.map((application) => (
+                                <ApplicationRow
+                                    key={application.id}
+                                    application={application}
+                                />
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
 
             <ApplicationDrawer
                 open={drawerOpen}

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Clock } from 'lucide-react';
 
 import { JobApplication } from '@/lib/types';
@@ -81,14 +82,31 @@ export function ApplicationCard({ application }: ApplicationItemProps) {
 
 // Row in the table (sm and up). Location only shows from lg, like its column header.
 export function ApplicationRow({ application }: ApplicationItemProps) {
+    const router = useRouter();
     const href = `/applications/${application.id}`;
+
+    // The pinned Role cell is position: sticky, which would trap a stretched link's overlay
+    // inside that cell. So the row handles plain clicks itself, while the title stays a real
+    // link for keyboard users and Cmd/Ctrl/middle-click.
+    const openOnClick = (e: React.MouseEvent<HTMLTableRowElement>) => {
+        if ((e.target as HTMLElement).closest('a, button')) return;
+        if (window.getSelection()?.toString()) return; // selecting text, not opening
+        router.push(href);
+    };
+
     return (
-        <tr className="relative border-b border-[var(--color-border-soft)] transition-colors hover:bg-[var(--color-surface)]">
+        <tr
+            onClick={openOnClick}
+            className="group cursor-pointer border-b border-[var(--color-border-soft)] transition-colors hover:bg-[var(--color-surface)]"
+        >
             <td
-                className="truncate px-4 py-3 text-sm font-medium"
+                className="sticky left-0 z-10 truncate bg-background px-4 py-3 text-sm font-medium shadow-[inset_-1px_0_0_var(--color-border-soft)] transition-colors group-hover:bg-[var(--color-surface)]"
                 title={application.title}
             >
-                <Link href={href} className={stretchedLink}>
+                <Link
+                    href={href}
+                    className="rounded-sm text-foreground no-underline outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-[var(--color-accent-border)]"
+                >
                     {application.title}
                 </Link>
                 <DeadlineNote application={application} />
@@ -99,13 +117,13 @@ export function ApplicationRow({ application }: ApplicationItemProps) {
             >
                 {application.company}
             </td>
-            <td className="hidden truncate px-4 py-3 text-sm text-[var(--color-text-tertiary)] lg:table-cell">
+            <td className="truncate px-4 py-3 text-sm text-[var(--color-text-tertiary)]">
                 {application.location ?? '—'}
             </td>
             <td className="px-4 py-3 text-sm whitespace-nowrap text-[var(--color-text-tertiary)] tabular-nums">
                 {appliedAt(application)}
             </td>
-            <td className="relative z-10 px-4 py-3">
+            <td className="px-4 py-3">
                 <StatusPopover
                     applicationId={application.id}
                     currentStatus={application.status}
