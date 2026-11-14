@@ -16,6 +16,7 @@ import SortableColumnHeader from './SortableColumnHeader';
 
 import { ClipboardList, Plus, ChevronDown } from 'lucide-react';
 import PageTitle from './PageTitle';
+import ExportMenu from './ExportMenu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -176,15 +177,18 @@ export default function ApplicationsView({
         <div className="p-4 sm:p-8">
             <div className="mb-3 flex items-center justify-between sm:mb-4">
                 <PageTitle icon={<ClipboardList />} title="Applications" noMargin />
-                <Button
-                    aria-label="Add new application"
-                    size="icon"
-                    className="sm:w-auto sm:px-4"
-                    onClick={() => setDrawerOpen(true)}
-                >
-                    <Plus size={16} aria-hidden="true" />
-                    <span className="hidden sm:inline">New application</span>
-                </Button>
+                <div className="flex gap-2">
+                    <ExportMenu applications={applications} />
+                    <Button
+                        aria-label="Add new application"
+                        size="icon"
+                        className="sm:w-auto sm:px-4"
+                        onClick={() => setDrawerOpen(true)}
+                    >
+                        <Plus size={16} aria-hidden="true" />
+                        <span className="hidden sm:inline">New application</span>
+                    </Button>
+                </div>
             </div>
 
             {/* Toolbar: search and status filter on one row (sort lives in the column headers
