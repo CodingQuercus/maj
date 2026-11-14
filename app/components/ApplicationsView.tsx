@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import ApplicationDrawer from './ApplicationDrawer';
@@ -68,6 +68,31 @@ export default function ApplicationsView({
     applications,
 }: ApplicationListProps) {
     const [drawerOpen, setDrawerOpen] = useState(false);
+
+    // Locked header: its height (for the sticky column headers) and whether it is stuck
+    // (to show a divider only once content scrolls under it).
+    const headerRef = useRef<HTMLDivElement>(null);
+    const sentinelRef = useRef<HTMLDivElement>(null);
+    const [headerHeight, setHeaderHeight] = useState(0);
+    const [stuck, setStuck] = useState(false);
+
+    useEffect(() => {
+        const header = headerRef.current;
+        const sentinel = sentinelRef.current;
+        if (!header || !sentinel) return;
+        const resize = new ResizeObserver(([entry]) =>
+            setHeaderHeight(Math.round(entry.borderBoxSize[0].blockSize))
+        );
+        resize.observe(header);
+        const intersect = new IntersectionObserver(([entry]) =>
+            setStuck(!entry.isIntersecting)
+        );
+        intersect.observe(sentinel);
+        return () => {
+            resize.disconnect();
+            intersect.disconnect();
+        };
+    }, []);
 
     // Filters, sort and search live in the URL (?status=interview,offer&sort=company&dir=asc&q=dev),
     // so they survive reloads, the back button and shared links. replaceState updates the URL
@@ -199,151 +224,181 @@ export default function ApplicationsView({
     return (
         // Phones get cards and a sort menu; sm and up get a sortable table. Both are
         // rendered and breakpoints pick one, so there is no layout flash on load.
-        <div className="p-4 sm:p-8">
-            <div className="mb-3 flex items-center justify-between sm:mb-4">
-                <PageTitle
-                    icon={<ClipboardList />}
-                    title="Applications"
-                    noMargin
-                />
-                <Button
-                    aria-label="Add new application"
-                    size="icon"
-                    className="sm:w-auto sm:px-4"
-                    onClick={() => setDrawerOpen(true)}
-                >
-                    <Plus size={16} aria-hidden="true" />
-                    <span className="hidden sm:inline">New application</span>
-                </Button>
-            </div>
+        <div
+            className="p-4 sm:p-8"
+            // Height of the locked header, so the table's column headers can stick right below it.
+            style={
+                {
+                    '--list-header-h': `${headerHeight}px`,
+                } as React.CSSProperties
+            }
+        >
+            {/* Marks the top of the page; when it scrolls out of view the header is "stuck". */}
+            <div ref={sentinelRef} aria-hidden="true" className="-mb-px h-px" />
 
-            {/* Toolbar: search, status filter and export on one row, right above the list they
+            {/* Locked header: title, New application and the toolbar stay reachable while the
+                list scrolls (instead of paginating the list). */}
+            <div
+                ref={headerRef}
+                className={cn(
+                    '-mx-4 -mt-4 bg-background px-4 pt-4 sm:-mx-8 sm:-mt-8 sm:px-8 sm:pt-8',
+                    'sticky top-0 z-30 transition-shadow',
+                    stuck &&
+                        'shadow-[0_1px_0_var(--color-border),0_6px_12px_-8px_rgb(0_0_0/0.12)]'
+                )}
+            >
+                <div className="mb-3 flex items-center justify-between sm:mb-4">
+                    <PageTitle
+                        icon={<ClipboardList />}
+                        title="Applications"
+                        noMargin
+                    />
+                    <Button
+                        aria-label="Add new application"
+                        size="icon"
+                        className="sm:w-auto sm:px-4"
+                        onClick={() => setDrawerOpen(true)}
+                    >
+                        <Plus size={16} aria-hidden="true" />
+                        <span className="hidden sm:inline">
+                            New application
+                        </span>
+                    </Button>
+                </div>
+
+                {/* Toolbar: search, status filter and export on one row, right above the list they
                 act on (sort lives in the column headers from sm up, in its own menu on phones). */}
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-                <Input
-                    aria-label="Search applications"
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search for role or company…"
-                    // pl-9 (36px) leaves room for the search icon from .input-search.
-                    className="input-search pl-9 sm:max-w-80"
-                />
-                <div className="flex gap-2 sm:flex-1">
-                    {/* Several statuses can be selected; the menu stays open while toggling. */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                variant="outline"
-                                className={cn(
-                                    'flex-1 justify-between gap-2 sm:min-w-44 sm:flex-none',
-                                    filter.length > 0 && 'border-primary'
-                                )}
-                            >
-                                <span className="flex min-w-0 items-center gap-2">
-                                    {filter.length === 0 ? (
-                                        'All statuses'
-                                    ) : (
-                                        <>
-                                            <span
-                                                aria-hidden="true"
-                                                className="flex -space-x-0.5"
-                                            >
-                                                {filter.map((s) => (
-                                                    <span
-                                                        key={s}
-                                                        className="size-2 rounded-full ring-2 ring-[var(--color-white)]"
-                                                        style={{
-                                                            background:
-                                                                STATUS_COLORS[
-                                                                    s
-                                                                ],
-                                                        }}
-                                                    />
-                                                ))}
-                                            </span>
-                                            <span className="truncate">
-                                                {filter.length === 1
-                                                    ? STATUS_LABELS[filter[0]]
-                                                    : `${filter.length} statuses`}
-                                            </span>
-                                        </>
+                <div className="flex flex-col gap-2 pb-4 sm:flex-row sm:items-center">
+                    <Input
+                        aria-label="Search applications"
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search for role or company…"
+                        // pl-9 (36px) leaves room for the search icon from .input-search.
+                        className="input-search pl-9 sm:max-w-80"
+                    />
+                    <div className="flex gap-2 sm:flex-1">
+                        {/* Several statuses can be selected; the menu stays open while toggling. */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className={cn(
+                                        'flex-1 justify-between gap-2 sm:min-w-44 sm:flex-none',
+                                        filter.length > 0 && 'border-primary'
                                     )}
-                                </span>
-                                <ChevronDown size={14} aria-hidden="true" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="min-w-56">
-                            <DropdownMenuCheckboxItem
-                                checked={filter.length === 0}
-                                onCheckedChange={() => toggleFilter('all')}
-                                onSelect={(e) => e.preventDefault()}
+                                >
+                                    <span className="flex min-w-0 items-center gap-2">
+                                        {filter.length === 0 ? (
+                                            'All statuses'
+                                        ) : (
+                                            <>
+                                                <span
+                                                    aria-hidden="true"
+                                                    className="flex -space-x-0.5"
+                                                >
+                                                    {filter.map((s) => (
+                                                        <span
+                                                            key={s}
+                                                            className="size-2 rounded-full ring-2 ring-[var(--color-white)]"
+                                                            style={{
+                                                                background:
+                                                                    STATUS_COLORS[
+                                                                        s
+                                                                    ],
+                                                            }}
+                                                        />
+                                                    ))}
+                                                </span>
+                                                <span className="truncate">
+                                                    {filter.length === 1
+                                                        ? STATUS_LABELS[
+                                                              filter[0]
+                                                          ]
+                                                        : `${filter.length} statuses`}
+                                                </span>
+                                            </>
+                                        )}
+                                    </span>
+                                    <ChevronDown size={14} aria-hidden="true" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align="start"
+                                className="min-w-56"
                             >
-                                All statuses
-                                <span className="ml-auto text-xs text-[var(--color-text-tertiary)] tabular-nums">
-                                    {applications.length}
-                                </span>
-                            </DropdownMenuCheckboxItem>
-                            <DropdownMenuSeparator />
-                            {STATUSES.map((s) => (
                                 <DropdownMenuCheckboxItem
-                                    key={s}
-                                    checked={filter.includes(s)}
-                                    onCheckedChange={() => toggleFilter(s)}
+                                    checked={filter.length === 0}
+                                    onCheckedChange={() => toggleFilter('all')}
                                     onSelect={(e) => e.preventDefault()}
                                 >
-                                    <span
-                                        className={`badge badge-dot badge-${s}`}
-                                    >
-                                        {STATUS_LABELS[s]}
-                                    </span>
+                                    All statuses
                                     <span className="ml-auto text-xs text-[var(--color-text-tertiary)] tabular-nums">
-                                        {statusCounts[s] ?? 0}
+                                        {applications.length}
                                     </span>
                                 </DropdownMenuCheckboxItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    {/* Phones: sort menu (the table headers sort from sm up) */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                variant="outline"
-                                className="flex-1 justify-between sm:hidden"
-                            >
-                                <span>Sort: {sortKeyLabels[sortKey]}</span>
-                                <ChevronDown size={14} aria-hidden="true" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                            align="end"
-                            className="w-(--radix-dropdown-menu-trigger-width)"
-                        >
-                            <DropdownMenuRadioGroup
-                                value={`${sortKey}:${sortDir}`}
-                                onValueChange={(value) => {
-                                    const [key, dir] = value.split(':') as [
-                                        SortKey,
-                                        SortDir,
-                                    ];
-                                    setSort(key, dir);
-                                }}
-                            >
-                                {sortOptions.map((opt) => (
-                                    <DropdownMenuRadioItem
-                                        key={opt.label}
-                                        value={`${opt.key}:${opt.dir}`}
+                                <DropdownMenuSeparator />
+                                {STATUSES.map((s) => (
+                                    <DropdownMenuCheckboxItem
+                                        key={s}
+                                        checked={filter.includes(s)}
+                                        onCheckedChange={() => toggleFilter(s)}
+                                        onSelect={(e) => e.preventDefault()}
                                     >
-                                        {opt.label}
-                                    </DropdownMenuRadioItem>
+                                        <span
+                                            className={`badge badge-dot badge-${s}`}
+                                        >
+                                            {STATUS_LABELS[s]}
+                                        </span>
+                                        <span className="ml-auto text-xs text-[var(--color-text-tertiary)] tabular-nums">
+                                            {statusCounts[s] ?? 0}
+                                        </span>
+                                    </DropdownMenuCheckboxItem>
                                 ))}
-                            </DropdownMenuRadioGroup>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
 
-                    <div className="ml-auto">
-                        <ExportMenu applications={applications} />
+                        {/* Phones: sort menu (the table headers sort from sm up) */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className="flex-1 justify-between sm:hidden"
+                                >
+                                    <span>Sort: {sortKeyLabels[sortKey]}</span>
+                                    <ChevronDown size={14} aria-hidden="true" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align="end"
+                                className="w-(--radix-dropdown-menu-trigger-width)"
+                            >
+                                <DropdownMenuRadioGroup
+                                    value={`${sortKey}:${sortDir}`}
+                                    onValueChange={(value) => {
+                                        const [key, dir] = value.split(':') as [
+                                            SortKey,
+                                            SortDir,
+                                        ];
+                                        setSort(key, dir);
+                                    }}
+                                >
+                                    {sortOptions.map((opt) => (
+                                        <DropdownMenuRadioItem
+                                            key={opt.label}
+                                            value={`${opt.key}:${opt.dir}`}
+                                        >
+                                            {opt.label}
+                                        </DropdownMenuRadioItem>
+                                    ))}
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        <div className="ml-auto">
+                            <ExportMenu applications={applications} />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -374,7 +429,9 @@ export default function ApplicationsView({
                 role="region"
                 aria-label="Applications table"
                 tabIndex={0}
-                className="hidden overflow-x-auto rounded-sm outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--color-accent-border)] sm:block"
+                // From xl the table fits, so the region stops being a scroll container and the
+                // column headers can stick below the locked header.
+                className="hidden overflow-x-auto rounded-sm outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--color-accent-border)] sm:block xl:overflow-visible"
             >
                 {/* 920px = the fixed columns (660px) + about 260px for Role. */}
                 <table className="w-full min-w-[920px] table-fixed border-collapse">
@@ -392,7 +449,7 @@ export default function ApplicationsView({
                                                 : 'descending'
                                             : undefined
                                     }
-                                    className={`border-b border-border bg-background px-4 py-2 text-left font-normal whitespace-nowrap ${col.className}`}
+                                    className={`border-b border-border bg-background px-4 py-2 text-left font-normal whitespace-nowrap xl:sticky xl:top-[var(--list-header-h)] xl:z-20 ${col.className}`}
                                 >
                                     <SortableColumnHeader
                                         label={col.label}
