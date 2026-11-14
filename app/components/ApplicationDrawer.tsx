@@ -3,11 +3,11 @@
 import { useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { JobApplication, WorkType } from '@/lib/types';
+import { JobApplication } from '@/lib/types';
 import { todayLocal } from '@/lib/dates';
 
 import { X } from 'lucide-react';
-import ApplicationForm from './ApplicationForm';
+import ApplicationForm, { type FormValues } from './ApplicationForm';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetClose, SheetContent, SheetTitle } from '@/components/ui/sheet';
@@ -18,24 +18,12 @@ type DrawerProps = {
     application?: JobApplication;
 };
 
-type FormValues = {
-    title: string;
-    company: string;
-    location: string;
-    workType: WorkType;
-    deadline: string;
-    appliedAt: string;
-    url: string;
-    description: string;
-    notes: string;
-};
-
 // Form values for an existing application, or an empty form for a new one.
 const initialValues = (application?: JobApplication): FormValues => ({
     title: application?.title ?? '',
     company: application?.company ?? '',
     location: application?.location ?? '',
-    workType: application?.work_type ?? 'hybrid',
+    workType: application?.work_type ?? '',
     deadline: application?.deadline ?? '',
     appliedAt: application?.applied_at?.split('T')[0] ?? todayLocal(),
     url: application?.url ?? '',
@@ -74,7 +62,7 @@ export default function ApplicationDrawer({
                     title: values.title,
                     company: values.company,
                     location: values.location,
-                    work_type: values.workType,
+                    work_type: values.workType || null,
                     deadline: values.deadline || null,
                     applied_at: values.appliedAt
                         ? new Date(values.appliedAt).toISOString()
@@ -107,7 +95,7 @@ export default function ApplicationDrawer({
                 title: values.title,
                 company: values.company,
                 location: values.location,
-                work_type: values.workType,
+                work_type: values.workType || null,
                 deadline: values.deadline || null,
                 description: values.description || null,
                 notes: values.notes || null,

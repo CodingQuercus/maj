@@ -13,11 +13,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 
-type FormValues = {
+// Form state for the application drawer. workType "" means "Not specified" (saved as null).
+export type FormValues = {
     title: string;
     company: string;
     location: string;
-    workType: WorkType;
+    workType: WorkType | '';
     deadline: string;
     appliedAt: string;
     url: string;
@@ -78,14 +79,18 @@ export default function ApplicationForm({
                 </div>
                 <div>
                     <Label htmlFor="workType">Work type</Label>
+                    {/* Radix Select can't use "" as an item value, so "none" stands in for it. */}
                     <Select
-                        value={values.workType}
-                        onValueChange={(value) => onChange('workType', value)}
+                        value={values.workType || 'none'}
+                        onValueChange={(value) =>
+                            onChange('workType', value === 'none' ? '' : value)
+                        }
                     >
                         <SelectTrigger id="workType" className="w-full">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                            <SelectItem value="none">Not specified</SelectItem>
                             <SelectItem value="on-site">On-site</SelectItem>
                             <SelectItem value="hybrid">Hybrid</SelectItem>
                             <SelectItem value="remote">Remote</SelectItem>
