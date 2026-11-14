@@ -15,12 +15,13 @@ import {
 import { JobApplication, Status } from '@/lib/types';
 import { STATUSES, STATUS_COLORS, STATUS_LABELS } from '@/lib/status';
 import { dateKey, formatDate, formatShortDate } from '@/lib/dates';
-import { LayoutDashboard } from 'lucide-react';
+import { ChevronRight, LayoutDashboard } from 'lucide-react';
 
 import Link from 'next/link';
 
 import PageTitle from './PageTitle';
 import { upcomingDeadline } from '@/lib/deadline';
+import { cn } from '@/lib/utils';
 
 type DashboardViewProps = {
     applications: JobApplication[];
@@ -137,30 +138,45 @@ export default function DashboardView({ applications }: DashboardViewProps) {
                             No upcoming deadlines for open applications.
                         </p>
                     ) : (
-                        <ul className="divide-y divide-[var(--color-border-soft)]">
+                        // Each row is one link: when (countdown + date) first, then what, so the
+                        // information and the action sit together instead of at opposite edges.
+                        <ul className="-mx-2 flex flex-col">
                             {upcoming.map(({ app, info }) => (
-                                <li key={app.id} className="flex items-center justify-between gap-4 py-2">
+                                <li key={app.id}>
                                     <Link
                                         href={`/applications/${app.id}`}
-                                        className="min-w-0 truncate text-sm font-medium text-foreground hover:underline"
+                                        className="flex items-center gap-4 rounded-md px-2 py-2 no-underline transition-colors hover:bg-accent"
                                     >
-                                        {app.title}
-                                        <span className="font-normal text-[var(--color-text-secondary)]">
-                                            {' '}· {app.company}
+                                        <span className="w-28 shrink-0" suppressHydrationWarning>
+                                            <span
+                                                className={cn(
+                                                    'block text-sm font-medium',
+                                                    info!.urgent
+                                                        ? 'text-[var(--status-interview-text)]'
+                                                        : 'text-foreground'
+                                                )}
+                                            >
+                                                {info!.label}
+                                            </span>
+                                            <span className="block text-xs text-[var(--color-text-tertiary)] tabular-nums">
+                                                {app.deadline}
+                                            </span>
                                         </span>
+                                        {/* Two lines, matching the countdown and date beside it. */}
+                                        <span className="min-w-0 flex-1">
+                                            <span className="block truncate text-sm font-medium text-foreground">
+                                                {app.title}
+                                            </span>
+                                            <span className="block truncate text-xs text-[var(--color-text-secondary)]">
+                                                {app.company}
+                                            </span>
+                                        </span>
+                                        <ChevronRight
+                                            size={16}
+                                            aria-hidden="true"
+                                            className="shrink-0 text-[var(--color-text-tertiary)]"
+                                        />
                                     </Link>
-                                    <span className="flex shrink-0 items-center gap-3 text-xs tabular-nums" suppressHydrationWarning>
-                                        <span className="text-[var(--color-text-tertiary)]">{app.deadline}</span>
-                                        <span
-                                            className={
-                                                info!.urgent
-                                                    ? 'font-medium text-[var(--status-interview-text)]'
-                                                    : 'text-[var(--color-text-secondary)]'
-                                            }
-                                        >
-                                            {info!.label}
-                                        </span>
-                                    </span>
                                 </li>
                             ))}
                         </ul>
