@@ -7,7 +7,8 @@ import { useSearchParams } from 'next/navigation';
 import ApplicationDrawer from './ApplicationDrawer';
 import { ApplicationCard, ApplicationRow } from './ApplicationListItem';
 import { JobApplication, Status } from '@/lib/types';
-import { STATUSES, STATUS_LABELS, isStatus } from '@/lib/status';
+import { STATUSES, STATUS_COLORS, STATUS_LABELS, isStatus } from '@/lib/status';
+import { cn } from '@/lib/utils';
 import { rememberApplicationsUrl } from '@/lib/navigation';
 
 import SortableColumnHeader from './SortableColumnHeader';
@@ -163,6 +164,12 @@ export default function ApplicationsView({
 
     const isEmpty = filteredApplications.length === 0;
 
+    // Number of applications per status, shown on the filter chips.
+    const statusCounts = applications.reduce<Partial<Record<Status, number>>>((acc, a) => {
+        acc[a.status] = (acc[a.status] ?? 0) + 1;
+        return acc;
+    }, {});
+
     return (
         // Phones get filter/sort menus and cards; sm and up get chips and a table.
         // Both are rendered and breakpoints pick one, so there is no layout flash on load.
@@ -217,6 +224,9 @@ export default function ApplicationsView({
                                 onSelect={(e) => e.preventDefault()}
                             >
                                 <span className={`badge badge-dot badge-${s}`}>{STATUS_LABELS[s]}</span>
+                                <span className="ml-auto text-xs text-[var(--color-text-tertiary)] tabular-nums">
+                                    {statusCounts[s] ?? 0}
+                                </span>
                             </DropdownMenuCheckboxItem>
                         ))}
                     </DropdownMenuContent>
@@ -247,18 +257,37 @@ export default function ApplicationsView({
                 </DropdownMenu>
             </div>
 
-            {/* sm and up: status filter chips */}
-            <div className="mb-4 hidden flex-wrap gap-2 sm:flex">
-                {['all', ...STATUSES].map((s) => (
-                    <button
-                        key={s}
-                        onClick={() => toggleFilter(s)}
-                        className={s !== 'all' ? `badge badge-dot badge-toggle badge-${s}` : 'badge badge-toggle'}
-                        aria-pressed={s === 'all' ? filter.length === 0 : filter.includes(s as Status)}
-                    >
-                        {s === 'all' ? `All (${applications.length})` : STATUS_LABELS[s as Status]}
-                    </button>
-                ))}
+            {/* sm and up: status filter chips. Squared and neutral (teal when selected) with a
+                count, so they read as controls rather than as the status pills in the rows. */}
+            <div className="mb-4 hidden flex-wrap gap-2 sm:flex" role="group" aria-label="Filter by status">
+                {(['all', ...STATUSES] as const).map((s) => {
+                    const selected = s === 'all' ? filter.length === 0 : filter.includes(s);
+                    const count = s === 'all' ? applications.length : (statusCounts[s] ?? 0);
+                    return (
+                        <button
+                            key={s}
+                            type="button"
+                            onClick={() => toggleFilter(s)}
+                            aria-pressed={selected}
+                            className={cn(
+                                'inline-flex h-8 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm transition-colors',
+                                selected
+                                    ? 'border-primary bg-[var(--color-accent-subtle)] font-medium text-[var(--color-accent-text)]'
+                                    : 'border-border bg-[var(--color-white)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-hard)] hover:text-foreground'
+                            )}
+                        >
+                            {s !== 'all' && (
+                                <span
+                                    aria-hidden="true"
+                                    className="size-2 rounded-full"
+                                    style={{ background: STATUS_COLORS[s] }}
+                                />
+                            )}
+                            {s === 'all' ? 'All' : STATUS_LABELS[s]}
+                            <span className="text-xs text-[var(--color-text-tertiary)] tabular-nums">{count}</span>
+                        </button>
+                    );
+                })}
             </div>
 
             {/* Phones: cards */}
