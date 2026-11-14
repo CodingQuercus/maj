@@ -1,14 +1,12 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
-import { toast } from 'sonner';
+import { usePathname } from 'next/navigation';
 import { ClipboardList, LayoutDashboard, Settings, LogOut } from 'lucide-react';
 
-import { createClient } from '@/lib/supabase/client';
 import { Spinner } from '@/components/ui/spinner';
+import { useSignOut } from '@/lib/useSignOut';
 import { cn } from '@/lib/utils';
 
 const links = [
@@ -19,32 +17,24 @@ const links = [
 const accountLink = { href: '/account', label: 'Account', icon: Settings };
 
 // Sidebar on tablet (icons only) and desktop (icons + labels), bottom bar on phones.
+// On phones, signing out is on the account page rather than a tab in the bottom bar.
 // Both are rendered and CSS picks one, so the right layout shows from the first paint.
 export default function Sidebar() {
     const pathname = usePathname();
-    const router = useRouter();
-    const supabase = createClient();
-    const [signingOut, setSigningOut] = useState(false);
+    const { signOut, signingOut } = useSignOut();
 
     // A section stays active on its sub-pages (e.g. /applications/123).
     const isActive = (href: string) =>
         pathname === href || pathname.startsWith(`${href}/`);
 
-    const handleSignOut = async () => {
-        setSigningOut(true);
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-            setSigningOut(false);
-            toast.error('Could not sign out. Please try again.');
-            return;
-        }
-        router.push('/');
-        router.refresh();
-    };
-
     // Swaps the sign-out icon for a spinner while signing out.
     const signOutIcon = signingOut ? (
-        <Spinner role={undefined} aria-label={undefined} aria-hidden="true" className="size-[18px]" />
+        <Spinner
+            role={undefined}
+            aria-label={undefined}
+            aria-hidden="true"
+            className="size-[18px]"
+        />
     ) : (
         <LogOut size={18} aria-hidden="true" />
     );
@@ -85,16 +75,6 @@ export default function Sidebar() {
                         {label}
                     </Link>
                 ))}
-                <button
-                    type="button"
-                    onClick={handleSignOut}
-                    disabled={signingOut}
-                    aria-busy={signingOut || undefined}
-                    className={barItem(false)}
-                >
-                    {signOutIcon}
-                    Sign out
-                </button>
             </nav>
 
             {/* Tablet and desktop: sticky sidebar */}
@@ -106,7 +86,13 @@ export default function Sidebar() {
                     href="/applications"
                     className="mb-4 flex items-center justify-center gap-2 no-underline lg:justify-start"
                 >
-                    <Image src="/maj-logo.svg" alt="Maj" width={28} height={28} style={{ height: 'auto' }} />
+                    <Image
+                        src="/maj-logo.svg"
+                        alt="Maj"
+                        width={28}
+                        height={28}
+                        style={{ height: 'auto' }}
+                    />
                     <span className="hidden flex-col lg:flex">
                         <span className="text-[length:var(--text-md)] leading-tight font-bold text-foreground">
                             Maj
@@ -117,7 +103,10 @@ export default function Sidebar() {
                     </span>
                 </Link>
 
-                <nav aria-label="App navigation" className="flex flex-1 flex-col gap-1">
+                <nav
+                    aria-label="App navigation"
+                    className="flex flex-1 flex-col gap-1"
+                >
                     {links.map(({ href, label, icon: Icon }) => (
                         <Link
                             key={href}
@@ -131,7 +120,9 @@ export default function Sidebar() {
                                 aria-hidden="true"
                                 className={cn(
                                     'shrink-0',
-                                    isActive(href) ? 'text-primary' : 'text-[var(--color-text-tertiary)]'
+                                    isActive(href)
+                                        ? 'text-primary'
+                                        : 'text-[var(--color-text-tertiary)]'
                                 )}
                             />
                             <span className={sideLabel}>{label}</span>
@@ -143,7 +134,9 @@ export default function Sidebar() {
                     <Link
                         href={accountLink.href}
                         title={accountLink.label}
-                        aria-current={isActive(accountLink.href) ? 'page' : undefined}
+                        aria-current={
+                            isActive(accountLink.href) ? 'page' : undefined
+                        }
                         className={sideItem(isActive(accountLink.href))}
                     >
                         <Settings
@@ -151,20 +144,24 @@ export default function Sidebar() {
                             aria-hidden="true"
                             className={cn(
                                 'shrink-0',
-                                isActive(accountLink.href) ? 'text-primary' : 'text-[var(--color-text-tertiary)]'
+                                isActive(accountLink.href)
+                                    ? 'text-primary'
+                                    : 'text-[var(--color-text-tertiary)]'
                             )}
                         />
                         <span className={sideLabel}>{accountLink.label}</span>
                     </Link>
                     <button
                         type="button"
-                        onClick={handleSignOut}
+                        onClick={signOut}
                         disabled={signingOut}
                         aria-busy={signingOut || undefined}
                         title="Sign out"
                         className={sideItem(false)}
                     >
-                        <span className="shrink-0 text-[var(--color-text-tertiary)]">{signOutIcon}</span>
+                        <span className="shrink-0 text-[var(--color-text-tertiary)]">
+                            {signOutIcon}
+                        </span>
                         <span className={sideLabel}>Sign out</span>
                     </button>
                 </div>
