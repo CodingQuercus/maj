@@ -173,7 +173,7 @@ export default function ApplicationsView({
 
     // Filter by status and search query, then sort by selected column.
     // Optional date range on date applied (?from=2026-05-01&to=2026-05-31), e.g. when
-    // opening a month or week from the dashboard chart.
+    // opening a month or week from the overview chart.
     const dateParam = (name: string) => {
         const value = searchParams.get(name);
         return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;

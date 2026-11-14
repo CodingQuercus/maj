@@ -1,6 +1,6 @@
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Loading placeholders for the dashboard routes (used by their loading.tsx files).
+// Loading placeholders for the app routes (used by their loading.tsx files).
 // They mirror the real layouts roughly so the page doesn't jump when content arrives.
 
 function Container({
@@ -103,9 +103,9 @@ export function ApplicationDetailSkeleton() {
     );
 }
 
-export function DashboardSkeleton() {
+export function OverviewSkeleton() {
     return (
-        <Container label="Loading dashboard">
+        <Container label="Loading overview">
             <TitleSkeleton />
             <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3">
                 {Array.from({ length: 6 }).map((_, i) => (

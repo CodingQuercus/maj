@@ -11,7 +11,7 @@ import { dateKey, parseDateKey, toDateKey, todayLocal } from '@/lib/dates';
 import { upcomingDeadline } from '@/lib/deadline';
 import { cn } from '@/lib/utils';
 
-type DashboardViewProps = {
+type OverviewViewProps = {
     applications: JobApplication[];
 };
 
@@ -49,7 +49,7 @@ function StatTile({ label, value, hint }: StatTileProps) {
 
 // ---------- Page ----------
 
-export default function DashboardView({ applications }: DashboardViewProps) {
+export default function OverviewView({ applications }: OverviewViewProps) {
     const total = applications.length;
 
     const statusCounts = applications.reduce<Partial<Record<Status, number>>>(
@@ -91,7 +91,7 @@ export default function DashboardView({ applications }: DashboardViewProps) {
 
     return (
         <div className="p-4 sm:p-8">
-            <PageTitle icon={<LayoutDashboard />} title="Dashboard" />
+            <PageTitle icon={<LayoutDashboard />} title="Overview" />
             <hr />
 
             <div className="flex flex-col gap-4">

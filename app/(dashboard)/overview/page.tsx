@@ -1,18 +1,18 @@
 import { Metadata } from 'next';
 
 import { createClient } from '@/lib/supabase/server';
-import DashboardView from '@/app/components/DashboardView';
+import OverviewView from '@/app/components/OverviewView';
 
 export const metadata: Metadata = {
-    title: 'Dashboard',
+    title: 'Overview',
 }
 
-export default async function DashboardPage() {
+export default async function OverviewPage() {
     const supabase = await createClient();
 
     const { data: applications } = await supabase
         .from('job_applications')
         .select('*');
 
-    return <DashboardView applications={applications ?? []} />;
+    return <OverviewView applications={applications ?? []} />;
 }

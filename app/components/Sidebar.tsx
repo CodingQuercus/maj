@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 
 const links = [
     { href: '/applications', label: 'Applications', icon: ClipboardList },
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/overview', label: 'Overview', icon: LayoutDashboard },
 ];
 
 const accountLink = { href: '/account', label: 'Account', icon: Settings };

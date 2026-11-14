@@ -150,7 +150,7 @@ function dayBuckets(counts: Map<string, number>, period: Bucket): Bucket[] {
 
 type ActivityChartProps = {
     applications: JobApplication[];
-    // Card classes from the dashboard, so all panels match.
+    // Card classes from the overview page, so all panels match.
     className?: string;
 };
 
