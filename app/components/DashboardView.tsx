@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ChevronRight, LayoutDashboard } from 'lucide-react';
 import {
     Bar,
@@ -60,7 +61,15 @@ function StatTile({ label, value, hint }: StatTileProps) {
 
 // ---------- Activity buckets ----------
 
-type Bucket = { key: string; label: string; tooltip: string; count: number };
+// from/to: the date range (YYYY-MM-DD) the bar covers, used to open it in the list.
+type Bucket = {
+    key: string;
+    label: string;
+    tooltip: string;
+    count: number;
+    from: string;
+    to: string;
+};
 
 const monthName = new Intl.DateTimeFormat('en-GB', { month: 'short' });
 const monthYear = new Intl.DateTimeFormat('en-GB', {
@@ -109,11 +118,15 @@ function activityBuckets(applications: JobApplication[]): {
             const d = new Date(start);
             d.setDate(d.getDate() + i * 7);
             const key = toDateKey(d);
+            const end = new Date(d);
+            end.setDate(end.getDate() + 6);
             buckets.push({
                 key,
                 label: key.slice(5),
                 tooltip: `Week of ${key}`,
                 count: counts.get(key) ?? 0,
+                from: key,
+                to: toDateKey(end),
             });
         }
         return { unit: 'week', buckets };
@@ -131,6 +144,8 @@ function activityBuckets(applications: JobApplication[]): {
             label: monthName.format(d),
             tooltip: monthYear.format(d),
             count: counts.get(key) ?? 0,
+            from: `${key}-01`,
+            to: toDateKey(new Date(d.getFullYear(), d.getMonth() + 1, 0)), // last day of the month
         });
         d.setMonth(d.getMonth() + 1);
     }
@@ -140,6 +155,10 @@ function activityBuckets(applications: JobApplication[]): {
 // ---------- Page ----------
 
 export default function DashboardView({ applications }: DashboardViewProps) {
+    const router = useRouter();
+    // Opens the list filtered to a chart bar's period.
+    const periodHref = (bucket: Bucket) =>
+        `/applications?from=${bucket.from}&to=${bucket.to}`;
     const total = applications.length;
 
     const statusCounts = applications.reduce<Partial<Record<Status, number>>>(
@@ -234,7 +253,8 @@ export default function DashboardView({ applications }: DashboardViewProps) {
                                             <Link
                                                 href={`/applications?status=${s}`}
                                                 aria-label={`${STATUS_LABELS[s]}: ${n} (${share}%). Show these applications`}
-                                                className="grid grid-cols-[7.5rem_1fr_4.5rem] items-center gap-3 rounded-md px-2 py-1.5 no-underline transition-colors hover:bg-accent"
+                                                title={`${n} of ${total} (${share}%)`}
+                                                className="grid grid-cols-[7.5rem_1fr_2rem] items-center gap-3 rounded-md px-2 py-1.5 no-underline transition-colors hover:bg-accent"
                                             >
                                                 <span
                                                     className={`badge badge-dot badge-${s} justify-self-start`}
@@ -252,11 +272,10 @@ export default function DashboardView({ applications }: DashboardViewProps) {
                                                         }}
                                                     />
                                                 </span>
-                                                <span className="text-right text-sm text-[var(--color-text-secondary)] tabular-nums">
+                                                {/* Count only; the bar already shows the share
+                                                    (the % is in the title and accessible name). */}
+                                                <span className="text-right text-sm font-medium text-foreground tabular-nums">
                                                     {n}
-                                                    <span className="ml-1.5 text-xs text-[var(--color-text-tertiary)]">
-                                                        {share}%
-                                                    </span>
                                                 </span>
                                             </Link>
                                         </li>
@@ -340,7 +359,7 @@ export default function DashboardView({ applications }: DashboardViewProps) {
                         Applications per {activity.unit}
                     </h2>
                     <p className="mb-4 text-xs text-[var(--color-text-tertiary)]">
-                        By date applied
+                        By date applied · select a bar to see those applications
                     </p>
                     {total === 0 ? (
                         <p className="text-sm text-[var(--color-text-tertiary)]">
@@ -403,11 +422,33 @@ export default function DashboardView({ applications }: DashboardViewProps) {
                                         fill={ACCENT}
                                         radius={[4, 4, 0, 0]}
                                         maxBarSize={24}
+                                        className="cursor-pointer"
+                                        onClick={(entry) => {
+                                            const bucket = (
+                                                entry as { payload?: Bucket }
+                                            ).payload;
+                                            if (bucket && bucket.count > 0)
+                                                router.push(periodHref(bucket));
+                                        }}
                                     />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
                     )}
+                    {/* The same periods as links, for keyboard and screen reader users (the
+                        chart bars are mouse/touch only). */}
+                    <ul className="sr-only">
+                        {activity.buckets
+                            .filter((b) => b.count > 0)
+                            .map((b) => (
+                                <li key={b.key}>
+                                    <Link href={periodHref(b)}>
+                                        {b.tooltip}: {b.count} application
+                                        {b.count === 1 ? '' : 's'}
+                                    </Link>
+                                </li>
+                            ))}
+                    </ul>
                 </section>
             </div>
         </div>

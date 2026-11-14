@@ -9,10 +9,11 @@ import { JobApplication, Status } from '@/lib/types';
 import { STATUSES, STATUS_COLORS, STATUS_LABELS, isStatus } from '@/lib/status';
 import { cn } from '@/lib/utils';
 import { rememberApplicationsUrl } from '@/lib/navigation';
+import { dateKey } from '@/lib/dates';
 
 import SortableColumnHeader from './SortableColumnHeader';
 
-import { ClipboardList, Plus, ChevronDown } from 'lucide-react';
+import { ClipboardList, Plus, ChevronDown, X } from 'lucide-react';
 import PageTitle from './PageTitle';
 import ExportMenu from './ExportMenu';
 import { Button } from '@/components/ui/button';
@@ -170,8 +171,26 @@ export default function ApplicationsView({
     };
 
     // Filter by status and search query, then sort by selected column.
+    // Optional date range on date applied (?from=2026-05-01&to=2026-05-31), e.g. when
+    // opening a month or week from the dashboard chart.
+    const dateParam = (name: string) => {
+        const value = searchParams.get(name);
+        return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+    };
+    const from = dateParam('from');
+    const to = dateParam('to');
+    const hasDateRange = Boolean(from || to);
+    const dateRangeLabel =
+        from && to ? `${from} – ${to}` : from ? `from ${from}` : `until ${to}`;
+
     const filteredApplications = applications
         .filter((a) => filter.length === 0 || filter.includes(a.status))
+        .filter((a) => {
+            if (!hasDateRange) return true;
+            if (!a.applied_at) return false;
+            const day = dateKey(a.applied_at);
+            return (!from || day >= from) && (!to || day <= to);
+        })
         .filter(
             (a) =>
                 a.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -185,7 +204,6 @@ export default function ApplicationsView({
             return 0;
         });
 
-    // Table columns. Location only shows from lg; the widths adapt to match.
     // Table columns. All are always shown; the table scrolls sideways when the screen is
     // narrower than its minimum width, with the Role column pinned on the left. The other
     // columns get fixed widths that fit their content (header + sort icon, longest badge);
@@ -206,9 +224,11 @@ export default function ApplicationsView({
 
     const emptyMessage = search
         ? `No results for “${search}”.`
-        : filter.length === 0
-          ? 'No applications yet. Add your first one!'
-          : 'No applications match the selected statuses.';
+        : hasDateRange
+          ? 'No applications in this period.'
+          : filter.length === 0
+            ? 'No applications yet. Add your first one!'
+            : 'No applications match the selected statuses.';
 
     const isEmpty = filteredApplications.length === 0;
 
@@ -401,6 +421,24 @@ export default function ApplicationsView({
                         </div>
                     </div>
                 </div>
+
+                {/* Active date range (from the dashboard chart), on its own row so the toolbar
+                    above keeps its layout. Removable. */}
+                {hasDateRange && (
+                    <div className="pb-3">
+                        <button
+                            type="button"
+                            onClick={() =>
+                                updateParams({ from: null, to: null })
+                            }
+                            aria-label={`Remove date filter: applied ${dateRangeLabel}`}
+                            className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-primary bg-[var(--color-accent-subtle)] px-3 text-sm whitespace-nowrap text-[var(--color-accent-text)] tabular-nums transition-colors hover:bg-[var(--color-accent-border)]/40"
+                        >
+                            Applied {dateRangeLabel}
+                            <X size={14} aria-hidden="true" />
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Phones: cards */}
