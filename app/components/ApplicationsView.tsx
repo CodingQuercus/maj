@@ -162,19 +162,21 @@ export default function ApplicationsView({
 
     // Table columns. Location only shows from lg; the widths adapt to match.
     // Table columns. All are always shown; the table scrolls sideways when the screen is
-    // narrower than its minimum width, with the Role column pinned on the left.
+    // narrower than its minimum width, with the Role column pinned on the left. The other
+    // columns get fixed widths that fit their content (header + sort icon, longest badge);
+    // Role takes the rest.
     const columns: { label: string; key: SortKey; className: string }[] = [
         {
             label: 'Role',
             key: 'title',
             className:
-                'sticky left-0 z-20 w-[30%] bg-background shadow-[inset_-1px_0_0_var(--color-border-soft)]',
+                'sticky left-0 z-20 bg-background shadow-[inset_-1px_0_0_var(--color-border-soft)]',
         },
-        { label: 'Company', key: 'company', className: 'w-[22%]' },
-        { label: 'Location', key: 'location', className: 'w-[16%]' },
+        { label: 'Company', key: 'company', className: 'w-[200px]' },
+        { label: 'Location', key: 'location', className: 'w-[150px]' },
         // "Date applied", not "Applied", which is also a status.
-        { label: 'Date applied', key: 'applied_at', className: 'w-[15%]' },
-        { label: 'Status', key: 'status', className: 'w-[17%]' },
+        { label: 'Date applied', key: 'applied_at', className: 'w-[160px]' },
+        { label: 'Status', key: 'status', className: 'w-[150px]' },
     ];
 
     const emptyMessage = search
@@ -374,7 +376,8 @@ export default function ApplicationsView({
                 tabIndex={0}
                 className="hidden overflow-x-auto rounded-sm outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--color-accent-border)] sm:block"
             >
-                <table className="w-full min-w-[720px] table-fixed border-collapse">
+                {/* 920px = the fixed columns (660px) + about 260px for Role. */}
+                <table className="w-full min-w-[920px] table-fixed border-collapse">
                     <caption className="sr-only">Applications</caption>
                     <thead>
                         <tr>
