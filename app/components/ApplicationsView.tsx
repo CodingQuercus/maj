@@ -171,8 +171,8 @@ export default function ApplicationsView({
     }, {});
 
     return (
-        // Phones get filter/sort menus and cards; sm and up get chips and a table.
-        // Both are rendered and breakpoints pick one, so there is no layout flash on load.
+        // Phones get cards and a sort menu; sm and up get a sortable table. Both are
+        // rendered and breakpoints pick one, so there is no layout flash on load.
         <div className="p-4 sm:p-8">
             <div className="mb-3 flex items-center justify-between sm:mb-4">
                 <PageTitle icon={<ClipboardList />} title="Applications" noMargin />
@@ -187,107 +187,107 @@ export default function ApplicationsView({
                 </Button>
             </div>
 
-            <Input
-                aria-label="Search applications"
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search for role or company…"
-                // pl-9 (36px) leaves room for the search icon from .input-search.
-                className="input-search mb-3 pl-9 sm:max-w-80"
-            />
-
-            {/* Phones: filter and sort menus */}
-            <div className="mb-3 flex gap-2 sm:hidden">
-                {/* Several statuses can be selected; the menu stays open while toggling. */}
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="flex-1 justify-between">
-                            <span>Filter{filter.length > 0 ? ` (${filter.length})` : ''}</span>
-                            <ChevronDown size={14} aria-hidden="true" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-(--radix-dropdown-menu-trigger-width)">
-                        <DropdownMenuCheckboxItem
-                            checked={filter.length === 0}
-                            onCheckedChange={() => toggleFilter('all')}
-                            onSelect={(e) => e.preventDefault()}
-                        >
-                            All ({applications.length})
-                        </DropdownMenuCheckboxItem>
-                        <DropdownMenuSeparator />
-                        {STATUSES.map((s) => (
+            {/* Toolbar: search and status filter on one row (sort lives in the column headers
+                from sm up, and in its own menu on phones). */}
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Input
+                    aria-label="Search applications"
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search for role or company…"
+                    // pl-9 (36px) leaves room for the search icon from .input-search.
+                    className="input-search pl-9 sm:max-w-80"
+                />
+                <div className="flex gap-2">
+                    {/* Several statuses can be selected; the menu stays open while toggling. */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className={cn(
+                                    'flex-1 justify-between gap-2 sm:min-w-44 sm:flex-none',
+                                    filter.length > 0 && 'border-primary'
+                                )}
+                            >
+                                <span className="flex min-w-0 items-center gap-2">
+                                    {filter.length === 0 ? (
+                                        'All statuses'
+                                    ) : (
+                                        <>
+                                            <span aria-hidden="true" className="flex -space-x-0.5">
+                                                {filter.map((s) => (
+                                                    <span
+                                                        key={s}
+                                                        className="size-2 rounded-full ring-2 ring-[var(--color-white)]"
+                                                        style={{ background: STATUS_COLORS[s] }}
+                                                    />
+                                                ))}
+                                            </span>
+                                            <span className="truncate">
+                                                {filter.length === 1
+                                                    ? STATUS_LABELS[filter[0]]
+                                                    : `${filter.length} statuses`}
+                                            </span>
+                                        </>
+                                    )}
+                                </span>
+                                <ChevronDown size={14} aria-hidden="true" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="min-w-56">
                             <DropdownMenuCheckboxItem
-                                key={s}
-                                checked={filter.includes(s)}
-                                onCheckedChange={() => toggleFilter(s)}
+                                checked={filter.length === 0}
+                                onCheckedChange={() => toggleFilter('all')}
                                 onSelect={(e) => e.preventDefault()}
                             >
-                                <span className={`badge badge-dot badge-${s}`}>{STATUS_LABELS[s]}</span>
+                                All statuses
                                 <span className="ml-auto text-xs text-[var(--color-text-tertiary)] tabular-nums">
-                                    {statusCounts[s] ?? 0}
+                                    {applications.length}
                                 </span>
                             </DropdownMenuCheckboxItem>
-                        ))}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="flex-1 justify-between">
-                            <span>Sort: {sortKeyLabels[sortKey]}</span>
-                            <ChevronDown size={14} aria-hidden="true" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-(--radix-dropdown-menu-trigger-width)">
-                        <DropdownMenuRadioGroup
-                            value={`${sortKey}:${sortDir}`}
-                            onValueChange={(value) => {
-                                const [key, dir] = value.split(':') as [SortKey, SortDir];
-                                setSort(key, dir);
-                            }}
-                        >
-                            {sortOptions.map((opt) => (
-                                <DropdownMenuRadioItem key={opt.label} value={`${opt.key}:${opt.dir}`}>
-                                    {opt.label}
-                                </DropdownMenuRadioItem>
+                            <DropdownMenuSeparator />
+                            {STATUSES.map((s) => (
+                                <DropdownMenuCheckboxItem
+                                    key={s}
+                                    checked={filter.includes(s)}
+                                    onCheckedChange={() => toggleFilter(s)}
+                                    onSelect={(e) => e.preventDefault()}
+                                >
+                                    <span className={`badge badge-dot badge-${s}`}>{STATUS_LABELS[s]}</span>
+                                    <span className="ml-auto text-xs text-[var(--color-text-tertiary)] tabular-nums">
+                                        {statusCounts[s] ?? 0}
+                                    </span>
+                                </DropdownMenuCheckboxItem>
                             ))}
-                        </DropdownMenuRadioGroup>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
 
-            {/* sm and up: status filter chips. Squared and neutral (teal when selected) with a
-                count, so they read as controls rather than as the status pills in the rows. */}
-            <div className="mb-4 hidden flex-wrap gap-2 sm:flex" role="group" aria-label="Filter by status">
-                {(['all', ...STATUSES] as const).map((s) => {
-                    const selected = s === 'all' ? filter.length === 0 : filter.includes(s);
-                    const count = s === 'all' ? applications.length : (statusCounts[s] ?? 0);
-                    return (
-                        <button
-                            key={s}
-                            type="button"
-                            onClick={() => toggleFilter(s)}
-                            aria-pressed={selected}
-                            className={cn(
-                                'inline-flex h-8 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm transition-colors',
-                                selected
-                                    ? 'border-primary bg-[var(--color-accent-subtle)] font-medium text-[var(--color-accent-text)]'
-                                    : 'border-border bg-[var(--color-white)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-hard)] hover:text-foreground'
-                            )}
-                        >
-                            {s !== 'all' && (
-                                <span
-                                    aria-hidden="true"
-                                    className="size-2 rounded-full"
-                                    style={{ background: STATUS_COLORS[s] }}
-                                />
-                            )}
-                            {s === 'all' ? 'All' : STATUS_LABELS[s]}
-                            <span className="text-xs text-[var(--color-text-tertiary)] tabular-nums">{count}</span>
-                        </button>
-                    );
-                })}
+                    {/* Phones: sort menu (the table headers sort from sm up) */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="flex-1 justify-between sm:hidden">
+                                <span>Sort: {sortKeyLabels[sortKey]}</span>
+                                <ChevronDown size={14} aria-hidden="true" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-(--radix-dropdown-menu-trigger-width)">
+                            <DropdownMenuRadioGroup
+                                value={`${sortKey}:${sortDir}`}
+                                onValueChange={(value) => {
+                                    const [key, dir] = value.split(':') as [SortKey, SortDir];
+                                    setSort(key, dir);
+                                }}
+                            >
+                                {sortOptions.map((opt) => (
+                                    <DropdownMenuRadioItem key={opt.label} value={`${opt.key}:${opt.dir}`}>
+                                        {opt.label}
+                                    </DropdownMenuRadioItem>
+                                ))}
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </div>
 
             {/* Phones: cards */}
