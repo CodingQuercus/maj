@@ -262,8 +262,10 @@ export default function ApplicationsView({
                 className={cn(
                     '-mx-4 -mt-4 bg-background px-4 pt-4 sm:-mx-8 sm:-mt-8 sm:px-8 sm:pt-8',
                     'sticky top-0 z-30 transition-shadow',
+                    // From xl the column headers stick right below, so they draw the divider
+                    // instead (otherwise it shows up as a line above them).
                     stuck &&
-                        'shadow-[0_1px_0_var(--color-border),0_6px_12px_-8px_rgb(0_0_0/0.12)]'
+                        'shadow-[0_1px_0_var(--color-border),0_6px_12px_-8px_rgb(0_0_0/0.12)] xl:shadow-none'
                 )}
             >
                 <div className="mb-3 flex items-center justify-between sm:mb-4">
@@ -288,7 +290,7 @@ export default function ApplicationsView({
                 {/* Toolbar: search, status filter and export on one row, right above the list they
                 act on (sort lives in the column headers from sm up, in its own menu on phones). */}
                 {/* One wrapping row; each control wraps on its own. Phones: search, then status +
-                    date, then sort + export. */}
+                    date, then sort + export. Tablets: search, then the rest. From xl: one row. */}
                 <div className="flex flex-wrap items-center gap-2 pb-4">
                     <Input
                         aria-label="Search applications"
@@ -297,7 +299,7 @@ export default function ApplicationsView({
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search for role or company…"
                         // pl-9 (36px) leaves room for the search icon from .input-search.
-                        className="input-search w-full pl-9 sm:w-72"
+                        className="input-search w-full pl-9 xl:w-72"
                     />
                     {/* Several statuses can be selected; the menu stays open while toggling. */}
                     <DropdownMenu>
@@ -457,7 +459,8 @@ export default function ApplicationsView({
                 className="hidden overflow-x-auto rounded-sm outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--color-accent-border)] sm:block xl:overflow-visible"
             >
                 {/* 920px = the fixed columns (660px) + about 260px for Role. */}
-                <table className="w-full min-w-[920px] table-fixed border-collapse">
+                {/* border-separate: with collapsed borders a sticky th leaves its border behind. */}
+                <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0">
                     <caption className="sr-only">Applications</caption>
                     <thead>
                         <tr>
@@ -472,7 +475,14 @@ export default function ApplicationsView({
                                                 : 'descending'
                                             : undefined
                                     }
-                                    className={`border-b border-border bg-background px-4 py-2 text-left font-normal whitespace-nowrap xl:sticky xl:top-[var(--list-header-h)] xl:z-20 ${col.className}`}
+                                    className={cn(
+                                        'border-b border-border bg-background px-4 py-2 text-left font-normal whitespace-nowrap xl:sticky xl:top-[var(--list-header-h)] xl:z-30',
+                                        col.className,
+                                        stuck &&
+                                            (col.key === 'title'
+                                                ? 'xl:shadow-[inset_-1px_0_0_var(--color-border-soft),0_6px_12px_-8px_rgb(0_0_0/0.12)]'
+                                                : 'xl:shadow-[0_6px_12px_-8px_rgb(0_0_0/0.12)]')
+                                    )}
                                 >
                                     <SortableColumnHeader
                                         label={col.label}

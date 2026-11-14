@@ -97,7 +97,8 @@ export function ApplicationRow({ application }: ApplicationItemProps) {
     return (
         <tr
             onClick={openOnClick}
-            className="group cursor-pointer border-b border-[var(--color-border-soft)] transition-colors hover:bg-[var(--color-surface)]"
+            // Borders on the cells: the table uses border-separate (for the sticky header).
+            className="group cursor-pointer transition-colors hover:bg-[var(--color-surface)] [&>td]:border-b [&>td]:border-[var(--color-border-soft)]"
         >
             <td
                 className="sticky left-0 z-10 truncate bg-background px-4 py-3 text-sm font-medium shadow-[inset_-1px_0_0_var(--color-border-soft)] transition-colors group-hover:bg-[var(--color-surface)]"
