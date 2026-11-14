@@ -4,16 +4,15 @@ import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { JobApplication, Status, Contact } from '@/lib/types';
+import { JobApplication, Contact } from '@/lib/types';
 import { formatDate } from '@/lib/dates';
 
-import { STATUSES, STATUS_LABELS, WORK_TYPE_LABELS } from '@/lib/status';
+import { WORK_TYPE_LABELS } from '@/lib/status';
 import { lastApplicationsUrl } from '@/lib/navigation';
 
 import {
     ArrowLeft,
     Pencil,
-    Activity,
     FileText,
     StickyNote,
     Users,
@@ -42,6 +41,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import ApplicationDrawer from './ApplicationDrawer';
 import SectionLabel from './SectionLabel';
+import StatusPopover from './StatusPopover';
 
 type ApplicationDetailProps = {
     application: JobApplication;
@@ -53,7 +53,6 @@ export default function ApplicationDetail({
     application,
     initialContacts,
 }: ApplicationDetailProps) {
-    const [status, setStatus] = useState<Status>(application.status);
     const [deleting, setDeleting] = useState(false);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -69,24 +68,6 @@ export default function ApplicationDetail({
 
     const router = useRouter();
     const supabase = useMemo(() => createClient(), []);
-
-    const handleStatusChange = async (newStatus: Status) => {
-        const previous = status;
-
-        setStatus(newStatus);
-
-        const { error } = await supabase
-            .from('job_applications')
-            .update({ status: newStatus })
-            .eq('id', application.id);
-
-        if (error) {
-            setStatus(previous);
-            toast.error('Could not update status. Please try again.');
-        } else {
-            router.refresh();
-        }
-    };
 
     const handleDelete = async () => {
         setDeleting(true);
@@ -208,7 +189,9 @@ export default function ApplicationDetail({
                         </Button>
                     </div>
 
-                    <div className="flex flex-wrap gap-4">
+                    {/* Status uses the same menu as the list, so it is changed the same way everywhere. */}
+                    <div className="flex flex-wrap items-center gap-4">
+                        <StatusPopover applicationId={application.id} currentStatus={application.status} />
                         {application.company && (
                             <span className={metaItem}>
                                 <Building2 size={14} aria-hidden="true" className={metaIcon} />
@@ -244,25 +227,6 @@ export default function ApplicationDetail({
                         )}
                     </div>
                 </header>
-
-                <hr />
-
-                {/* Status */}
-                <section className="py-4">
-                    <SectionLabel icon={<Activity size={16} />} label="Status" />
-                    <div className="flex flex-wrap gap-2">
-                        {STATUSES.map((s) => (
-                            <button
-                                key={s}
-                                onClick={() => handleStatusChange(s)}
-                                aria-pressed={status === s}
-                                className={`badge badge-dot badge-toggle badge-${s}`}
-                            >
-                                {STATUS_LABELS[s]}
-                            </button>
-                        ))}
-                    </div>
-                </section>
 
                 <hr />
 
