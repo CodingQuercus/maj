@@ -13,9 +13,10 @@ import { dateKey } from '@/lib/dates';
 
 import SortableColumnHeader from './SortableColumnHeader';
 
-import { ClipboardList, Plus, ChevronDown, X } from 'lucide-react';
+import { ClipboardList, Plus, ChevronDown } from 'lucide-react';
 import PageTitle from './PageTitle';
 import ExportMenu from './ExportMenu';
+import DateRangeFilter from './DateRangeFilter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -180,8 +181,6 @@ export default function ApplicationsView({
     const from = dateParam('from');
     const to = dateParam('to');
     const hasDateRange = Boolean(from || to);
-    const dateRangeLabel =
-        from && to ? `${from} – ${to}` : from ? `from ${from}` : `until ${to}`;
 
     const filteredApplications = applications
         .filter((a) => filter.length === 0 || filter.includes(a.status))
@@ -288,7 +287,9 @@ export default function ApplicationsView({
 
                 {/* Toolbar: search, status filter and export on one row, right above the list they
                 act on (sort lives in the column headers from sm up, in its own menu on phones). */}
-                <div className="flex flex-col gap-2 pb-4 sm:flex-row sm:items-center">
+                {/* One wrapping row; each control wraps on its own. Phones: search, then status +
+                    date, then sort + export. */}
+                <div className="flex flex-wrap items-center gap-2 pb-4">
                     <Input
                         aria-label="Search applications"
                         type="text"
@@ -296,149 +297,133 @@ export default function ApplicationsView({
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search for role or company…"
                         // pl-9 (36px) leaves room for the search icon from .input-search.
-                        className="input-search pl-9 sm:max-w-80"
+                        className="input-search w-full pl-9 sm:w-72"
                     />
-                    <div className="flex gap-2 sm:flex-1">
-                        {/* Several statuses can be selected; the menu stays open while toggling. */}
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    className={cn(
-                                        'flex-1 justify-between gap-2 sm:min-w-44 sm:flex-none',
-                                        filter.length > 0 && 'border-primary'
-                                    )}
-                                >
-                                    <span className="flex min-w-0 items-center gap-2">
-                                        {filter.length === 0 ? (
-                                            'All statuses'
-                                        ) : (
-                                            <>
-                                                <span
-                                                    aria-hidden="true"
-                                                    className="flex -space-x-0.5"
-                                                >
-                                                    {filter.map((s) => (
-                                                        <span
-                                                            key={s}
-                                                            className="size-2 rounded-full ring-2 ring-[var(--color-white)]"
-                                                            style={{
-                                                                background:
-                                                                    STATUS_COLORS[
-                                                                        s
-                                                                    ],
-                                                            }}
-                                                        />
-                                                    ))}
-                                                </span>
-                                                <span className="truncate">
-                                                    {filter.length === 1
-                                                        ? STATUS_LABELS[
-                                                              filter[0]
-                                                          ]
-                                                        : `${filter.length} statuses`}
-                                                </span>
-                                            </>
-                                        )}
-                                    </span>
-                                    <ChevronDown size={14} aria-hidden="true" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                                align="start"
-                                className="min-w-56"
+                    {/* Several statuses can be selected; the menu stays open while toggling. */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className={cn(
+                                    'min-w-0 flex-1 basis-[calc(50%-0.25rem)] justify-between gap-2 sm:min-w-44 sm:flex-none sm:basis-auto',
+                                    filter.length > 0 && 'border-primary'
+                                )}
                             >
+                                <span className="flex min-w-0 items-center gap-2">
+                                    {filter.length === 0 ? (
+                                        'All statuses'
+                                    ) : (
+                                        <>
+                                            <span
+                                                aria-hidden="true"
+                                                className="flex -space-x-0.5"
+                                            >
+                                                {filter.map((s) => (
+                                                    <span
+                                                        key={s}
+                                                        className="size-2 rounded-full ring-2 ring-[var(--color-white)]"
+                                                        style={{
+                                                            background:
+                                                                STATUS_COLORS[
+                                                                    s
+                                                                ],
+                                                        }}
+                                                    />
+                                                ))}
+                                            </span>
+                                            <span className="truncate">
+                                                {filter.length === 1
+                                                    ? STATUS_LABELS[filter[0]]
+                                                    : `${filter.length} statuses`}
+                                            </span>
+                                        </>
+                                    )}
+                                </span>
+                                <ChevronDown size={14} aria-hidden="true" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="min-w-56">
+                            <DropdownMenuCheckboxItem
+                                checked={filter.length === 0}
+                                onCheckedChange={() => toggleFilter('all')}
+                                onSelect={(e) => e.preventDefault()}
+                            >
+                                All statuses
+                                <span className="ml-auto text-xs text-[var(--color-text-tertiary)] tabular-nums">
+                                    {applications.length}
+                                </span>
+                            </DropdownMenuCheckboxItem>
+                            <DropdownMenuSeparator />
+                            {STATUSES.map((s) => (
                                 <DropdownMenuCheckboxItem
-                                    checked={filter.length === 0}
-                                    onCheckedChange={() => toggleFilter('all')}
+                                    key={s}
+                                    checked={filter.includes(s)}
+                                    onCheckedChange={() => toggleFilter(s)}
                                     onSelect={(e) => e.preventDefault()}
                                 >
-                                    All statuses
+                                    <span
+                                        className={`badge badge-dot badge-${s}`}
+                                    >
+                                        {STATUS_LABELS[s]}
+                                    </span>
                                     <span className="ml-auto text-xs text-[var(--color-text-tertiary)] tabular-nums">
-                                        {applications.length}
+                                        {statusCounts[s] ?? 0}
                                     </span>
                                 </DropdownMenuCheckboxItem>
-                                <DropdownMenuSeparator />
-                                {STATUSES.map((s) => (
-                                    <DropdownMenuCheckboxItem
-                                        key={s}
-                                        checked={filter.includes(s)}
-                                        onCheckedChange={() => toggleFilter(s)}
-                                        onSelect={(e) => e.preventDefault()}
-                                    >
-                                        <span
-                                            className={`badge badge-dot badge-${s}`}
-                                        >
-                                            {STATUS_LABELS[s]}
-                                        </span>
-                                        <span className="ml-auto text-xs text-[var(--color-text-tertiary)] tabular-nums">
-                                            {statusCounts[s] ?? 0}
-                                        </span>
-                                    </DropdownMenuCheckboxItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
 
-                        {/* Phones: sort menu (the table headers sort from sm up) */}
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    className="flex-1 justify-between sm:hidden"
-                                >
-                                    <span>Sort: {sortKeyLabels[sortKey]}</span>
-                                    <ChevronDown size={14} aria-hidden="true" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                                align="end"
-                                className="w-(--radix-dropdown-menu-trigger-width)"
+                    <DateRangeFilter
+                        from={from}
+                        to={to}
+                        onChange={(nextFrom, nextTo) =>
+                            updateParams({ from: nextFrom, to: nextTo })
+                        }
+                        className="min-w-0 flex-1 basis-[calc(50%-0.25rem)] sm:flex-none sm:basis-auto"
+                    />
+
+                    {/* Phones: sort menu (the table headers sort from sm up) */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className="flex-1 justify-between sm:hidden"
                             >
-                                <DropdownMenuRadioGroup
-                                    value={`${sortKey}:${sortDir}`}
-                                    onValueChange={(value) => {
-                                        const [key, dir] = value.split(':') as [
-                                            SortKey,
-                                            SortDir,
-                                        ];
-                                        setSort(key, dir);
-                                    }}
-                                >
-                                    {sortOptions.map((opt) => (
-                                        <DropdownMenuRadioItem
-                                            key={opt.label}
-                                            value={`${opt.key}:${opt.dir}`}
-                                        >
-                                            {opt.label}
-                                        </DropdownMenuRadioItem>
-                                    ))}
-                                </DropdownMenuRadioGroup>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                                <span>Sort: {sortKeyLabels[sortKey]}</span>
+                                <ChevronDown size={14} aria-hidden="true" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                            align="end"
+                            className="w-(--radix-dropdown-menu-trigger-width)"
+                        >
+                            <DropdownMenuRadioGroup
+                                value={`${sortKey}:${sortDir}`}
+                                onValueChange={(value) => {
+                                    const [key, dir] = value.split(':') as [
+                                        SortKey,
+                                        SortDir,
+                                    ];
+                                    setSort(key, dir);
+                                }}
+                            >
+                                {sortOptions.map((opt) => (
+                                    <DropdownMenuRadioItem
+                                        key={opt.label}
+                                        value={`${opt.key}:${opt.dir}`}
+                                    >
+                                        {opt.label}
+                                    </DropdownMenuRadioItem>
+                                ))}
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
 
-                        <div className="ml-auto">
-                            <ExportMenu applications={applications} />
-                        </div>
+                    <div className="ml-auto">
+                        <ExportMenu applications={applications} />
                     </div>
                 </div>
-
-                {/* Active date range (from the dashboard chart), on its own row so the toolbar
-                    above keeps its layout. Removable. */}
-                {hasDateRange && (
-                    <div className="pb-3">
-                        <button
-                            type="button"
-                            onClick={() =>
-                                updateParams({ from: null, to: null })
-                            }
-                            aria-label={`Remove date filter: applied ${dateRangeLabel}`}
-                            className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-primary bg-[var(--color-accent-subtle)] px-3 text-sm whitespace-nowrap text-[var(--color-accent-text)] tabular-nums transition-colors hover:bg-[var(--color-accent-border)]/40"
-                        >
-                            Applied {dateRangeLabel}
-                            <X size={14} aria-hidden="true" />
-                        </button>
-                    </div>
-                )}
             </div>
 
             {/* Phones: cards */}
