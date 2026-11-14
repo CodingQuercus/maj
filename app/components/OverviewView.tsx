@@ -8,6 +8,7 @@ import ActivityChart from './ActivityChart';
 import { JobApplication, Status } from '@/lib/types';
 import { OPEN_STATUSES, STATUSES, STATUS_LABELS } from '@/lib/status';
 import { dateKey, parseDateKey, toDateKey, todayLocal } from '@/lib/dates';
+import { dateRangePresets } from '@/lib/dateRanges';
 import { upcomingDeadline } from '@/lib/deadline';
 import { cn } from '@/lib/utils';
 
@@ -71,16 +72,15 @@ export default function OverviewView({ applications }: OverviewViewProps) {
         applications.filter(
             (a) => a.applied_at && dateKey(a.applied_at).startsWith(month)
         ).length;
+    // The tiles only count what the user does themself (not replies, which they can't
+    // control) and compare neutrally: last month is a reference, not a +/- score.
     const thisMonthCount = appliedIn(thisMonth);
-    const monthDelta = thisMonthCount - appliedIn(lastMonth);
-    const monthHint =
-        monthDelta === 0
-            ? 'Same as last month'
-            : `${monthDelta > 0 ? '+' : '−'}${Math.abs(monthDelta)} vs last month`;
+    const lastMonthCount = appliedIn(lastMonth);
+    const weekStart = dateRangePresets().find((p) => p.id === 'this-week')!.from;
+    const thisWeekCount = applications.filter(
+        (a) => a.applied_at && dateKey(a.applied_at) >= weekStart
+    ).length;
     const active = OPEN_STATUSES.reduce((sum, s) => sum + count(s), 0);
-    const progressed =
-        count('assessment') + count('interview') + count('offer');
-    const progressRate = total > 0 ? Math.round((progressed / total) * 100) : 0;
 
     // Next deadlines for open applications (any distance ahead).
     const upcoming = applications
@@ -99,19 +99,23 @@ export default function OverviewView({ applications }: OverviewViewProps) {
                 <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                     <StatTile label="Applications" value={total} />
                     <StatTile
+                        label="This week"
+                        value={thisWeekCount}
+                        hint={
+                            thisWeekCount > 0
+                                ? 'Since Monday'
+                                : 'New week, new chances'
+                        }
+                    />
+                    <StatTile
                         label="This month"
                         value={thisMonthCount}
-                        hint={monthHint}
+                        hint={`${lastMonthCount} last month`}
                     />
                     <StatTile
                         label="In progress"
                         value={active}
                         hint="Applied, assessment or interview"
-                    />
-                    <StatTile
-                        label="Progressed"
-                        value={`${progressRate}%`}
-                        hint="Reached assessment or later"
                     />
                 </div>
 
