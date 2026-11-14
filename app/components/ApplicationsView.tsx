@@ -204,24 +204,19 @@ export default function ApplicationsView({
                     title="Applications"
                     noMargin
                 />
-                <div className="flex gap-2">
-                    <ExportMenu applications={applications} />
-                    <Button
-                        aria-label="Add new application"
-                        size="icon"
-                        className="sm:w-auto sm:px-4"
-                        onClick={() => setDrawerOpen(true)}
-                    >
-                        <Plus size={16} aria-hidden="true" />
-                        <span className="hidden sm:inline">
-                            New application
-                        </span>
-                    </Button>
-                </div>
+                <Button
+                    aria-label="Add new application"
+                    size="icon"
+                    className="sm:w-auto sm:px-4"
+                    onClick={() => setDrawerOpen(true)}
+                >
+                    <Plus size={16} aria-hidden="true" />
+                    <span className="hidden sm:inline">New application</span>
+                </Button>
             </div>
 
-            {/* Toolbar: search and status filter on one row (sort lives in the column headers
-                from sm up, and in its own menu on phones). */}
+            {/* Toolbar: search, status filter and export on one row, right above the list they
+                act on (sort lives in the column headers from sm up, in its own menu on phones). */}
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
                 <Input
                     aria-label="Search applications"
@@ -232,7 +227,7 @@ export default function ApplicationsView({
                     // pl-9 (36px) leaves room for the search icon from .input-search.
                     className="input-search pl-9 sm:max-w-80"
                 />
-                <div className="flex gap-2">
+                <div className="flex gap-2 sm:flex-1">
                     {/* Several statuses can be selected; the menu stays open while toggling. */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -344,6 +339,10 @@ export default function ApplicationsView({
                             </DropdownMenuRadioGroup>
                         </DropdownMenuContent>
                     </DropdownMenu>
+
+                    <div className="ml-auto">
+                        <ExportMenu applications={applications} />
+                    </div>
                 </div>
             </div>
 
