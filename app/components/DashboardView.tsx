@@ -17,7 +17,10 @@ import { STATUSES, STATUS_COLORS, STATUS_LABELS } from '@/lib/status';
 import { dateKey, formatDate, formatShortDate } from '@/lib/dates';
 import { LayoutDashboard } from 'lucide-react';
 
+import Link from 'next/link';
+
 import PageTitle from './PageTitle';
+import { upcomingDeadline } from '@/lib/deadline';
 
 type DashboardViewProps = {
     applications: JobApplication[];
@@ -92,6 +95,13 @@ export default function DashboardView({ applications }: DashboardViewProps) {
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([day, count]) => ({ day, count }));
 
+    // Next deadlines for applications that are still open (any distance ahead).
+    const upcoming = applications
+        .map((app) => ({ app, info: upcomingDeadline(app, Infinity) }))
+        .filter((item) => item.info !== null)
+        .sort((a, b) => a.info!.days - b.info!.days)
+        .slice(0, 5);
+
     // One card per status, in pipeline order.
     const statCards = STATUSES.map((s) => ({
         label: STATUS_LABELS[s],
@@ -116,6 +126,46 @@ export default function DashboardView({ applications }: DashboardViewProps) {
                         <StatCard key={card.label} {...card} />
                     ))}
                 </div>
+
+                {/* Upcoming deadlines */}
+                <section className={`${card} p-6`} aria-labelledby="deadlines-heading">
+                    <h2 id="deadlines-heading" className="mb-3 text-[length:var(--text-md)]">
+                        Upcoming deadlines
+                    </h2>
+                    {upcoming.length === 0 ? (
+                        <p className="text-sm text-[var(--color-text-tertiary)]">
+                            No upcoming deadlines for open applications.
+                        </p>
+                    ) : (
+                        <ul className="divide-y divide-[var(--color-border-soft)]">
+                            {upcoming.map(({ app, info }) => (
+                                <li key={app.id} className="flex items-center justify-between gap-4 py-2">
+                                    <Link
+                                        href={`/applications/${app.id}`}
+                                        className="min-w-0 truncate text-sm font-medium text-foreground hover:underline"
+                                    >
+                                        {app.title}
+                                        <span className="font-normal text-[var(--color-text-secondary)]">
+                                            {' '}· {app.company}
+                                        </span>
+                                    </Link>
+                                    <span className="flex shrink-0 items-center gap-3 text-xs tabular-nums" suppressHydrationWarning>
+                                        <span className="text-[var(--color-text-tertiary)]">{app.deadline}</span>
+                                        <span
+                                            className={
+                                                info!.urgent
+                                                    ? 'font-medium text-[var(--status-interview-text)]'
+                                                    : 'text-[var(--color-text-secondary)]'
+                                            }
+                                        >
+                                            {info!.label}
+                                        </span>
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </section>
 
                 {total === 0 ? (
                     <div className="rounded-lg border border-[var(--color-border-soft)] bg-muted p-12 text-center">

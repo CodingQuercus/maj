@@ -40,3 +40,6 @@ export const WORK_TYPE_LABELS: Record<WorkType, string> = {
 export function isStatus(value: string): value is Status {
     return (STATUSES as string[]).includes(value);
 }
+
+// Statuses where the application is still in progress (deadlines matter for these).
+export const OPEN_STATUSES: Status[] = ['applied', 'assessment', 'interview'];

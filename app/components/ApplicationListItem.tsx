@@ -1,10 +1,35 @@
 'use client';
 
 import Link from 'next/link';
+import { Clock } from 'lucide-react';
 
 import { JobApplication } from '@/lib/types';
 import { formatDate } from '@/lib/dates';
 import StatusPopover from './StatusPopover';
+import { upcomingDeadline } from '@/lib/deadline';
+import { cn } from '@/lib/utils';
+
+// "Due in 3 days" under the title for open applications with a deadline in the next
+// two weeks; amber when three days or less remain.
+function DeadlineNote({ application }: ApplicationItemProps) {
+    const info = upcomingDeadline(application);
+    if (!info) return null;
+    return (
+        <span
+            className={cn(
+                'mt-0.5 flex items-center gap-1 text-xs font-normal',
+                info.urgent
+                    ? 'text-[var(--status-interview-text)]'
+                    : 'text-[var(--color-text-tertiary)]'
+            )}
+            // "Today" can differ between the server and the browser around midnight.
+            suppressHydrationWarning
+        >
+            <Clock size={12} aria-hidden="true" />
+            {info.label}
+        </span>
+    );
+}
 
 type ApplicationItemProps = {
     application: JobApplication;
@@ -35,6 +60,7 @@ export function ApplicationCard({ application }: ApplicationItemProps) {
                     <p className="truncate text-sm text-[var(--color-text-secondary)]">
                         {application.company}
                     </p>
+                    <DeadlineNote application={application} />
                 </div>
                 <div className="relative z-10 shrink-0">
                     <StatusPopover
@@ -65,6 +91,7 @@ export function ApplicationRow({ application }: ApplicationItemProps) {
                 <Link href={href} className={stretchedLink}>
                     {application.title}
                 </Link>
+                <DeadlineNote application={application} />
             </td>
             <td
                 className="truncate px-4 py-3 text-sm text-[var(--color-text-secondary)]"
