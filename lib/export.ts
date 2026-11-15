@@ -1,5 +1,6 @@
 import { JobApplication } from './types';
-import { dateKey, todayLocal } from './dates';
+import { dateKey } from './dates';
+import { applicationsInMonth, currentMonth, shiftMonth } from './report';
 import { STATUS_LABELS, WORK_TYPE_LABELS } from './status';
 
 export type ExportPeriod = 'this-month' | 'last-month' | 'all';
@@ -13,9 +14,7 @@ export const EXPORT_PERIOD_LABELS: Record<ExportPeriod, string> = {
 // "2026-11" for this month or last month, null for all time.
 function periodMonth(period: ExportPeriod): string | null {
     if (period === 'all') return null;
-    const [y, m] = todayLocal().split('-').map(Number);
-    const date = new Date(y, m - 1 - (period === 'last-month' ? 1 : 0), 1);
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    return shiftMonth(currentMonth(), period === 'last-month' ? -1 : 0);
 }
 
 // Applications applied for in the period, oldest first (the order a report is read in).
@@ -24,17 +23,18 @@ export function applicationsInPeriod(
     period: ExportPeriod
 ): JobApplication[] {
     const month = periodMonth(period);
-    return applications
-        .filter(
-            (a) =>
-                month === null ||
-                (a.applied_at && dateKey(a.applied_at).startsWith(month))
-        )
-        .sort((a, b) => (a.applied_at ?? '').localeCompare(b.applied_at ?? ''));
+    if (month) return applicationsInMonth(applications, month);
+    return [...applications].sort((a, b) =>
+        (a.applied_at ?? '').localeCompare(b.applied_at ?? '')
+    );
 }
 
-export function exportFileName(period: ExportPeriod): string {
-    const month = periodMonth(period);
+// "maj-applications-2026-10.csv", or "-all" for every application.
+export function exportFileName(
+    period: ExportPeriod | { month: string }
+): string {
+    const month =
+        typeof period === 'object' ? period.month : periodMonth(period);
     return `maj-applications-${month ?? 'all'}.csv`;
 }
 
@@ -71,6 +71,24 @@ export function toCsv(applications: JobApplication[]): string {
     return [header, ...rows]
         .map((row) => row.map(escapeCell).join(SEPARATOR))
         .join('\r\n');
+}
+
+// Tab-separated text of what an activity report asks for (date, role, employer, place),
+// with a header row. Pastes as a table into Excel or Google Sheets and stays readable as
+// plain text.
+export function toReportText(applications: JobApplication[]): string {
+    const header = ['Date applied', 'Role', 'Company', 'Location'];
+    const rows = applications.map((a) => [
+        a.applied_at ? dateKey(a.applied_at) : '',
+        a.title,
+        a.company,
+        a.location ?? '',
+    ]);
+    return [header, ...rows]
+        .map((row) =>
+            row.map((cell) => cell.replace(/[\t\r\n]+/g, ' ')).join('\t')
+        )
+        .join('\n');
 }
 
 // Starts a browser download of the CSV. The BOM makes Excel read the file as UTF-8,

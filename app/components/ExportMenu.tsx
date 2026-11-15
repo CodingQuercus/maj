@@ -1,6 +1,7 @@
 'use client';
 
-import { Download } from 'lucide-react';
+import Link from 'next/link';
+import { Download, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -67,6 +69,13 @@ export default function ExportMenu({ applications }: ExportMenuProps) {
                         </DropdownMenuItem>
                     )
                 )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                    <Link href="/report" className="no-underline">
+                        <FileText size={16} aria-hidden="true" />
+                        Monthly activity report
+                    </Link>
+                </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
     );

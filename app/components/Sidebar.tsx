@@ -3,7 +3,13 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { ClipboardList, LayoutDashboard, Settings, LogOut } from 'lucide-react';
+import {
+    ClipboardList,
+    FileText,
+    LayoutDashboard,
+    LogOut,
+    Settings,
+} from 'lucide-react';
 
 import { Spinner } from '@/components/ui/spinner';
 import { useSignOut } from '@/lib/useSignOut';
@@ -12,6 +18,7 @@ import { cn } from '@/lib/utils';
 const links = [
     { href: '/applications', label: 'Applications', icon: ClipboardList },
     { href: '/overview', label: 'Overview', icon: LayoutDashboard },
+    { href: '/report', label: 'Report', icon: FileText },
 ];
 
 const accountLink = { href: '/account', label: 'Account', icon: Settings };
