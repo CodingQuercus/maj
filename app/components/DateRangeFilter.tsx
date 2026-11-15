@@ -148,7 +148,9 @@ export default function DateRangeFilter({
                         })}
                     </ul>
 
-                    {/* Custom range: the first click sets the start, the second the end. */}
+                    {/* Custom range: the first click sets the start, the second the end; the
+                        range is only used after Apply, so a stray click can be corrected. A
+                        click after a complete range starts a new one. */}
                     <div>
                         <Calendar
                             mode="range"
@@ -164,10 +166,10 @@ export default function DateRangeFilter({
                             endMonth={thisMonthStart}
                             disabled={{ after: today }}
                             // Clicks are handled here rather than via onSelect: first click = start,
-                            // second = end (either order), then the filter applies.
+                            // second = end (either order).
                             onSelect={() => {}}
                             onDayClick={(day) => {
-                                if (!draft?.from) {
+                                if (!draft?.from || draft.to) {
                                     setDraft({ from: day, to: undefined });
                                     return;
                                 }
@@ -175,17 +177,37 @@ export default function DateRangeFilter({
                                     draft.from <= day
                                         ? [draft.from, day]
                                         : [day, draft.from];
-                                apply(toDateKey(start), toDateKey(end));
+                                setDraft({ from: start, to: end });
                             }}
                         />
-                        <p
-                            className="px-3 pb-3 text-xs text-[var(--color-text-tertiary)]"
-                            aria-live="polite"
-                        >
-                            {draft?.from
-                                ? 'Now pick the end date.'
-                                : 'Pick a start date, then an end date.'}
-                        </p>
+                        <div className="flex min-h-11 items-center justify-between gap-3 px-3 pb-3">
+                            <p
+                                className="text-xs text-[var(--color-text-tertiary)] tabular-nums"
+                                aria-live="polite"
+                            >
+                                {draft?.from && draft.to
+                                    ? describeDateRange(
+                                          toDateKey(draft.from),
+                                          toDateKey(draft.to)
+                                      )
+                                    : draft?.from
+                                      ? 'Now pick the end date.'
+                                      : 'Pick a start date, then an end date.'}
+                            </p>
+                            {draft?.from && draft.to && (
+                                <Button
+                                    size="sm"
+                                    onClick={() =>
+                                        apply(
+                                            toDateKey(draft.from!),
+                                            toDateKey(draft.to!)
+                                        )
+                                    }
+                                >
+                                    Apply
+                                </Button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </PopoverContent>
