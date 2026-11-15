@@ -23,33 +23,20 @@ export default function SortableColumnHeader({
         <button
             onClick={() => onSort(sortKey)}
             aria-label={`Sort by ${label}`}
-            style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-1)',
-                fontSize: 'var(--text-xs)',
-                fontWeight: '500',
-                color: active
-                    ? 'var(--color-text-primary)'
-                    : 'var(--color-text-tertiary)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                padding: 0,
-            }}
+            className={`flex cursor-pointer items-center gap-1 border-none bg-transparent p-0 text-xs font-medium tracking-[0.08em] uppercase ${
+                active ? 'text-foreground' : 'text-[var(--color-text-tertiary)]'
+            }`}
         >
             {label}
             {/* Show direction arrow if active, neutral icon if not */}
             {active ? (
                 sortDir === 'asc' ? (
-                    <ChevronUp size={12} />
+                    <ChevronUp size={12} aria-hidden="true" />
                 ) : (
-                    <ChevronDown size={12} />
+                    <ChevronDown size={12} aria-hidden="true" />
                 )
             ) : (
-                <ChevronsUpDown size={12} style={{ opacity: 0.3 }} />
+                <ChevronsUpDown size={12} className="opacity-30" />
             )}
         </button>
     );

@@ -1,17 +1,18 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { JobApplication, Status, Contact } from '@/lib/types';
+import { JobApplication, Contact, ApplicationEvent } from '@/lib/types';
+import { formatDate } from '@/lib/dates';
 
-import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { WORK_TYPE_LABELS } from '@/lib/status';
+import { lastApplicationsUrl } from '@/lib/navigation';
 
 import {
     ArrowLeft,
     Pencil,
-    Activity,
     FileText,
     StickyNote,
     Users,
@@ -24,45 +25,43 @@ import {
     ExternalLink,
 } from 'lucide-react';
 
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import ApplicationDrawer from './ApplicationDrawer';
+import EventsSection from './EventsSection';
 import SectionLabel from './SectionLabel';
+import StatusPopover from './StatusPopover';
 
 type ApplicationDetailProps = {
     application: JobApplication;
-};
-
-const statusOptions: Status[] = [
-    'applied',
-    'assessment',
-    'interview',
-    'offer',
-    'rejected',
-    'withdrawn',
-];
-
-const statusLabels: Record<string, string> = {
-    all: 'All',
-    applied: 'Applied',
-    assessment: 'Assessment',
-    interview: 'Interview',
-    offer: 'Offer',
-    rejected: 'Rejected',
-    withdrawn: 'Withdrawn',
-};
-
-const workTypeLabels: Record<string, string> = {
-    'on-site': 'On-site',
-    hybrid: 'Hybrid',
-    remote: 'Remote',
+    // Loaded on the server together with the application.
+    initialContacts: Contact[];
+    initialEvents: ApplicationEvent[];
 };
 
 export default function ApplicationDetail({
     application,
+    initialContacts,
+    initialEvents,
 }: ApplicationDetailProps) {
-    const [status, setStatus] = useState<Status>(application.status);
     const [deleting, setDeleting] = useState(false);
+    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
-    const [contacts, setContacts] = useState<Contact[]>([]);
+    const [contacts, setContacts] = useState<Contact[]>(initialContacts);
+    const [savingContact, setSavingContact] = useState(false);
+    const [deletingContactId, setDeletingContactId] = useState<string | null>(null);
     const [addingContact, setAddingContact] = useState(false);
     const [contactName, setContactName] = useState('');
     const [contactEmail, setContactEmail] = useState('');
@@ -70,41 +69,10 @@ export default function ApplicationDetail({
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [contactError, setContactError] = useState<string | null>(null);
 
-    const bp = useBreakpoint();
     const router = useRouter();
     const supabase = useMemo(() => createClient(), []);
 
-    useEffect(() => {
-        const fetchContacts = async () => {
-            const { data } = await supabase
-                .from('contacts')
-                .select('*')
-                .eq('job_application_id', application.id);
-            if (data) setContacts(data);
-        };
-        fetchContacts();
-    }, [application.id, supabase]);
-
-    const handleStatusChange = async (newStatus: Status) => {
-        const previous = status;
-
-        setStatus(newStatus);
-
-        const { error } = await supabase
-            .from('job_applications')
-            .update({ status: newStatus })
-            .eq('id', application.id);
-
-        if (error) {
-            setStatus(previous);
-        } else {
-            router.refresh();
-        }
-    };
-
     const handleDelete = async () => {
-        if (!confirm('Are you sure you want to delete this application?'))
-            return;
         setDeleting(true);
         setDeleteError(null);
         const { error } = await supabase
@@ -115,15 +83,18 @@ export default function ApplicationDetail({
         if (error) {
             setDeleteError('Could not delete application. Please try again.');
             setDeleting(false);
+            setConfirmDeleteOpen(false);
             return;
         }
-        router.push('/applications');
+        toast.success('Application deleted');
+        router.push(lastApplicationsUrl());
         router.refresh();
     };
 
     const handleAddContact = async () => {
         setContactError(null);
         if (!contactName.trim()) return;
+        setSavingContact(true);
         const { data, error } = await supabase
             .from('contacts')
             .insert({
@@ -134,11 +105,13 @@ export default function ApplicationDetail({
             })
             .select()
             .single();
+        setSavingContact(false);
 
         if (error) {
             setContactError('Could not add contact. Please try again.')
             return
         }
+        toast.success('Contact added');
         setContacts([...contacts, data]);
         setContactName('');
         setContactEmail('');
@@ -149,470 +122,298 @@ export default function ApplicationDetail({
 
     const handleDeleteContact = async (id: string) => {
         setContactError(null);
+        setDeletingContactId(id);
         const { error } = await supabase.from('contacts').delete().eq('id', id);
+        setDeletingContactId(null);
         if (error) {
-            setContactError('Could not delete contact. Please try again.');
+            toast.error('Could not delete contact. Please try again.');
             return
         }
+        const removed = contacts.find((c) => c.id === id);
         setContacts(contacts.filter((c) => c.id !== id));
+        toast.success('Contact removed', {
+            // Longer than the default 4s so there is time to reach the Undo button.
+            duration: 8000,
+            // Re-creates the contact with its original id and date, so it returns to the same place.
+            action: removed && {
+                label: 'Undo',
+                onClick: () => restoreContact(removed),
+            },
+        });
     };
 
-    const pad = bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)';
+    const restoreContact = async (contact: Contact) => {
+        const { data, error } = await supabase
+            .from('contacts')
+            .insert(contact)
+            .select()
+            .single();
+        if (error) {
+            toast.error('Could not restore the contact. Please add it again.');
+            return;
+        }
+        setContacts((prev) =>
+            [...prev, data].sort((a, b) => a.created_at.localeCompare(b.created_at))
+        );
+        toast.success('Contact restored');
+    };
+
+    // Shared styles for the small meta rows under the title.
+    const metaItem = 'flex items-center gap-1 text-sm text-[var(--color-text-secondary)]';
+    const metaIcon = 'text-[var(--color-text-tertiary)]';
+    const emptyText = 'text-sm text-[var(--color-text-tertiary)]';
 
     return (
         <>
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                <div style={{ paddingTop: pad, paddingLeft: pad, paddingRight: pad, paddingBottom: 0}}>
-                    <button
-                        onClick={() => router.back()}
-                        aria-label="Go back to applications"
-                        className="btn btn-ghost btn-sm"
-                        style={{ marginBottom: bp === 'mobile' ? 'var(--space-2)' : 'var(--space-3)' }}
-                    >
-                        <ArrowLeft size={16} />
-                        Back
-                    </button>
-
-                    {/* Header */}
-                    <div
-                        style={{
-                            marginBottom: bp === 'mobile' ? 'var(--space-3)' : 'var(--space-6)',
+            <div className="p-4 sm:p-8">
+                {/* A real link to the list (works when opened from a shared link too). A plain
+                    click returns to the list with the filters the user left it with. */}
+                <Button asChild variant="ghost" size="sm" className="mb-2 sm:mb-3">
+                    <Link
+                        href="/applications"
+                        onClick={(e) => {
+                            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                            e.preventDefault();
+                            router.push(lastApplicationsUrl());
                         }}
                     >
-                        <div
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 'var(--space-3)',
-                                width: '100%'
-                            }}
-                        >
-                            <div
-                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                            >
-                                <h1 style={{ fontSize: bp === 'mobile' ? 'var(--text-xl)' : undefined }}>
-                                    {application.title}
-                                </h1>
-                                <button
-                                    className="btn btn-secondary btn-sm"
-                                    onClick={() => setDrawerOpen(true)}
-                                    style={{ flexShrink: 0 }}
-                                >
-                                    <Pencil size={14} />
-                                    Edit
-                                </button>
-                            </div>
-                            {/* Metadata for a job application */}
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    flexWrap: 'wrap',
-                                    gap: 'var(--space-4)',
-                                }}
-                            >
-                                {application.company && (
-                                    <span
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 'var(--space-1)',
-                                            fontSize: 'var(--text-sm)',
-                                            color: 'var(--color-text-secondary)',
-                                        }}
-                                    >
-                                        <Building2
-                                            size={14}
-                                            color="var(--color-text-tertiary)"
-                                        />
-                                        {application.company}
-                                    </span>
-                                )}
-                                {application.location && (
-                                    <span
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 'var(--space-1)',
-                                            fontSize: 'var(--text-sm)',
-                                            color: 'var(--color-text-secondary)',
-                                        }}
-                                    >
-                                        <MapPin
-                                            size={14}
-                                            color="var(--color-text-tertiary)"
-                                        />
-                                        {application.location}
-                                    </span>
-                                )}
-                                {application.work_type && (
-                                    <span
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 'var(--space-1)',
-                                            fontSize: 'var(--text-sm)',
-                                            color: 'var(--color-text-secondary)',
-                                        }}
-                                    >
-                                        <Briefcase
-                                            size={14}
-                                            color="var(--color-text-tertiary)"
-                                        />
-                                        {workTypeLabels[application.work_type]}
-                                    </span>
-                                )}
-                            </div>
+                        <ArrowLeft size={16} aria-hidden="true" />
+                        Back to applications
+                    </Link>
+                </Button>
 
-                            {/* Dates */}
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    gap: 'var(--space-2)',
-                                }}
-                            >
-                                {application.applied_at && (
-                                    <span
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 'var(--space-1)',
-                                            fontSize: 'var(--text-xs)',
-                                            color: 'var(--color-text-tertiary)',
-                                        }}
-                                    >
-                                        <Calendar size={12} />
-                                        Applied{' '}
-                                        {new Date(
-                                            application.applied_at
-                                        ).toLocaleDateString('sv-SE')}
-                                    </span>
-                                )}
-                                {application.deadline && (
-                                    <span
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 'var(--space-1)',
-                                            fontSize: 'var(--text-xs)',
-                                            color: 'var(--color-text-tertiary)',
-                                        }}
-                                    >
-                                        <Calendar size={12} />
-                                        Deadline{' '}
-                                        {new Date(
-                                            application.deadline
-                                        ).toLocaleDateString('sv-SE')}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
+                {/* Header */}
+                <header className="mb-3 flex flex-col gap-3 sm:mb-6">
+                    <div className="flex items-center justify-between gap-4">
+                        <h1 className="min-w-0 text-xl break-words sm:text-3xl">{application.title}</h1>
+                        <Button variant="outline" size="sm" onClick={() => setDrawerOpen(true)}>
+                            <Pencil size={14} aria-hidden="true" />
+                            Edit
+                        </Button>
                     </div>
 
-                    <hr />
-                </div>
-                <div style={{
-                    flex: 1,
-                    overflowY: 'auto',
-                    paddingLeft: pad,
-                    paddingRight: pad,
-                    paddingBottom: bp === 'mobile' ? '164px' : pad,
-                }}>
-
-                    {/* Status */}
-                    <div style={{ padding: 'var(--space-4) 0' }}>
-                        <SectionLabel
-                            icon={<Activity size={16} />}
-                            label="Status"
+                    {/* Status uses the same menu as the list, so it is changed the same way everywhere. */}
+                    <div className="flex flex-wrap items-center gap-4">
+                        {/* Keyed by status so it picks up a change made elsewhere on the page
+                            (e.g. "Set status to Interview" after adding an interview). */}
+                        <StatusPopover
+                            key={application.status}
+                            applicationId={application.id}
+                            currentStatus={application.status}
                         />
-                        <div
-                            style={{
-                                display: 'flex',
-                                gap: 'var(--space-2)',
-                                flexWrap: 'wrap',
-                            }}
-                        >
-                            {statusOptions.map((s) => (
-                                <button
-                                    key={s}
-                                    onClick={() => handleStatusChange(s)}
-                                    aria-pressed={status === s}
-                                    className={`badge badge-dot badge-${s}`}
-                                    style={{
-                                        cursor: 'pointer',
-                                        border:
-                                            status === s
-                                                ? '2px solid currentColor'
-                                                : '1px solid',
-                                        opacity: status === s ? 1 : 0.45,
-                                        padding: '6px 12px',
-                                    }}
-                                >
-                                    {statusLabels[s]}
-                                </button>
-                            ))}
-                        </div>
+                        {application.company && (
+                            <span className={metaItem}>
+                                <Building2 size={14} aria-hidden="true" className={metaIcon} />
+                                {application.company}
+                            </span>
+                        )}
+                        {application.location && (
+                            <span className={metaItem}>
+                                <MapPin size={14} aria-hidden="true" className={metaIcon} />
+                                {application.location}
+                            </span>
+                        )}
+                        {application.work_type && (
+                            <span className={metaItem}>
+                                <Briefcase size={14} aria-hidden="true" className={metaIcon} />
+                                {WORK_TYPE_LABELS[application.work_type]}
+                            </span>
+                        )}
                     </div>
 
-                    <hr />
+                    <div className="flex flex-wrap gap-2 text-xs text-[var(--color-text-tertiary)] tabular-nums">
+                        {application.applied_at && (
+                            <span className="flex items-center gap-1">
+                                <Calendar size={12} aria-hidden="true" />
+                                Applied {formatDate(application.applied_at)}
+                            </span>
+                        )}
+                        {application.deadline && (
+                            <span className="flex items-center gap-1">
+                                <Calendar size={12} aria-hidden="true" />
+                                Deadline {formatDate(application.deadline)}
+                            </span>
+                        )}
+                    </div>
+                </header>
 
-                    {/* Job description */}
-                    <div style={{ padding: 'var(--space-4) 0' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' }}>
-                            <SectionLabel icon={<FileText size={16} />} label="Job description" noMargin />
-                            {application.url && (
-                                <Link
-                                    href={application.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="btn btn-ghost btn-sm"
-                                    style={{ color: 'var(--color-accent)', fontSize: 'var(--text-sm)' }}
-                                >
-                                    <ExternalLink size={16} />
+                <hr />
+
+                {/* Job description */}
+                <section className="py-4">
+                    <div className="mb-3 flex items-center justify-between">
+                        <SectionLabel icon={<FileText size={16} />} label="Job description" noMargin />
+                        {application.url && (
+                            <Button asChild variant="ghost" size="sm" className="text-primary hover:text-primary">
+                                <Link href={application.url} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink size={16} aria-hidden="true" />
                                     View posting
                                 </Link>
-                            )}
-                        </div>
-                        {application.description ? (
-                            <p
-                                style={{
-                                    fontSize: 'var(--text-sm)',
-                                    whiteSpace: 'pre-wrap',
-                                    maxWidth: '700px'
-                                }}
-                            >
-                                {application.description}
-                            </p>
-                        ) : (
-                            <p
-                                style={{
-                                    fontSize: 'var(--text-sm)',
-                                    color: 'var(--color-text-disabled)',
-                                }}
-                            >
-                                No description added.
-                            </p>
+                            </Button>
                         )}
                     </div>
+                    {application.description ? (
+                        <p className="max-w-[700px] text-sm whitespace-pre-wrap">{application.description}</p>
+                    ) : (
+                        <p className={emptyText}>No description added.</p>
+                    )}
+                </section>
 
-                    <hr />
+                <hr />
 
-                    {/* Notes */}
-                    <div style={{ padding: 'var(--space-4) 0' }}>
-                        <SectionLabel
-                            icon={<StickyNote size={16} />}
-                            label="Notes"
-                        />
-                        {application.notes ? (
-                            <p
-                                style={{
-                                    fontSize: 'var(--text-sm)',
-                                    whiteSpace: 'pre-wrap',
-                                    maxWidth: '700px'
-                                }}
-                            >
-                                {application.notes}
-                            </p>
-                        ) : (
-                            <p
-                                style={{
-                                    fontSize: 'var(--text-sm)',
-                                    color: 'var(--color-text-disabled)',
-                                }}
-                            >
-                                No notes added.
-                            </p>
-                        )}
-                    </div>
+                {/* Events (interviews, calls…), after the posting they belong to. */}
+                <EventsSection
+                    applicationId={application.id}
+                    status={application.status}
+                    initialEvents={initialEvents}
+                />
 
-                    <hr />
+                <hr />
 
-                    {/* Contacts */}
-                    <div style={{ padding: 'var(--space-4) 0' }}>
-                        <div
-                            style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                marginBottom: 'var(--space-3)',
-                            }}
+                {/* Notes */}
+                <section className="py-4">
+                    <SectionLabel icon={<StickyNote size={16} />} label="Notes" />
+                    {application.notes ? (
+                        <p className="max-w-[700px] text-sm whitespace-pre-wrap">{application.notes}</p>
+                    ) : (
+                        <p className={emptyText}>No notes added.</p>
+                    )}
+                </section>
+
+                <hr />
+
+                {/* Contacts */}
+                <section className="py-4">
+                    <div className="mb-3 flex items-center justify-between">
+                        <SectionLabel icon={<Users size={16} />} label="Contacts" noMargin />
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setAddingContact(!addingContact)}
+                            aria-expanded={addingContact}
                         >
-                            <SectionLabel
-                                icon={<Users size={16} />}
-                                label="Contacts"
-                                noMargin
+                            <Plus size={14} aria-hidden="true" />
+                            Add contact
+                        </Button>
+                    </div>
+
+                    {addingContact && (
+                        <div className="mb-4 flex max-w-[480px] flex-col gap-3 rounded-lg bg-muted p-4">
+                            <Input
+                                placeholder="Name *"
+                                value={contactName}
+                                aria-label="Contact name"
+                                onChange={(e) => setContactName(e.target.value)}
                             />
-                            <button
-                                className="btn btn-ghost btn-sm"
-                                onClick={() => setAddingContact(!addingContact)}
-                            >
-                                <Plus size={14} />
-                                Add
-                            </button>
-                        </div>
-
-                        {addingContact && (
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: 'var(--space-3)',
-                                    padding: 'var(--space-4)',
-                                    background: 'var(--color-surface)',
-                                    borderRadius: 'var(--radius-lg)',
-                                    marginBottom: 'var(--space-4)',
-                                    maxWidth: '480px'
-                                }}
-                            >
-                                <input
-                                    placeholder="Name *"
-                                    value={contactName}
-                                    aria-label="Contact name"
-                                    onChange={(e) => setContactName(e.target.value)}
-                                />
-                                <input
-                                    placeholder="Email"
-                                    aria-label="Contact email"
-                                    value={contactEmail}
-                                    onChange={(e) =>
-                                        setContactEmail(e.target.value)
-                                    }
-                                />
-                                <input
-                                    placeholder="Role (e.g. Recruiter)"
-                                    aria-label="Contact role"
-                                    value={contactRole}
-                                    onChange={(e) => setContactRole(e.target.value)}
-                                />
-                                {contactError && <p className="field-error" role="alert">{contactError}</p>}
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        gap: 'var(--space-2)',
-                                    }}
-                                >
-                                    <button
-                                        className="btn btn-primary btn-sm"
-                                        onClick={handleAddContact}
-                                    >
-                                        Save
-                                    </button>
-                                    <button
-                                        className="btn btn-ghost btn-sm"
-                                        onClick={() => setAddingContact(false)}
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
+                            <Input
+                                type="email"
+                                // The contact's address, not the user's: keep the browser from autofilling it.
+                                autoComplete="off"
+                                spellCheck={false}
+                                placeholder="Email"
+                                aria-label="Contact email"
+                                value={contactEmail}
+                                onChange={(e) => setContactEmail(e.target.value)}
+                            />
+                            <Input
+                                placeholder="Role (e.g. Recruiter)"
+                                aria-label="Contact role"
+                                value={contactRole}
+                                onChange={(e) => setContactRole(e.target.value)}
+                            />
+                            {contactError && (
+                                <p className="field-error" role="alert">
+                                    {contactError}
+                                </p>
+                            )}
+                            <div className="flex gap-2">
+                                <Button size="sm" onClick={handleAddContact} loading={savingContact}>
+                                    {savingContact ? 'Saving…' : 'Save'}
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => setAddingContact(false)}>
+                                    Cancel
+                                </Button>
                             </div>
-                        )}
-
-                        {contacts.length === 0 && !addingContact && (
-                            <p
-                                style={{
-                                    fontSize: 'var(--text-sm)',
-                                    color: 'var(--color-text-disabled)',
-                                }}
-                            >
-                                No contacts added.
-                            </p>
-                        )}
-
-                        <div
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 'var(--space-2)',
-                            }}
-                        >
-                            {contacts.map((contact) => (
-                                <div
-                                    key={contact.id}
-                                    style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        padding: 'var(--space-3) var(--space-4)',
-                                        background: 'var(--color-surface)',
-                                        borderRadius: 'var(--radius-lg)',
-                                    }}
-                                >
-                                    <div>
-                                        <p
-                                            style={{
-                                                fontSize: 'var(--text-sm)',
-                                                fontWeight: '500',
-                                                color: 'var(--color-text-primary)',
-                                            }}
-                                        >
-                                            {contact.name}
-                                        </p>
-                                        {contact.role && (
-                                            <p
-                                                style={{
-                                                    fontSize: 'var(--text-xs)',
-                                                    color: 'var(--color-text-tertiary)',
-                                                }}
-                                            >
-                                                {contact.role}
-                                            </p>
-                                        )}
-                                        {contact.email && (
-                                            <p
-                                                style={{
-                                                    fontSize: 'var(--text-xs)',
-                                                    color: 'var(--color-text-tertiary)',
-                                                }}
-                                            >
-                                                {contact.email}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <button
-                                        className="btn btn-ghost btn-icon btn-sm"
-                                        aria-label={`Delete contact ${contact.name}`}
-                                        onClick={() =>
-                                            handleDeleteContact(contact.id)
-                                        }
-                                    >
-                                        <Trash2
-                                            size={14}
-                                            color="var(--color-danger)"
-                                        />
-                                    </button>
-                                </div>
-                            ))}
                         </div>
-                    </div>
+                    )}
 
-                    <hr />
+                    {contacts.length === 0 && !addingContact && (
+                        <p className={emptyText}>No contacts added.</p>
+                    )}
 
-                    {/* Delete */}
-                    <div
-                        style={{
-                            padding: 'var(--space-6) 0',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'flex-end',
-                            gap: 'var(--space-2)',
-                        }}
+                    <ul className="flex flex-col gap-2">
+                        {contacts.map((contact) => (
+                            <li
+                                key={contact.id}
+                                className="flex items-center justify-between gap-3 rounded-lg bg-muted px-4 py-3"
+                            >
+                                <div className="min-w-0">
+                                    <p className="truncate text-sm font-medium text-foreground">{contact.name}</p>
+                                    {contact.role && (
+                                        <p className="truncate text-xs text-[var(--color-text-tertiary)]">{contact.role}</p>
+                                    )}
+                                    {contact.email && (
+                                        <p className="truncate text-xs text-[var(--color-text-tertiary)]">{contact.email}</p>
+                                    )}
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    aria-label={`Delete contact ${contact.name}`}
+                                    onClick={() => handleDeleteContact(contact.id)}
+                                    loading={deletingContactId === contact.id}
+                                >
+                                    {deletingContactId !== contact.id && (
+                                        <Trash2 size={14} aria-hidden="true" className="text-destructive" />
+                                    )}
+                                </Button>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+
+                <hr />
+
+                {/* Delete */}
+                <section className="flex flex-col items-end gap-2 py-6">
+                    {deleteError && (
+                        <p className="field-error" role="alert">
+                            {deleteError}
+                        </p>
+                    )}
+                    <AlertDialog
+                        open={confirmDeleteOpen}
+                        // Stay open while deleting so the spinner stays visible.
+                        onOpenChange={(next) => !deleting && setConfirmDeleteOpen(next)}
                     >
-                        {deleteError && <p className="field-error" role="alert">{deleteError}</p>}
-                        <button
-                            onClick={handleDelete}
-                            disabled={deleting}
-                            className="btn btn-danger btn-sm"
-                        >
-                            {deleting ? 'Deleting...' : 'Delete application'}
-                        </button>
-                    </div>
-                </div>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm">
+                                Delete application
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Delete this application?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    {`${application.title} at ${application.company} will be permanently deleted. This can't be undone.`}
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                                {/* A plain Button rather than AlertDialogAction, which would close the dialog before the delete finishes. */}
+                                <Button variant="destructive" onClick={handleDelete} loading={deleting}>
+                                    {deleting ? 'Deleting…' : 'Delete application'}
+                                </Button>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </section>
             </div>
 
             <ApplicationDrawer
                 open={drawerOpen}
                 onClose={() => setDrawerOpen(false)}
                 application={application}
-                bp={bp}
             />
         </>
     );

@@ -1,27 +1,20 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { Status } from '@/lib/types';
+import { STATUSES, STATUS_LABELS } from '@/lib/status';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
-const statusOptions: Status[] = [
-    'applied',
-    'assessment',
-    'interview',
-    'offer',
-    'rejected',
-    'withdrawn',
-];
-
-const statusLabels: Record<Status, string> = {
-    applied: 'Applied',
-    assessment: 'Assessment',
-    interview: 'Interview',
-    offer: 'Offer',
-    rejected: 'Rejected',
-    withdrawn: 'Withdrawn',
-};
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 type StatusPopoverProps = {
     applicationId: string;
@@ -32,110 +25,60 @@ export default function StatusPopover({
     applicationId,
     currentStatus,
 }: StatusPopoverProps) {
-    const [open, setOpen] = useState(false);
     const [status, setStatus] = useState<Status>(currentStatus);
-    const ref = useRef<HTMLDivElement>(null);
     const supabase = createClient();
     const router = useRouter();
 
-    // Close popover when clicking outside.
-    useEffect(() => {
-        function handleClickOutside(e: MouseEvent) {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                setOpen(false);
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside);
-        return () =>
-            document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
     const handleSelect = async (newStatus: Status) => {
+        if (newStatus === status) return;
         // Update UI optimistically before database confirms.
         const previous = status;
         setStatus(newStatus);
-        setOpen(false);
         const { error } = await supabase
             .from('job_applications')
             .update({ status: newStatus })
             .eq('id', applicationId);
 
         if (error) {
-            setStatus(previous)
+            setStatus(previous);
+            toast.error('Could not update status. Please try again.');
         } else {
-            router.refresh()
+            router.refresh();
         }
     };
 
-    return (
-        <div
-            ref={ref}
-            style={{ position: 'relative', display: 'inline-block' }}
-        >
-            {/* Trigger badge, stopPropagation to prevent navigation on row click  */}
-            <button
-                onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setOpen(!open);
-                }}
-                aria-haspopup="listbox"
-                aria-expanded={open}
-                aria-label={`Change status, current: ${status}`}
-                className={`badge badge-dot badge-${status}`}
-                style={{ cursor: 'pointer' }}
-            >
-                {statusLabels[status]}
-            </button>
+    // The menu sits inside a clickable list row. React events bubble through the portal
+    // to the row, so clicks and key presses here must not reach it (it would navigate).
+    const stop = (e: React.SyntheticEvent) => e.stopPropagation();
 
-            {/* Status options popover */}
-            {open && (
-                <div
-                    role="listbox"
-                    aria-label="Select status"
-                    style={{
-                        position: 'absolute',
-                        top: 'calc(100% + 4px)',
-                        left: 0,
-                        background: 'var(--color-white)',
-                        border: '1px solid var(--color-border)',
-                        borderRadius: 'var(--radius-lg)',
-                        boxShadow: 'var(--shadow-md)',
-                        zIndex: 100,
-                        padding: 'var(--space-1)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 'var(--space-1)',
-                        minWidth: '140px',
-                    }}
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <button
+                    type="button"
+                    onClick={stop}
+                    onKeyDown={stop}
+                    aria-label={`Change status, current: ${STATUS_LABELS[status]}`}
+                    className={`badge badge-dot badge-${status} cursor-pointer`}
                 >
-                    {statusOptions.map((s) => (
-                        <button
-                            key={s}
-                            role="option"
-                            aria-selected={status === s}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleSelect(s);
-                            }}
-                            className={`badge badge-dot badge-${s}`}
-                            style={{
-                                cursor: 'pointer',
-                                opacity: status === s ? 1 : 0.5,
-                                border:
-                                    status === s
-                                        ? '2px solid currentColor'
-                                        : '1px solid',
-                                textAlign: 'left',
-                                justifyContent: 'flex-start',
-                            }}
-                        >
-                            {statusLabels[s]}
-                        </button>
+                    {STATUS_LABELS[status]}
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" onClick={stop} onKeyDown={stop}>
+                <DropdownMenuLabel>Status</DropdownMenuLabel>
+                <DropdownMenuRadioGroup
+                    value={status}
+                    onValueChange={(value) => handleSelect(value as Status)}
+                >
+                    {STATUSES.map((s) => (
+                        <DropdownMenuRadioItem key={s} value={s}>
+                            <span className={`badge badge-dot badge-${s}`}>
+                                {STATUS_LABELS[s]}
+                            </span>
+                        </DropdownMenuRadioItem>
                     ))}
-                </div>
-            )}
-        </div>
+                </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 }

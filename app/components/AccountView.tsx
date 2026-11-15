@@ -1,116 +1,58 @@
-"use client";
+import { Settings } from 'lucide-react';
 
 import AccountActions from './AccountActions';
 import PageTitle from './PageTitle';
-import { Settings } from 'lucide-react';
-
-import { useBreakpoint } from '@/hooks/useBreakpoint';
+import ReportDeadlineSetting from './ReportDeadlineSetting';
+import { formatDate } from '@/lib/dates';
 
 type AccountViewProps = {
     email: string;
     createdAt: string;
-    isDemo: boolean,
+    isDemo: boolean;
+    reportDueDay: number | null;
 };
 
-export default function AccountView({ email, createdAt, isDemo }: AccountViewProps) {
-    
-    const bp = useBreakpoint();
+export default function AccountView({
+    email,
+    createdAt,
+    isDemo,
+    reportDueDay,
+}: AccountViewProps) {
+    const label = 'mb-1 block text-xs tracking-[0.08em] text-[var(--color-text-tertiary)] uppercase';
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div style={{
-                paddingTop: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
-                paddingLeft: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
-                paddingRight: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
-                paddingBottom: 0,
-                flexShrink: 0,
-            }}>
-                <PageTitle icon={<Settings size={bp === 'mobile' ? 24 : 32} />} title="Account" />
-                <hr />
-            </div>
+        <div className="p-4 sm:p-8">
+            <PageTitle icon={<Settings />} title="Account" />
+            <hr />
 
-            <div style={{
-                flex: 1,
-                overflowY: 'auto',
-                paddingTop: 'var(--space-4)',
-                paddingLeft: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
-                paddingRight: bp === 'mobile' ? 'var(--space-4)' : 'var(--space-8)',
-                paddingBottom: bp === 'mobile' ? '164px' : 'var(--space-8)',
-            }}>
-                {/* User profile information */}
-                <div
-                    className="card"
-                    style={{ marginBottom: 'var(--space-4)', maxWidth: '480px', }}
-                    role="region"
-                    aria-label="Profile information"
+            <div className="pt-4">
+                <section
+                    className="mb-4 max-w-[480px] rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-xs)]"
+                    aria-labelledby="profile-heading"
                 >
-                    <h2
-                        style={{
-                            fontSize: 'var(--text-md)',
-                            marginBottom: 'var(--space-6)',
-                        }}
-                    >
+                    <h2 id="profile-heading" className="mb-6 text-[length:var(--text-md)]">
                         Profile
                     </h2>
-                    <div
-                        style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 'var(--space-4)',
-                        }}
-                    >
+                    <dl className="flex flex-col gap-4">
                         <div>
-                            <span
-                                style={{
-                                    fontSize: 'var(--text-xs)',
-                                    color: 'var(--color-text-tertiary)',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.08em',
-                                    display: 'block',
-                                    marginBottom: 'var(--space-1)',
-                                }}
-                            >
-                                Email
-                            </span>
-                            <span
-                                style={{
-                                    fontSize: 'var(--text-sm)',
-                                    color: 'var(--color-text-primary)',
-                                }}
-                            >
-                                {email}
-                            </span>
+                            <dt className={label}>Email</dt>
+                            <dd className="text-sm break-all text-foreground">{email}</dd>
                         </div>
                         <div>
-                            <span
-                                style={{
-                                    fontSize: 'var(--text-xs)',
-                                    color: 'var(--color-text-tertiary)',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.08em',
-                                    display: 'block',
-                                    marginBottom: 'var(--space-1)',
-                                }}
-                            >
-                                Member since
-                            </span>
-                            <span
-                                style={{
-                                    fontSize: 'var(--text-sm)',
-                                    color: 'var(--color-text-primary)',
-                                }}
-                            >
-                                {createdAt
-                                    ? new Date(createdAt).toLocaleDateString(
-                                        'sv-SE'
-                                    )
-                                    : '—'}
-                            </span>
+                            <dt className={label}>Member since</dt>
+                            <dd className="text-sm text-foreground tabular-nums">
+                                {createdAt ? formatDate(createdAt) : '—'}
+                            </dd>
                         </div>
-                    </div>
+                    </dl>
+                </section>
+
+                <div className="mb-4 max-w-[480px]">
+                    <ReportDeadlineSetting dueDay={reportDueDay} />
                 </div>
 
                 <AccountActions email={email} isDemo={isDemo} />
+
             </div>
         </div>
     );

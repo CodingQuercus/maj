@@ -4,251 +4,218 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import {
+    CalendarDays,
+    ClipboardList,
+    FileText,
+    LayoutDashboard,
+    LogOut,
+    Menu,
+    Settings,
+} from 'lucide-react';
 
-import { useBreakpoint } from "@/hooks/useBreakpoint"
+import { Button } from '@/components/ui/button';
+import {
+    Sheet,
+    SheetContent,
+    SheetTitle,
+    SheetTrigger,
+} from '@/components/ui/sheet';
+import { Spinner } from '@/components/ui/spinner';
+import { useSignOut } from '@/lib/useSignOut';
+import { cn } from '@/lib/utils';
 
-import { ClipboardList, LayoutDashboard, Settings, LogOut } from 'lucide-react';
+const links = [
+    { href: '/applications', label: 'Applications', icon: ClipboardList },
+    { href: '/overview', label: 'Overview', icon: LayoutDashboard },
+    { href: '/calendar', label: 'Calendar', icon: CalendarDays },
+    { href: '/report', label: 'Report', icon: FileText },
+];
 
+const accountLink = { href: '/account', label: 'Account', icon: Settings };
 
+// Navigation in three shapes, all rendered with CSS picking one so the right layout shows
+// from the first paint:
+// - phones: a menu button at the top left that opens the menu as a drawer (five sections
+//   no longer fit a bottom bar);
+// - tablet: a sticky sidebar with icons only;
+// - desktop: the same sidebar with labels.
 export default function Sidebar() {
-    const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-
-    const bp = useBreakpoint();
     const pathname = usePathname();
-    const router = useRouter();
-    const supabase = createClient();
+    const { signOut, signingOut } = useSignOut();
+    const [menuOpen, setMenuOpen] = useState(false);
 
-    const handleSignOut = async () => {
-        await supabase.auth.signOut();
-        router.push('/');
-        router.refresh();
-    };
+    // A section stays active on its sub-pages (e.g. /applications/123).
+    const isActive = (href: string) =>
+        pathname === href || pathname.startsWith(`${href}/`);
 
-    const links = [
-        {
-            href: '/applications',
-            label: 'Applications',
-            icon: <ClipboardList size={18} />,
-        },
-        {
-            href: '/dashboard',
-            label: 'Dashboard',
-            icon: <LayoutDashboard size={18} />,
-        },
-    ];
+    // Swaps the sign-out icon for a spinner while signing out.
+    const signOutIcon = signingOut ? (
+        <Spinner
+            role={undefined}
+            aria-label={undefined}
+            aria-hidden="true"
+            className="size-[18px]"
+        />
+    ) : (
+        <LogOut size={18} aria-hidden="true" />
+    );
 
-    const allItems = [
-        ...links,
-        { href: '/account', label: 'Account', icon: <Settings size={18} /> },
-    ];
+    const itemBase =
+        'flex w-full cursor-pointer items-center gap-3 rounded-lg p-3 text-sm text-[var(--color-text-secondary)] no-underline transition-colors hover:bg-accent hover:text-[var(--color-text-secondary)]';
+    const itemActive =
+        'bg-[var(--color-white)] font-semibold text-foreground shadow-[var(--shadow-xs)] hover:bg-[var(--color-white)] hover:text-foreground';
 
-    const navItem = (active: boolean, hovered: boolean) => ({
-        display: 'flex',
-        alignItems: 'center',
-        gap: bp === 'tablet' ? '0' : 'var(--space-3)',
-        justifyContent: bp === 'tablet' ? 'center' : 'flex-start',
-        padding: 'var(--space-3)',
-        borderRadius: 'var(--radius-lg)',
-        fontSize: 'var(--text-sm)',
-        fontWeight: active ? '600' : '400',
-        textDecoration: 'none',
-        transition: 'background var(--transition-fast)',
-        background: active
-            ? 'var(--color-white)'
-            : hovered
-            ? 'var(--color-overlay)'
-            : 'transparent',
-        color: active ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-        boxShadow: active ? 'var(--shadow-xs)' : 'none',
-        border: 'none',
-        cursor: 'pointer',
-        width: '100%',
-        textAlign: 'left' as const,
-        position: 'relative' as const,
-    });
-
-
-    /* If client device is mobile, return bottom navbar */
-    if (bp === 'mobile') {
-        return (
-            <nav
-                aria-label="Main navigation"
-                style={{
-                    position: 'fixed',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: '64px',
-                    background: 'var(--color-surface)',
-                    borderTop: '1px solid var(--color-border)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-around',
-                    zIndex: 10,
-                    paddingBottom: 'env(safe-area-inset-bottom)',
-                }}
-            >
-                {allItems.map((item) => {
-                    const active = pathname === item.href;
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            aria-current={active ? 'page' : undefined}
-                            aria-label={item.label}
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: '4px',
-                                textDecoration: 'none',
-                                padding: 'var(--space-2)',
-                                borderRadius: 'var(--radius-lg)',
-                                color: active
-                                    ? 'var(--color-accent)'
-                                    : 'var(--color-text-tertiary)',
-                                flex: 1,
-                            }}
-                        >
-                            {item.icon}
-                            <span style={{ fontSize: '10px', fontWeight: active ? '600' : '400' }}>
-                                {item.label}
-                            </span>
-                        </Link>
-                    );
-                })}
-                {/* Sign out */}
-                <button
-                    type="button"
-                    onClick={handleSignOut}
-                    aria-label="Sign out"
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '4px',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: 'var(--space-2)',
-                        borderRadius: 'var(--radius-lg)',
-                        color: 'var(--color-text-tertiary)',
-                        flex: 1,
-                    }}
-                >
-                    <LogOut size={18} />
-                    <span style={{ fontSize: '10px' }}>Sign out</span>
-                </button>
-            </nav>
+    // Sidebar item: centred icon on tablet, icon + label from lg. In the phone menu the
+    // label always shows.
+    const item = (active: boolean, inMenu: boolean) =>
+        cn(
+            itemBase,
+            !inMenu && 'justify-center lg:justify-start',
+            active && itemActive
         );
-    }
 
+    // Label hidden visually on tablet but still read by screen readers.
+    const label = (inMenu: boolean) => (inMenu ? '' : 'sr-only lg:not-sr-only');
 
-    return (
-        <aside
-            aria-label="Main navigation"
-            style={{
-                width: bp === 'tablet' ? '64px' : 'var(--sidebar-width)',
-                background: 'var(--color-surface)',
-                borderRight: '1px solid var(--color-border)',
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100vh',
-                paddingTop: 'var(--space-8)',
-                paddingBottom: 'var(--space-8)',
-                paddingLeft: 'var(--space-4)',
-                paddingRight: 'var(--space-4)',
-                transition: 'width 0.2s ease',
-                flexShrink: 0,
-            }}
-        >
-            {/* Logo and application name */}
-            <Link
-                href="/applications"
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: bp === 'tablet' ? 'center' : 'flex-start',
-                    gap: 'var(--space-2)',
-                    textDecoration: 'none',
-                    marginBottom: 'var(--space-4)',
-                }}
-            >
-                <Image src="/maj-logo.svg" alt="Maj" width={28} height={28} style={{ height: 'auto' }} />
-                {bp === 'desktop' && (
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: 'var(--text-md)', fontWeight: '700', color: 'var(--color-text-primary)', lineHeight: 1.2 }}>
-                            Maj
-                        </span>
-                        <span style={{ fontSize: 'var(--text-xs)', fontWeight: '500', color: 'var(--color-text-secondary)', letterSpacing: 'var(--tracking-tight)' }}>
-                            My Application Journal
-                        </span>
-                    </div>
+    const iconClass = (active: boolean) =>
+        cn(
+            'shrink-0',
+            active ? 'text-primary' : 'text-[var(--color-text-tertiary)]'
+        );
+
+    const brand = (withText: 'always' | 'lg') => (
+        <span className="flex items-center gap-2">
+            <Image
+                src="/maj-logo.svg"
+                alt="Maj"
+                width={28}
+                height={28}
+                style={{ height: 'auto' }}
+            />
+            <span
+                className={cn(
+                    'flex-col',
+                    withText === 'lg' ? 'hidden lg:flex' : 'flex'
                 )}
-            </Link>
+            >
+                <span className="text-[length:var(--text-md)] leading-tight font-bold text-foreground">
+                    Maj
+                </span>
+                <span className="text-xs font-medium tracking-[var(--tracking-tight)] text-[var(--color-text-secondary)]">
+                    My Application Journal
+                </span>
+            </span>
+        </span>
+    );
 
-
-            {/* Main navigation links */}
+    // The links, account and sign out; shared by the sidebar and the phone menu.
+    const navContent = (inMenu: boolean) => (
+        <>
             <nav
                 aria-label="App navigation"
-                style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', flex: 1 }}
+                className="flex flex-1 flex-col gap-1"
             >
-                {links.map((link) => {
-                    const active = pathname === link.href;
-                    const hovered = hoveredItem === link.href;
-                    return (
-                        <Link
-                            key={link.href}
-                            href={link.href}
-                            title={bp === 'tablet' ? link.label : undefined}
-                            aria-label={bp === 'tablet' ? link.label : undefined}
-                            aria-current={active ? 'page' : undefined}
-                            style={navItem(active, hovered)}
-                            onMouseEnter={() => setHoveredItem(link.href)}
-                            onMouseLeave={() => setHoveredItem(null)}
-                        >
-                            <span style={{ color: active ? 'var(--color-accent)' : 'var(--color-text-tertiary)', flexShrink: 0 }}>
-                                {link.icon}
-                            </span>
-                            {bp === 'desktop' && link.label}
-                        </Link>
-                    );
-                })}
+                {links.map(({ href, label: text, icon: Icon }) => (
+                    <Link
+                        key={href}
+                        href={href}
+                        title={inMenu ? undefined : text}
+                        aria-current={isActive(href) ? 'page' : undefined}
+                        className={item(isActive(href), inMenu)}
+                        onClick={() => setMenuOpen(false)}
+                    >
+                        <Icon
+                            size={18}
+                            aria-hidden="true"
+                            className={iconClass(isActive(href))}
+                        />
+                        <span className={label(inMenu)}>{text}</span>
+                    </Link>
+                ))}
             </nav>
 
-            {/* Account and sign out */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-3)' }}>
+            <div className="flex flex-col gap-1 border-t border-border pt-3">
                 <Link
-                    href="/account"
-                    title={bp === 'tablet' ? 'Account' : undefined}
-                    aria-label={bp === 'tablet' ? 'Account' : undefined}
-                    style={navItem(pathname === '/account', hoveredItem === 'account')}
-                    onMouseEnter={() => setHoveredItem('account')}
-                    onMouseLeave={() => setHoveredItem(null)}
+                    href={accountLink.href}
+                    title={inMenu ? undefined : accountLink.label}
+                    aria-current={
+                        isActive(accountLink.href) ? 'page' : undefined
+                    }
+                    className={item(isActive(accountLink.href), inMenu)}
+                    onClick={() => setMenuOpen(false)}
                 >
-                    <span style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }}>
-                        <Settings size={18} />
-                    </span>
-                    {bp === 'desktop' && 'Account'}
+                    <Settings
+                        size={18}
+                        aria-hidden="true"
+                        className={iconClass(isActive(accountLink.href))}
+                    />
+                    <span className={label(inMenu)}>{accountLink.label}</span>
                 </Link>
-
                 <button
                     type="button"
-                    onClick={handleSignOut}
-                    title={bp === 'tablet' ? 'Sign out' : undefined}
-                    aria-label={bp === 'tablet' ? 'Sign out' : undefined}
-                    style={navItem(false, hoveredItem === 'button')}
-                    onMouseEnter={() => setHoveredItem('button')}
-                    onMouseLeave={() => setHoveredItem(null)}
+                    onClick={signOut}
+                    disabled={signingOut}
+                    aria-busy={signingOut || undefined}
+                    title={inMenu ? undefined : 'Sign out'}
+                    className={item(false, inMenu)}
                 >
-                    <span style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }}>
-                        <LogOut size={18} />
+                    <span className="shrink-0 text-[var(--color-text-tertiary)]">
+                        {signOutIcon}
                     </span>
-                    {bp === 'desktop' && 'Sign out'}
+                    <span className={label(inMenu)}>Sign out</span>
                 </button>
             </div>
-        </aside>
+        </>
+    );
+
+    return (
+        <>
+            {/* Phones: just a menu button at the top left that opens the menu as a drawer. Not
+                sticky, so pages with their own locked header (the applications list) keep
+                the top of the screen. */}
+            <div className="flex items-center px-2 pt-2 sm:hidden">
+                <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+                    <SheetTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Open menu"
+                        >
+                            <Menu size={20} aria-hidden="true" />
+                        </Button>
+                    </SheetTrigger>
+                    <SheetContent
+                        side="left"
+                        aria-describedby={undefined}
+                        className="w-72 gap-0 bg-muted px-4 py-6"
+                    >
+                        <SheetTitle className="sr-only">Menu</SheetTitle>
+                        <Link
+                            href="/applications"
+                            className="mb-4 px-1 no-underline"
+                            onClick={() => setMenuOpen(false)}
+                        >
+                            {brand('always')}
+                        </Link>
+                        {navContent(true)}
+                    </SheetContent>
+                </Sheet>
+            </div>
+
+            {/* Tablet and desktop: sticky sidebar */}
+            <aside
+                aria-label="Main navigation"
+                className="sticky top-0 hidden h-dvh w-16 shrink-0 flex-col border-r border-border bg-muted px-2 py-8 sm:flex lg:w-[var(--sidebar-width)] lg:px-4"
+            >
+                <Link
+                    href="/applications"
+                    className="mb-4 flex justify-center no-underline lg:justify-start"
+                >
+                    {brand('lg')}
+                </Link>
+                {navContent(false)}
+            </aside>
+        </>
     );
 }

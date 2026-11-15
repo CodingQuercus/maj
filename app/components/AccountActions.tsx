@@ -1,11 +1,25 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 
-import { deleteAccount } from '@/app/actions/account';
+import { deleteAccount, requestPasswordReset } from '@/app/actions/account';
 
 import { Check } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 type AccountActionProps = {
     email: string;
@@ -15,129 +29,86 @@ type AccountActionProps = {
 export default function AccountActions({ email, isDemo }: AccountActionProps) {
     const [resetSent, setResetSent] = useState(false);
     const [resetError, setResetError] = useState<string | null>(null);
+    const [resetting, setResetting] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-
-    const supabase = createClient();
 
     const handleResetPassword = async () => {
         setResetError(null);
+        setResetting(true);
 
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/reset-password`,
-        });
-
-        if (error) {
-            setResetError('Could not send reset link. Please try again.');
-            return
+        const result = await requestPasswordReset(email);
+        setResetting(false);
+        if (result?.error) {
+            setResetError(result.error);
+            return;
         }
 
         setResetSent(true);
     };
 
+    const card = 'rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-xs)]';
+    const muted = 'text-sm text-[var(--color-text-tertiary)]';
+
     return (
-        <div
-            style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 'var(--space-4)',
-                maxWidth: '480px'
-            }}
-        >
+        <div className="flex max-w-[480px] flex-col gap-4">
             {/* Reset password */}
-            <div className="card" role="region" aria-label="Password settings">
-                <h2
-                    style={{
-                        fontSize: 'var(--text-md)',
-                        marginBottom: 'var(--space-2)',
-                    }}
-                >
+            <section className={card} aria-labelledby="password-heading">
+                <h2 id="password-heading" className="mb-2 text-[length:var(--text-md)]">
                     Password
                 </h2>
-                <p
-                    style={{
-                        fontSize: 'var(--text-sm)',
-                        color: 'var(--color-text-tertiary)',
-                        marginBottom: 'var(--space-4)',
-                    }}
-                >
-                    Send a password reset link to your email.
-                </p>
-                {resetSent ? (
-                    <p
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 'var(--space-2)',
-                            fontSize: 'var(--text-sm)',
-                            color: 'var(--color-success)',
-                        }}
-                        role="alert"
-                    >
-                        <Check size={'var(--text-sm)'} />
+                <p className={`mb-4 ${muted}`}>Send a password reset link to your email.</p>
+                {isDemo ? (
+                    <p className={muted}>Password reset is not available in the demo.</p>
+                ) : resetSent ? (
+                    <p className="flex items-center gap-2 text-sm text-[var(--color-success)]" role="status">
+                        <Check size={14} aria-hidden="true" />
                         Reset link sent to {email}
                     </p>
                 ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                        {resetError && <p className="field-error" role="alert">{resetError}</p>}
-                        <button
-                            onClick={handleResetPassword}
-                            className="btn btn-secondary btn-sm"
-                        >
-                            Send reset link
-                        </button>
+                    <div className="flex flex-col gap-2">
+                        {resetError && (
+                            <p className="field-error" role="alert">
+                                {resetError}
+                            </p>
+                        )}
+                        <Button variant="outline" size="sm" onClick={handleResetPassword} loading={resetting}>
+                            {resetting ? 'Sending…' : 'Send reset link'}
+                        </Button>
                     </div>
                 )}
-            </div>
+            </section>
 
             {/* Delete account */}
-            <div
-                className="card"
-                style={{ borderColor: 'var(--color-danger-border)' }}
-                role="region"
-                aria-label="Danger zone"
+            <section
+                className={cn(card, 'border-[var(--color-danger-border)]')}
+                aria-labelledby="danger-heading"
             >
-                <h2
-                    style={{
-                        fontSize: 'var(--text-md)',
-                        marginBottom: 'var(--space-2)',
-                    }}
-                >
+                <h2 id="danger-heading" className="mb-2 text-[length:var(--text-md)]">
                     Danger zone
                 </h2>
-                <p
-                    style={{
-                        fontSize: 'var(--text-sm)',
-                        color: 'var(--color-text-tertiary)',
-                        marginBottom: 'var(--space-4)',
-                    }}
-                >
-                    Permanently delete your account and all your data. This
-                    cannot be undone.
+                <p className={`mb-4 ${muted}`}>
+                    Permanently delete your account and all your data. This cannot be undone.
                 </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                    {isDemo ? (
-                        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-tertiary)' }}>
-                            Account deletion is not available in the demo.
-                        </p>
-                    ) : (
-                        <button onClick={() => setShowDeleteModal(true)} className="btn btn-danger btn-sm">
-                            Delete account
-                        </button>
-                    )}
-                </div>
-            </div>
-            {showDeleteModal && <DeleteAccountModal onClose={() => setShowDeleteModal(false)} />}
+                {isDemo ? (
+                    <p className={muted}>Account deletion is not available in the demo.</p>
+                ) : (
+                    <AlertDialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm">
+                                Delete account
+                            </Button>
+                        </AlertDialogTrigger>
+                        <DeleteAccountDialogContent />
+                    </AlertDialog>
+                )}
+            </section>
         </div>
     );
 }
 
-
-function DeleteAccountModal({
-    onClose
-}: {
-    onClose: () => void
-}) {
+// Contents of the delete-account confirmation. Mounted only while the dialog is open,
+// so the typed confirmation resets each time.
+function DeleteAccountDialogContent() {
     const [confirmText, setConfirmText] = useState('');
     const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -146,82 +117,53 @@ function DeleteAccountModal({
         setDeleting(true);
         setError(null);
         try {
+            // Redirects to the start page on success.
             await deleteAccount();
         } catch {
             setError('Could not delete account. Please try again.');
             setDeleting(false);
         }
-    }
+    };
 
     return (
-        <>
-            <div
-                onClick={onClose}
-                style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(0, 0, 0, 0.4)',
-                    zIndex: 40,
-                }}
-            />
-            {/* Modal */}
-            <div style={{
-                position: 'fixed',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                background: 'var(--color-white)',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-xl)',
-                boxShadow: 'var(--shadow-lg)',
-                padding: 'var(--space-6)',
-                zIndex: 50,
-                width: 'min(420px, calc(100vw - var(--space-8)))',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 'var(--space-4)',
-            }}>
-                <h2 style={{ fontSize: 'var(--text-lg)' }}>Delete account</h2>
-                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
-                    This will permanently delete your account and all your data. This cannot be undone.
-                </p>
-                <div style={{
-                    background: 'var(--color-danger-subtle)',
-                    border: '1px solid var(--color-danger-border)',
-                    borderRadius: 'var(--radius-lg)',
-                    padding: 'var(--space-3)',
-                }}>
-                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-danger)' }}>
-                        Type <strong>DELETE</strong> to confirm.
-                    </p>
-                </div>
-                <input
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Delete account</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This will permanently delete your account and all your data.
+                    This cannot be undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div>
+                <Label htmlFor="delete-confirm">
+                    Type <strong className="text-destructive">DELETE</strong> to confirm
+                </Label>
+                <Input
+                    id="delete-confirm"
                     value={confirmText}
                     onChange={(e) => setConfirmText(e.target.value)}
                     placeholder="DELETE"
+                    autoComplete="off"
                     autoFocus
                 />
-                {error && <p className="field-error" role="alert">{error}</p>}
-                <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                    <button
-                        type="button"
-                        onClick={() => { onClose(); }}
-                        className="btn btn-secondary"
-                        style={{ flex: 1 }}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        disabled={confirmText !== 'DELETE' || deleting}
-                        onClick={handleDeleteAccount}
-                        className="btn btn-danger"
-                        style={{ flex: 1 }}
-                    >
-                        {deleting ? 'Deleting...' : 'Delete account'}
-                    </button>
-                </div>
             </div>
-        </>
-    )
+            {error && (
+                <p className="field-error" role="alert">
+                    {error}
+                </p>
+            )}
+            <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={confirmText !== 'DELETE'}
+                    loading={deleting}
+                    onClick={handleDeleteAccount}
+                >
+                    {deleting ? 'Deleting…' : 'Delete account'}
+                </Button>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    );
 }

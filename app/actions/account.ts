@@ -3,6 +3,39 @@
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
+import { revalidatePath } from 'next/cache';
+
+import { DUE_DAY_MAX, parseDueDay } from '@/lib/report';
+
+// Emails a password reset link. Used from the sign-in page ("Forgot password?") and the account page.
+// Runs on the server so the shared demo account never triggers emails (its address doesn't exist
+// and bounces can get the project's email sending restricted). The PKCE code verifier is stored as
+// a cookie by the server client, so the link must be opened in the same browser.
+export async function requestPasswordReset(
+    email: string
+): Promise<{ error: string } | undefined> {
+    if (email.trim().toLowerCase() === process.env.DEMO_EMAIL?.toLowerCase()) {
+        // Same response as a real request, so the demo address is treated like any other.
+        return;
+    }
+
+    const headerList = await headers();
+    const origin =
+        headerList.get('origin') ??
+        `${headerList.get('x-forwarded-proto') ?? 'http'}://${headerList.get('host')}`;
+
+    const supabase = await createClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        // The callback exchanges the code from the email for a session, then opens the reset page.
+        redirectTo: `${origin}/auth/callback?next=/reset-password`,
+    });
+
+    if (error) {
+        console.error('requestPasswordReset failed', error);
+        return { error: 'Could not send reset link. Please try again in a moment.' };
+    }
+}
 
 export async function deleteAccount() {
 
@@ -25,15 +58,70 @@ export async function deleteAccount() {
         process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 
-    // Remove data
-    await supabase.from('job_applications').delete().eq('user_id', user.id);
+    // Remove data. Stop here if it fails, so the user is never deleted with data left behind.
+    const { error: dataError } = await supabase
+        .from('job_applications')
+        .delete()
+        .eq('user_id', user.id);
+    if (dataError) {
+        console.error('deleteAccount: could not delete applications', dataError);
+        throw new Error('Could not delete account data');
+    }
 
     // Delete the user.
-    await admin.auth.admin.deleteUser(user.id);
+    const { error: userError } = await admin.auth.admin.deleteUser(user.id);
+    if (userError) {
+        console.error('deleteAccount: could not delete user', userError);
+        throw new Error('Could not delete account');
+    }
 
     // Sign out to clear the session.
     await supabase.auth.signOut();
 
     // Redirect user to login
     redirect('/');
+}
+
+// Sets a new password for the signed-in user (reached via the reset link in the email).
+// Done on the server so the shared demo account's password can't be changed.
+export async function updatePassword(
+    password: string
+): Promise<{ error: string } | undefined> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: 'Your reset link has expired. Please request a new one.' };
+    }
+
+    if (user.email === process.env.DEMO_EMAIL) {
+        return { error: 'The demo account password cannot be changed.' };
+    }
+
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) return { error: error.message };
+
+    redirect('/applications');
+}
+
+// Saves the monthly report deadline (a day of the month, or null for none) in the user's
+// account metadata, so no table is needed for this one preference.
+export async function updateReportDueDay(
+    day: number | null
+): Promise<{ error: string } | undefined> {
+    const value = parseDueDay(day);
+    if (day !== null && value === null) {
+        return { error: `Pick a day between 1 and ${DUE_DAY_MAX}.` };
+    }
+
+    const supabase = await createClient();
+    const { error } = await supabase.auth.updateUser({
+        data: { report_due_day: value },
+    });
+    if (error) {
+        console.error('updateReportDueDay failed', error);
+        return { error: 'Could not save. Please try again.' };
+    }
+
+    revalidatePath('/report');
 }
