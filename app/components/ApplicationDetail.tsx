@@ -269,7 +269,7 @@ export default function ApplicationDetail({
                     {/* Saved (not applied yet): one click to record applying. After a missed
                         deadline the user chooses what happens; nothing changes by itself. */}
                     {isSaved && (
-                        <div className="flex flex-col gap-3 rounded-lg border border-dashed border-[var(--color-border-hard)] bg-[var(--color-surface)] p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex max-w-[600px] flex-col gap-3 rounded-lg border border-dashed border-[var(--color-border-hard)] bg-[var(--color-surface)] p-4 sm:flex-row sm:items-center sm:justify-between">
                             <p className="text-sm text-[var(--color-text-secondary)]" suppressHydrationWarning>
                                 {missed
                                     ? `The last day to apply was ${formatDate(application.deadline!)}. Did you apply?`
