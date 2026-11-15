@@ -17,6 +17,7 @@ import { todayLocal } from '@/lib/dates';
 import { EVENT_KINDS, EVENT_KIND_LABELS, formatTime } from '@/lib/events';
 import { ApplicationEvent, EventKind, JobApplication } from '@/lib/types';
 import DatePicker from './DatePicker';
+import TimePicker from './TimePicker';
 
 export type ApplicationOption = Pick<
     JobApplication,
@@ -154,12 +155,12 @@ export default function EventForm({
                     />
                 </div>
                 <div>
-                    <Label htmlFor={id('time')}>Time (optional)</Label>
-                    <Input
+                    <Label htmlFor={id('time')}>Time</Label>
+                    <TimePicker
                         id={id('time')}
-                        type="time"
+                        label="Time"
                         value={time}
-                        onChange={(e) => setTime(e.target.value)}
+                        onChange={setTime}
                     />
                 </div>
             </div>
