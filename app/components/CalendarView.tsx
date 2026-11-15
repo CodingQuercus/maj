@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 
 import EventDrawer from './EventDrawer';
+import MonthSelect from './MonthSelect';
 import PageTitle from './PageTitle';
 import { Button } from '@/components/ui/button';
 import { WEEKDAYS, formatAgendaDay, monthWeeks } from '@/lib/calendar';
@@ -161,6 +162,16 @@ function MonthGrid({
     selected: string;
     onSelect: (day: string) => void;
 }) {
+    // Events and deadlines per month, for the month picker.
+    const monthCounts = new Map<string, number>();
+    for (const [key, d] of days) {
+        const m = key.slice(0, 7);
+        monthCounts.set(
+            m,
+            (monthCounts.get(m) ?? 0) + d.events.length + d.deadlines.length
+        );
+    }
+
     // Read out with each date, e.g. "1 event, 1 deadline".
     const summary = (d: Day | undefined) =>
         [
@@ -174,32 +185,33 @@ function MonthGrid({
 
     return (
         <div className="rounded-xl border border-border bg-card p-2 shadow-[var(--shadow-xs)] sm:p-3">
-            {/* Month and arrows belong to the calendar they control. */}
+            {/* Previous / month / next. The month opens a year of months to jump to, each
+                with how many events and deadlines it has. */}
             <div className="flex items-center justify-between gap-2 px-1 pt-1 pb-3">
-                <h2
-                    aria-live="polite"
-                    className="text-[length:var(--text-md)] tabular-nums"
+                <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Previous month"
+                    onClick={() => onMonth(shiftMonth(month, -1))}
                 >
-                    {formatMonth(month)}
+                    <ChevronLeft size={16} aria-hidden="true" />
+                </Button>
+                <h2 aria-live="polite">
+                    <MonthSelect
+                        month={month}
+                        onChange={onMonth}
+                        counts={monthCounts}
+                        noun={['event or deadline', 'events or deadlines']}
+                    />
                 </h2>
-                <div className="flex items-center gap-1">
-                    <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label="Previous month"
-                        onClick={() => onMonth(shiftMonth(month, -1))}
-                    >
-                        <ChevronLeft size={16} aria-hidden="true" />
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label="Next month"
-                        onClick={() => onMonth(shiftMonth(month, 1))}
-                    >
-                        <ChevronRight size={16} aria-hidden="true" />
-                    </Button>
-                </div>
+                <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Next month"
+                    onClick={() => onMonth(shiftMonth(month, 1))}
+                >
+                    <ChevronRight size={16} aria-hidden="true" />
+                </Button>
             </div>
             <div
                 aria-hidden="true"
