@@ -2,10 +2,15 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Copy, Download, FileText } from 'lucide-react';
+import {
+    ChevronLeft,
+    ChevronRight,
+    Copy,
+    Download,
+    FileText,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
-import MonthPicker from './MonthPicker';
 import PageTitle from './PageTitle';
 import { Button } from '@/components/ui/button';
 import { dateKey } from '@/lib/dates';
@@ -18,6 +23,7 @@ import {
     isMonthKey,
     monthDueNow,
     reportDueDate,
+    shiftMonth,
 } from '@/lib/report';
 import { JobApplication } from '@/lib/types';
 
@@ -88,50 +94,74 @@ export default function ReportView({ applications, dueDay }: ReportViewProps) {
             <hr />
 
             <div className="flex max-w-[900px] flex-col gap-4">
-                {/* No months after the current one. */}
-                <MonthPicker
-                    month={month}
-                    onChange={setMonth}
-                    max={thisMonth}
-                />
-
-                {/* Summary and the two ways to take the report along. */}
+                {/* Summary and the two ways to take the report along. The month and its
+                    arrows sit in the card's header, like the calendar; no months after the
+                    current one. */}
                 <section
-                    className={`${card} flex flex-col gap-4 p-5 sm:flex-row sm:items-end sm:justify-between`}
+                    className={`${card} flex flex-col gap-4 p-5`}
                     aria-label={`Summary for ${label}`}
                 >
-                    <div className="flex flex-col gap-1">
-                        <span className="text-3xl font-semibold text-foreground tabular-nums">
-                            {rows.length}
-                        </span>
-                        <span className="text-sm text-[var(--color-text-secondary)]">
-                            {rows.length === 1 ? 'job' : 'jobs'} applied for in{' '}
+                    <div className="-mt-1 flex items-center justify-between gap-2 border-b border-[var(--color-border-soft)] pb-3">
+                        <h2
+                            aria-live="polite"
+                            className="text-[length:var(--text-md)] tabular-nums"
+                        >
                             {label}
-                        </span>
-                        {timing && (
-                            <span className="text-xs text-[var(--color-text-tertiary)] tabular-nums">
-                                {timing}
-                            </span>
-                        )}
+                        </h2>
+                        <div className="flex items-center gap-1">
+                            <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Previous month"
+                                onClick={() => setMonth(shiftMonth(month, -1))}
+                            >
+                                <ChevronLeft size={16} aria-hidden="true" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Next month"
+                                disabled={month >= thisMonth}
+                                onClick={() => setMonth(shiftMonth(month, 1))}
+                            >
+                                <ChevronRight size={16} aria-hidden="true" />
+                            </Button>
+                        </div>
                     </div>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            disabled={rows.length === 0}
-                            onClick={copy}
-                            className="flex-1 sm:flex-none"
-                        >
-                            <Copy size={16} aria-hidden="true" />
-                            Copy
-                        </Button>
-                        <Button
-                            disabled={rows.length === 0}
-                            onClick={download}
-                            className="flex-1 sm:flex-none"
-                        >
-                            <Download size={16} aria-hidden="true" />
-                            Download CSV
-                        </Button>
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-3xl font-semibold text-foreground tabular-nums">
+                                {rows.length}
+                            </span>
+                            <span className="text-sm text-[var(--color-text-secondary)]">
+                                {rows.length === 1 ? 'job' : 'jobs'} applied for
+                                in {label}
+                            </span>
+                            {timing && (
+                                <span className="text-xs text-[var(--color-text-tertiary)] tabular-nums">
+                                    {timing}
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                disabled={rows.length === 0}
+                                onClick={copy}
+                                className="flex-1 sm:flex-none"
+                            >
+                                <Copy size={16} aria-hidden="true" />
+                                Copy
+                            </Button>
+                            <Button
+                                disabled={rows.length === 0}
+                                onClick={download}
+                                className="flex-1 sm:flex-none"
+                            >
+                                <Download size={16} aria-hidden="true" />
+                                Download CSV
+                            </Button>
+                        </div>
                     </div>
                 </section>
 
