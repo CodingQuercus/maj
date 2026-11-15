@@ -14,7 +14,9 @@ import {
 } from '@/components/ui/select';
 
 // Form state for the application drawer. workType "" means "Not specified" (saved as null).
+// stage: "saved" = planning to apply (deadline = last day to apply), "applied" = sent.
 export type FormValues = {
+    stage: 'saved' | 'applied';
     title: string;
     company: string;
     location: string;
@@ -29,6 +31,8 @@ export type FormValues = {
 type ApplicationFormProps = {
     values: FormValues;
     onChange: (field: keyof FormValues, value: string) => void;
+    // New applications choose Saved or Applied; existing ones keep their stage.
+    isNew: boolean;
 };
 
 // Grows a textarea to fit its content (used for description and notes).
@@ -44,9 +48,62 @@ const pair = 'grid grid-cols-1 gap-4 sm:grid-cols-2';
 export default function ApplicationForm({
     values,
     onChange,
+    isNew,
 }: ApplicationFormProps) {
+    const saved = values.stage === 'saved';
+    const stageOption = (
+        stage: FormValues['stage'],
+        label: string,
+        hint: string
+    ) => (
+        <button
+            type="button"
+            role="radio"
+            aria-checked={values.stage === stage}
+            aria-label={`${label}: ${hint}`}
+            onClick={() => onChange('stage', stage)}
+            className={
+                'flex flex-1 cursor-pointer flex-col items-start gap-0.5 rounded-md border px-3 py-2 text-left outline-none focus-ring ' +
+                (values.stage === stage
+                    ? 'border-primary bg-[var(--color-accent-subtle)]'
+                    : 'border-border bg-[var(--color-white)] hover:bg-[var(--color-surface)]')
+            }
+        >
+            <span className="text-sm font-medium text-foreground">{label}</span>
+            <span className="text-xs text-[var(--color-text-tertiary)]">
+                {hint}
+            </span>
+        </button>
+    );
+
     return (
         <>
+            {isNew && (
+                <div>
+                    <span
+                        id="stage-label"
+                        className="mb-1.5 block text-sm font-medium"
+                    >
+                        Status
+                    </span>
+                    <div
+                        role="radiogroup"
+                        aria-labelledby="stage-label"
+                        className="flex gap-2"
+                    >
+                        {stageOption(
+                            'applied',
+                            'Already applied',
+                            'Log a sent application'
+                        )}
+                        {stageOption(
+                            'saved',
+                            'Saved for later',
+                            'Remind me to apply'
+                        )}
+                    </div>
+                </div>
+            )}
             <div>
                 <Label htmlFor="title">Job title *</Label>
                 <Input
@@ -98,27 +155,31 @@ export default function ApplicationForm({
                     </Select>
                 </div>
             </div>
+            {/* Saved jobs have a last day to apply; applied ones a date applied. */}
             <div className={pair}>
-                <div>
-                    <Label htmlFor="appliedAt">Date applied</Label>
-                    <DatePicker
-                        id="appliedAt"
-                        label="Date applied"
-                        value={values.appliedAt}
-                        onChange={(value) => onChange('appliedAt', value)}
-                    />
-                </div>
-                <div>
-                    <Label htmlFor="deadline">Deadline</Label>
-                    <DatePicker
-                        id="deadline"
-                        label="Deadline"
-                        value={values.deadline}
-                        onChange={(value) => onChange('deadline', value)}
-                        placeholder="No deadline"
-                        clearable
-                    />
-                </div>
+                {saved ? (
+                    <div>
+                        <Label htmlFor="deadline">Apply by</Label>
+                        <DatePicker
+                            id="deadline"
+                            label="Apply by"
+                            value={values.deadline}
+                            onChange={(value) => onChange('deadline', value)}
+                            placeholder="No deadline"
+                            clearable
+                        />
+                    </div>
+                ) : (
+                    <div>
+                        <Label htmlFor="appliedAt">Date applied</Label>
+                        <DatePicker
+                            id="appliedAt"
+                            label="Date applied"
+                            value={values.appliedAt}
+                            onChange={(value) => onChange('appliedAt', value)}
+                        />
+                    </div>
+                )}
             </div>
             <div>
                 <Label htmlFor="url">Job posting URL</Label>

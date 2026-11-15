@@ -78,6 +78,8 @@ export default function OverviewView({
     events,
 }: OverviewViewProps) {
     const total = applications.length;
+    // Saved jobs aren't applications yet, so the headline count leaves them out.
+    const appliedCount = applications.filter((a) => a.status !== 'saved').length;
 
     const statusCounts = applications.reduce<Partial<Record<Status, number>>>(
         (acc, a) => {
@@ -134,7 +136,7 @@ export default function OverviewView({
                           when: info.label,
                           urgent: info.urgent,
                           title: app.title,
-                          detail: `Deadline · ${app.company}`,
+                          detail: `Apply by · ${app.company}`,
                       },
                   ]
                 : [];
@@ -154,7 +156,7 @@ export default function OverviewView({
             <div className="flex flex-col gap-4">
                 {/* Headline numbers */}
                 <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-                    <StatTile label="Applications" value={total} />
+                    <StatTile label="Applications" value={appliedCount} />
                     <StatTile
                         label="This week"
                         value={thisWeekCount}

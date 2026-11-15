@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { JobApplication, Contact, ApplicationEvent } from '@/lib/types';
-import { formatDate } from '@/lib/dates';
+import { formatDate, todayLocal } from '@/lib/dates';
+import { deadlinePassed } from '@/lib/deadline';
 
 import { WORK_TYPE_LABELS } from '@/lib/status';
 import { lastApplicationsUrl } from '@/lib/navigation';
@@ -72,6 +73,29 @@ export default function ApplicationDetail({
 
     const router = useRouter();
     const supabase = useMemo(() => createClient(), []);
+
+    const isSaved = application.status === 'saved';
+    const missed = deadlinePassed(application);
+    const [markingApplied, setMarkingApplied] = useState(false);
+
+    // Saved -> Applied, dated today (can be changed in Edit).
+    const markAsApplied = async () => {
+        setMarkingApplied(true);
+        const { error } = await supabase
+            .from('job_applications')
+            .update({
+                status: 'applied',
+                applied_at: new Date(todayLocal()).toISOString(),
+            })
+            .eq('id', application.id);
+        setMarkingApplied(false);
+        if (error) {
+            toast.error('Could not update the application. Please try again.');
+            return;
+        }
+        toast.success('Marked as applied');
+        router.refresh();
+    };
 
     const handleDelete = async () => {
         setDeleting(true);
@@ -233,13 +257,36 @@ export default function ApplicationDetail({
                                 Applied {formatDate(application.applied_at)}
                             </span>
                         )}
-                        {application.deadline && (
+                        {/* The deadline is the last day to apply: only shown while saved. */}
+                        {isSaved && application.deadline && (
                             <span className="flex items-center gap-1">
                                 <Calendar size={12} aria-hidden="true" />
-                                Deadline {formatDate(application.deadline)}
+                                Apply by {formatDate(application.deadline)}
                             </span>
                         )}
                     </div>
+
+                    {/* Saved (not applied yet): one click to record applying. After a missed
+                        deadline the user chooses what happens; nothing changes by itself. */}
+                    {isSaved && (
+                        <div className="flex flex-col gap-3 rounded-lg border border-dashed border-[var(--color-border-hard)] bg-[var(--color-surface)] p-4 sm:flex-row sm:items-center sm:justify-between">
+                            <p className="text-sm text-[var(--color-text-secondary)]" suppressHydrationWarning>
+                                {missed
+                                    ? `The last day to apply was ${formatDate(application.deadline!)}. Did you apply?`
+                                    : 'Not applied yet.'}
+                            </p>
+                            <div className="flex shrink-0 gap-2">
+                                <Button size="sm" onClick={markAsApplied} loading={markingApplied}>
+                                    Mark as applied
+                                </Button>
+                                {missed && (
+                                    <Button variant="destructive" size="sm" onClick={() => setConfirmDeleteOpen(true)}>
+                                        Delete
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </header>
 
                 <hr />

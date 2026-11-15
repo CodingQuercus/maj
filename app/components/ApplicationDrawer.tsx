@@ -10,7 +10,12 @@ import { X } from 'lucide-react';
 import ApplicationForm, { type FormValues } from './ApplicationForm';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetClose, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import {
+    Sheet,
+    SheetClose,
+    SheetContent,
+    SheetTitle,
+} from '@/components/ui/sheet';
 
 type DrawerProps = {
     open: boolean;
@@ -20,6 +25,8 @@ type DrawerProps = {
 
 // Form values for an existing application, or an empty form for a new one.
 const initialValues = (application?: JobApplication): FormValues => ({
+    // New entries default to Applied (logging a sent application is the most common).
+    stage: application?.status === 'saved' ? 'saved' : 'applied',
     title: application?.title ?? '',
     company: application?.company ?? '',
     location: application?.location ?? '',
@@ -36,9 +43,9 @@ export default function ApplicationDrawer({
     onClose,
     application,
 }: DrawerProps) {
-
-    const [values, setValues] = useState<FormValues>(() => initialValues(application));
-
+    const [values, setValues] = useState<FormValues>(() =>
+        initialValues(application)
+    );
 
     const isEditing = !!application;
     const [loading, setLoading] = useState(false);
@@ -63,10 +70,14 @@ export default function ApplicationDrawer({
                     company: values.company,
                     location: values.location,
                     work_type: values.workType || null,
-                    deadline: values.deadline || null,
-                    applied_at: values.appliedAt
-                        ? new Date(values.appliedAt).toISOString()
-                        : null,
+                    // Only the date the form shows for this stage is changed.
+                    ...(values.stage === 'saved'
+                        ? { deadline: values.deadline || null }
+                        : {
+                              applied_at: values.appliedAt
+                                  ? new Date(values.appliedAt).toISOString()
+                                  : null,
+                          }),
                     description: values.description || null,
                     notes: values.notes || null,
                     url: values.url || null,
@@ -76,7 +87,7 @@ export default function ApplicationDrawer({
             if (error) {
                 setError('Something went wrong. Please try again');
                 setLoading(false);
-                return
+                return;
             }
             router.refresh();
             onClose();
@@ -96,33 +107,42 @@ export default function ApplicationDrawer({
                 company: values.company,
                 location: values.location,
                 work_type: values.workType || null,
-                deadline: values.deadline || null,
                 description: values.description || null,
                 notes: values.notes || null,
                 user_id: user.id,
-                status: 'applied',
-                applied_at: values.appliedAt
-                    ? new Date(values.appliedAt).toISOString()
-                    : new Date(todayLocal()).toISOString(),
+                status: values.stage,
+                // Saved: a last day to apply, no date applied yet. Applied: the reverse.
+                deadline:
+                    values.stage === 'saved' ? values.deadline || null : null,
+                applied_at:
+                    values.stage === 'saved'
+                        ? null
+                        : values.appliedAt
+                          ? new Date(values.appliedAt).toISOString()
+                          : new Date(todayLocal()).toISOString(),
                 url: values.url || null,
             });
 
             if (error) {
                 setError('Something went wrong. Please try again');
                 setLoading(false);
-                return
+                return;
             }
             router.refresh();
             onClose();
             resetForm();
-            toast.success('Application added');
+            toast.success(
+                values.stage === 'saved'
+                    ? 'Saved for later'
+                    : 'Application added'
+            );
         }
 
         setLoading(false);
     };
 
     const handleChange = (field: keyof FormValues, value: string) => {
-        setValues(prev => ({ ...prev, [field]: value }));
+        setValues((prev) => ({ ...prev, [field]: value }));
     };
 
     const resetForm = () => setValues(initialValues());
@@ -143,9 +163,12 @@ export default function ApplicationDrawer({
                     // edit don't linger. A new-application draft is kept until it is saved.
                     if (application) setValues(initialValues(application));
                     setError(null);
-                    openerRef.current = document.activeElement as HTMLElement | null;
+                    openerRef.current =
+                        document.activeElement as HTMLElement | null;
                     formRef.current
-                        ?.querySelector<HTMLElement>('input, select, textarea, button')
+                        ?.querySelector<HTMLElement>(
+                            'input, select, textarea, button'
+                        )
                         ?.focus({ preventScroll: true });
                 }}
                 // The drawer is opened from plain buttons rather than a SheetTrigger, so Radix
@@ -161,7 +184,11 @@ export default function ApplicationDrawer({
                         {isEditing ? 'Edit application' : 'New application'}
                     </SheetTitle>
                     <SheetClose asChild>
-                        <Button variant="ghost" size="icon" aria-label="Close drawer">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Close drawer"
+                        >
                             <X size={16} />
                         </Button>
                     </SheetClose>
@@ -176,19 +203,40 @@ export default function ApplicationDrawer({
                     }
                     className="flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-4"
                 >
-                    <ApplicationForm values={values} onChange={handleChange} />
+                    <ApplicationForm
+                        values={values}
+                        onChange={handleChange}
+                        isNew={!isEditing}
+                    />
                 </form>
 
                 <div className="flex flex-col gap-2 border-t border-border p-4">
-                    {error && <p className="field-error" role="alert">{error}</p>}
+                    {error && (
+                        <p className="field-error" role="alert">
+                            {error}
+                        </p>
+                    )}
                     <div className="flex gap-2">
                         <SheetClose asChild>
-                            <Button type="button" variant="outline" className="flex-1">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="flex-1"
+                            >
                                 Cancel
                             </Button>
                         </SheetClose>
-                        <Button type="submit" form="application-form" loading={loading} className="flex-1">
-                            {loading ? 'Saving…' : isEditing ? 'Save changes' : 'Save application'}
+                        <Button
+                            type="submit"
+                            form="application-form"
+                            loading={loading}
+                            className="flex-1"
+                        >
+                            {loading
+                                ? 'Saving…'
+                                : isEditing
+                                  ? 'Save changes'
+                                  : 'Save application'}
                         </Button>
                     </div>
                 </div>

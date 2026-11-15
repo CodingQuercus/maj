@@ -3,6 +3,7 @@ export type WorkType = 'on-site' | 'hybrid' | 'remote';
 
 // Status options representing the current stage of an application
 export type Status =
+    | 'saved'
     | 'applied'
     | 'assessment'
     | 'interview'

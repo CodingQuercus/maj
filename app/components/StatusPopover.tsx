@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Status } from '@/lib/types';
 import { STATUSES, STATUS_LABELS } from '@/lib/status';
+import { todayLocal } from '@/lib/dates';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -34,9 +35,17 @@ export default function StatusPopover({
         // Update UI optimistically before database confirms.
         const previous = status;
         setStatus(newStatus);
+        // Leaving Saved means the job was applied for: record today as the date applied
+        // (it can be changed in Edit).
+        const leavingSaved = previous === 'saved' && newStatus !== 'saved';
         const { error } = await supabase
             .from('job_applications')
-            .update({ status: newStatus })
+            .update({
+                status: newStatus,
+                ...(leavingSaved && {
+                    applied_at: new Date(todayLocal()).toISOString(),
+                }),
+            })
             .eq('id', applicationId);
 
         if (error) {

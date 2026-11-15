@@ -18,15 +18,16 @@ function periodMonth(period: ExportPeriod): string | null {
 }
 
 // Applications applied for in the period, oldest first (the order a report is read in).
+// Saved jobs (not applied for yet) are never exported.
 export function applicationsInPeriod(
     applications: JobApplication[],
     period: ExportPeriod
 ): JobApplication[] {
     const month = periodMonth(period);
     if (month) return applicationsInMonth(applications, month);
-    return [...applications].sort((a, b) =>
-        (a.applied_at ?? '').localeCompare(b.applied_at ?? '')
-    );
+    return applications
+        .filter((a) => a.status !== 'saved')
+        .sort((a, b) => (a.applied_at ?? '').localeCompare(b.applied_at ?? ''));
 }
 
 // "maj-applications-2026-10.csv", or "-all" for every application.

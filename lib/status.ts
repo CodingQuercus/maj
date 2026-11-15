@@ -1,7 +1,10 @@
 import { Status, WorkType } from './types';
 
 // Application statuses in pipeline order. Single source for menus, filters and charts.
+// "saved" is a job you plan to apply for: no date applied yet, and its deadline is the
+// last day to apply.
 export const STATUSES: Status[] = [
+    'saved',
     'applied',
     'assessment',
     'interview',
@@ -11,6 +14,7 @@ export const STATUSES: Status[] = [
 ];
 
 export const STATUS_LABELS: Record<Status, string> = {
+    saved: 'Saved',
     applied: 'Applied',
     assessment: 'Assessment',
     interview: 'Interview',
@@ -22,6 +26,7 @@ export const STATUS_LABELS: Record<Status, string> = {
 // Hex values for charts (SVG attributes can't use CSS variables).
 // Keep in sync with the --status-* tokens in globals.css.
 export const STATUS_COLORS: Record<Status, string> = {
+    saved: '#a8a29e',
     applied: '#64748b',
     assessment: '#0284c7',
     interview: '#d97706',

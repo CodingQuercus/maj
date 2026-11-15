@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
-import { formatDate } from '@/lib/dates';
+import { formatDate, todayLocal } from '@/lib/dates';
 import { deleteEventWithUndo } from '@/lib/eventActions';
 import {
     EVENT_KIND_LABELS,
@@ -57,7 +57,13 @@ export default function EventsSection({
     const setStatusToInterview = async () => {
         const { error } = await supabase
             .from('job_applications')
-            .update({ status: 'interview' })
+            .update({
+                status: 'interview',
+                // A saved job with an interview has been applied for: date it today.
+                ...(status === 'saved' && {
+                    applied_at: new Date(todayLocal()).toISOString(),
+                }),
+            })
             .eq('id', applicationId);
         if (error) {
             toast.error('Could not update status. Please try again.');
@@ -73,7 +79,9 @@ export default function EventsSection({
         const suggest =
             isNew &&
             event.kind === 'interview' &&
-            (status === 'applied' || status === 'assessment');
+            (status === 'saved' ||
+                status === 'applied' ||
+                status === 'assessment');
         toast.success(
             isNew ? 'Event added' : 'Event updated',
             suggest

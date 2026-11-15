@@ -196,10 +196,21 @@ export default function ApplicationsView({
                 a.company.toLowerCase().includes(search.toLowerCase())
         )
         .sort((a, b) => {
-            const aVal = a[sortKey] ?? '';
-            const bVal = b[sortKey] ?? '';
+            // By date, saved jobs (no date applied yet) count as the future: first when
+            // newest is first, and among themselves the soonest deadline first.
+            const value = (x: JobApplication) =>
+                sortKey === 'applied_at'
+                    ? (x.applied_at ?? '9999')
+                    : (x[sortKey] ?? '');
+            const aVal = value(a);
+            const bVal = value(b);
             if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
             if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+            if (sortKey === 'applied_at' && !a.applied_at && !b.applied_at) {
+                return (a.deadline ?? '9999').localeCompare(
+                    b.deadline ?? '9999'
+                );
+            }
             return 0;
         });
 

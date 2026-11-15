@@ -7,12 +7,23 @@ import { Clock } from 'lucide-react';
 import { JobApplication } from '@/lib/types';
 import { formatDate } from '@/lib/dates';
 import StatusPopover from './StatusPopover';
-import { upcomingDeadline } from '@/lib/deadline';
+import { deadlinePassed, upcomingDeadline } from '@/lib/deadline';
 import { cn } from '@/lib/utils';
 
-// "Due in 3 days" under the title for open applications with a deadline in the next
-// two weeks; amber when three days or less remain.
+// Under the title of a saved job: "Apply within 3 days" when its deadline is in the next
+// two weeks (amber when three days or less remain), or "Deadline passed".
 function DeadlineNote({ application }: ApplicationItemProps) {
+    if (deadlinePassed(application)) {
+        return (
+            <span
+                className="mt-0.5 flex items-center gap-1 text-xs font-normal text-[var(--color-text-tertiary)]"
+                suppressHydrationWarning
+            >
+                <Clock size={12} aria-hidden="true" />
+                Deadline passed
+            </span>
+        );
+    }
     const info = upcomingDeadline(application);
     if (!info) return null;
     return (
@@ -49,7 +60,13 @@ const appliedAt = (application: JobApplication) =>
 export function ApplicationCard({ application }: ApplicationItemProps) {
     const href = `/applications/${application.id}`;
     return (
-        <li className="relative flex flex-col gap-2 rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-xs)] transition-[border-color,box-shadow] hover:border-[var(--color-border-hard)] hover:shadow-[var(--shadow-sm)]">
+        <li
+            className={cn(
+                'relative flex flex-col gap-2 rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-xs)] transition-[border-color,box-shadow,opacity] hover:border-[var(--color-border-hard)] hover:shadow-[var(--shadow-sm)]',
+                // Missed deadline: muted until the user decides what to do with it.
+                deadlinePassed(application) && 'opacity-60 hover:opacity-100'
+            )}
+        >
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                     <Link
@@ -98,7 +115,11 @@ export function ApplicationRow({ application }: ApplicationItemProps) {
         <tr
             onClick={openOnClick}
             // Borders on the cells: the table uses border-separate (for the sticky header).
-            className="group cursor-pointer transition-colors hover:bg-[var(--color-surface)] [&>td]:border-b [&>td]:border-[var(--color-border-soft)]"
+            className={cn(
+                'group cursor-pointer transition-[background-color,opacity] hover:bg-[var(--color-surface)] [&>td]:border-b [&>td]:border-[var(--color-border-soft)]',
+                // Missed deadline: muted until the user decides what to do with it.
+                deadlinePassed(application) && 'opacity-60 hover:opacity-100'
+            )}
         >
             <td
                 className="sticky left-0 z-10 truncate bg-background px-4 py-3 text-sm font-medium shadow-[inset_-1px_0_0_var(--color-border-soft)] transition-colors group-hover:bg-[var(--color-surface)]"

@@ -28,7 +28,7 @@ import {
     isMonthKey,
     shiftMonth,
 } from '@/lib/months';
-import { OPEN_STATUSES, STATUS_COLORS } from '@/lib/status';
+import { STATUS_COLORS } from '@/lib/status';
 import { CalendarEvent, JobApplication } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -52,7 +52,7 @@ type DrawerState =
     | { open: true; event: CalendarEvent; date?: undefined };
 
 // Two columns: a month calendar to pick a day, and that day's schedule (events by time,
-// then deadlines of open applications). Stacked on phones. The one Add button sits on the
+// then last days to apply for saved jobs). Stacked on phones. The one Add button sits on the
 // day's schedule. Events are added, edited and deleted in a drawer, or on an application's page.
 // The month lives in the URL (?month=2026-11).
 export default function CalendarView({
@@ -77,7 +77,8 @@ export default function CalendarView({
         dayFor(event.event_date).events.push(event);
     }
     for (const app of applications) {
-        if (app.deadline && OPEN_STATUSES.includes(app.status)) {
+        // Last day to apply, for jobs saved but not applied for yet.
+        if (app.deadline && app.status === 'saved') {
             dayFor(dateKey(app.deadline)).deadlines.push(app);
         }
     }
@@ -383,7 +384,7 @@ function DaySchedule({
                                 </span>
                                 <span className="min-w-0 flex-1">
                                     <span className="block font-medium text-foreground">
-                                        Deadline
+                                        Apply by
                                     </span>
                                     <span className="block truncate text-[var(--color-text-secondary)]">
                                         {a.title} · {a.company}

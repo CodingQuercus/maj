@@ -64,6 +64,8 @@
     --color-info-border: #bae6fd;
 
     /* Job Application Status Tokens */
+    --status-saved: #a8a29e;
+    /* Stone: not applied yet */
     --status-applied: #64748b;
     /* Slate */
     --status-assessment: #0284c7;
@@ -79,6 +81,7 @@
 
     /* Darker status shades for badge text, so 12px labels keep 4.5:1 on their tinted
        backgrounds. The base colours above stay for dots, borders and charts. */
+    --status-saved-text: #57534e;
     --status-applied-text: #475569;
     --status-assessment-text: #0369a1;
     --status-interview-text: #b45309;
@@ -505,6 +508,14 @@ button.badge {
     border-radius: 50%;
     background: currentColor;
     flex-shrink: 0;
+}
+
+.badge-saved {
+    /* Dashed and without fill: planned, not sent yet. */
+    background: transparent;
+    color: var(--status-saved-text);
+    border-color: var(--status-saved);
+    border-style: dashed;
 }
 
 .badge-applied {
