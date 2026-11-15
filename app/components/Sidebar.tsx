@@ -36,8 +36,8 @@ const accountLink = { href: '/account', label: 'Account', icon: Settings };
 
 // Navigation in three shapes, all rendered with CSS picking one so the right layout shows
 // from the first paint:
-// - phones: a top bar with the logo and a menu button that opens the menu as a drawer
-//   (five sections no longer fit a bottom bar);
+// - phones: a menu button at the top left that opens the menu as a drawer (five sections
+//   no longer fit a bottom bar);
 // - tablet: a sticky sidebar with icons only;
 // - desktop: the same sidebar with labels.
 export default function Sidebar() {
@@ -171,12 +171,10 @@ export default function Sidebar() {
 
     return (
         <>
-            {/* Phones: top bar with a menu drawer. Not sticky, so pages with their own locked
-                header (the applications list) keep the top of the screen. */}
-            <header className="flex items-center justify-between border-b border-border bg-muted px-4 py-2 sm:hidden">
-                <Link href="/applications" className="no-underline">
-                    {brand('always')}
-                </Link>
+            {/* Phones: just a menu button at the top left that opens the menu as a drawer. Not
+                sticky, so pages with their own locked header (the applications list) keep
+                the top of the screen. */}
+            <div className="flex items-center px-2 pt-2 sm:hidden">
                 <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
                     <SheetTrigger asChild>
                         <Button
@@ -203,7 +201,7 @@ export default function Sidebar() {
                         {navContent(true)}
                     </SheetContent>
                 </Sheet>
-            </header>
+            </div>
 
             {/* Tablet and desktop: sticky sidebar */}
             <aside

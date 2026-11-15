@@ -56,6 +56,8 @@ export default function CalendarView({
     const month = isMonthKey(param) ? param : thisMonth;
     const today = todayLocal();
     const [drawer, setDrawer] = useState<DrawerState>({ open: false });
+    // Day picked in the phone grid. Falls back to today in the current month.
+    const [selected, setSelected] = useState<string | null>(null);
 
     const setMonth = (next: string) => {
         const params = new URLSearchParams(searchParams.toString());
@@ -91,9 +93,11 @@ export default function CalendarView({
 
     const weeks = monthWeeks(month);
     const label = formatMonth(month);
-    const monthDays = [...days.keys()]
-        .filter((key) => key.startsWith(month))
-        .sort();
+    const selectedDay = selected?.startsWith(month)
+        ? selected
+        : month === thisMonth
+          ? today
+          : null;
 
     return (
         <div className="p-4 sm:p-8">
@@ -114,7 +118,11 @@ export default function CalendarView({
             <hr />
 
             <div className="flex flex-col gap-4">
-                <MonthPicker month={month} onChange={setMonth} />
+                <MonthPicker
+                    month={month}
+                    onChange={setMonth}
+                    resetLabel="Today"
+                />
 
                 {/* md and up: month grid */}
                 <div className="hidden overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-xs)] md:block">
@@ -153,38 +161,18 @@ export default function CalendarView({
                     </table>
                 </div>
 
-                {/* Phones: agenda of the days that have something */}
-                <div className="md:hidden">
-                    {monthDays.length === 0 ? (
-                        <p className="py-8 text-center text-sm text-[var(--color-text-tertiary)]">
-                            Nothing in {label}.
-                        </p>
-                    ) : (
-                        <ol className="flex flex-col gap-4">
-                            {monthDays.map((key) => (
-                                <li key={key}>
-                                    <h3
-                                        className={cn(
-                                            'mb-1.5 text-sm font-medium tabular-nums',
-                                            key === today
-                                                ? 'text-primary'
-                                                : 'text-[var(--color-text-secondary)]'
-                                        )}
-                                    >
-                                        {formatAgendaDay(key)}
-                                        {key === today && ' · Today'}
-                                    </h3>
-                                    <DayItems
-                                        dayKey={key}
-                                        day={days.get(key)!}
-                                        onEdit={edit}
-                                        roomy
-                                    />
-                                </li>
-                            ))}
-                        </ol>
-                    )}
-                </div>
+                {/* Phones: a compact month grid; tap a date to see it and add events. */}
+                <MobileMonth
+                    weeks={weeks}
+                    month={month}
+                    label={label}
+                    today={today}
+                    days={days}
+                    selected={selectedDay}
+                    onSelect={setSelected}
+                    onAdd={addOn}
+                    onEdit={edit}
+                />
 
                 <p className="text-xs text-[var(--color-text-tertiary)]">
                     Deadlines show for applications that are still open.
@@ -220,9 +208,18 @@ function GridCell({
     const dayNumber = Number(dayKey.slice(8));
     return (
         <td
+            // A click on the day's empty space adds an event there (the + button is the
+            // keyboard way to do the same).
+            onClick={(e) => {
+                if (outside || (e.target as HTMLElement).closest('a, button'))
+                    return;
+                onAdd(dayKey);
+            }}
             className={cn(
                 'group h-28 border-r border-b border-[var(--color-border-soft)] p-1.5 align-top last:border-r-0 [tr:last-child>&]:border-b-0',
-                outside && 'bg-[var(--color-surface)]'
+                outside
+                    ? 'bg-[var(--color-surface)]'
+                    : 'cursor-pointer transition-colors hover:bg-[var(--color-surface)]'
             )}
         >
             <div className="mb-1 flex items-center justify-between">
@@ -352,5 +349,174 @@ function DayItems({
                 </li>
             )}
         </ul>
+    );
+}
+
+// Phones: 7-column grid of dates with dots for what is on them: filled for an event, a ring
+// for a deadline (shape, not only colour, tells them apart), light for applied.
+// Tapping a date shows its items below with a button to add an event on it.
+function MobileMonth({
+    weeks,
+    month,
+    label,
+    today,
+    days,
+    selected,
+    onSelect,
+    onAdd,
+    onEdit,
+}: {
+    weeks: string[][];
+    month: string;
+    label: string;
+    today: string;
+    days: Map<string, Day>;
+    selected: string | null;
+    onSelect: (day: string) => void;
+    onAdd: (date: string) => void;
+    onEdit: (event: CalendarEvent) => void;
+}) {
+    const day = selected ? days.get(selected) : undefined;
+    const empty =
+        !day ||
+        (day.events.length === 0 &&
+            day.deadlines.length === 0 &&
+            day.applied === 0);
+
+    // Read out with each date, e.g. "1 event, 1 deadline".
+    const summary = (d: Day | undefined) =>
+        [
+            d?.events.length &&
+                `${d.events.length} event${d.events.length === 1 ? '' : 's'}`,
+            d?.deadlines.length &&
+                `${d.deadlines.length} deadline${d.deadlines.length === 1 ? '' : 's'}`,
+            d?.applied && `${d.applied} applied`,
+        ]
+            .filter(Boolean)
+            .join(', ');
+
+    return (
+        <div className="flex flex-col gap-4 md:hidden">
+            <div className="rounded-xl border border-border bg-card p-2 shadow-[var(--shadow-xs)]">
+                <div
+                    aria-hidden="true"
+                    className="grid grid-cols-7 pb-1 text-center text-[11px] tracking-wider text-[var(--color-text-tertiary)] uppercase"
+                >
+                    {WEEKDAYS.map((d) => (
+                        <span key={d}>{d.slice(0, 2)}</span>
+                    ))}
+                </div>
+                <div
+                    role="group"
+                    aria-label={label}
+                    className="grid grid-cols-7"
+                >
+                    {weeks.flat().map((key) => {
+                        if (!key.startsWith(month))
+                            return <span key={key} aria-hidden="true" />;
+                        const d = days.get(key);
+                        const isSelected = key === selected;
+                        const isToday = key === today;
+                        const info = summary(d);
+                        return (
+                            <button
+                                key={key}
+                                type="button"
+                                aria-pressed={isSelected}
+                                aria-label={`${formatAgendaDay(key)}${isToday ? ', today' : ''}${info ? `, ${info}` : ''}`}
+                                onClick={() => onSelect(key)}
+                                className="flex h-12 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg outline-none focus-ring"
+                            >
+                                <span
+                                    className={cn(
+                                        'inline-flex size-8 items-center justify-center rounded-full text-sm tabular-nums',
+                                        isSelected
+                                            ? 'bg-primary font-semibold text-primary-foreground'
+                                            : isToday
+                                              ? 'font-semibold text-primary'
+                                              : 'text-foreground'
+                                    )}
+                                >
+                                    {Number(key.slice(8))}
+                                </span>
+                                <span
+                                    aria-hidden="true"
+                                    className="flex h-1.5 gap-0.5"
+                                >
+                                    {d && d.events.length > 0 && (
+                                        <span className="size-1.5 rounded-full bg-primary" />
+                                    )}
+                                    {d && d.deadlines.length > 0 && (
+                                        <span className="size-1.5 rounded-full border border-[var(--color-text-tertiary)]" />
+                                    )}
+                                    {d && d.applied > 0 && (
+                                        <span className="size-1.5 rounded-full bg-[var(--color-accent-border)]" />
+                                    )}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+                <p
+                    aria-hidden="true"
+                    className="flex justify-center gap-4 pt-2 text-[11px] text-[var(--color-text-tertiary)]"
+                >
+                    <span className="flex items-center gap-1">
+                        <span className="size-1.5 rounded-full bg-primary" />
+                        Event
+                    </span>
+                    <span className="flex items-center gap-1">
+                        <span className="size-1.5 rounded-full border border-[var(--color-text-tertiary)]" />
+                        Deadline
+                    </span>
+                    <span className="flex items-center gap-1">
+                        <span className="size-1.5 rounded-full bg-[var(--color-accent-border)]" />
+                        Applied
+                    </span>
+                </p>
+            </div>
+
+            {selected ? (
+                <section aria-label={formatAgendaDay(selected)}>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                        <h3
+                            className={cn(
+                                'text-sm font-medium tabular-nums',
+                                selected === today
+                                    ? 'text-primary'
+                                    : 'text-[var(--color-text-secondary)]'
+                            )}
+                        >
+                            {formatAgendaDay(selected)}
+                            {selected === today && ' · Today'}
+                        </h3>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onAdd(selected)}
+                        >
+                            <Plus size={14} aria-hidden="true" />
+                            Add event
+                        </Button>
+                    </div>
+                    {empty ? (
+                        <p className="text-sm text-[var(--color-text-tertiary)]">
+                            Nothing on this day.
+                        </p>
+                    ) : (
+                        <DayItems
+                            dayKey={selected}
+                            day={day!}
+                            onEdit={onEdit}
+                            roomy
+                        />
+                    )}
+                </section>
+            ) : (
+                <p className="text-center text-sm text-[var(--color-text-tertiary)]">
+                    Tap a date to see it or add an event.
+                </p>
+            )}
+        </div>
     );
 }
