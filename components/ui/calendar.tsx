@@ -128,8 +128,10 @@ function Calendar({
                     'rounded-r-md bg-accent',
                     defaultClassNames.range_end
                 ),
+                // Today as a green outline (as in the app's calendar), not a grey fill that
+                // reads like a selection. A selected today is filled as usual.
                 today: cn(
-                    'rounded-md bg-accent text-accent-foreground data-[selected=true]:rounded-none',
+                    'rounded-md shadow-[inset_0_0_0_1.5px_var(--color-primary)] data-[selected=true]:rounded-none [&>button]:font-semibold [&>button]:text-primary',
                     defaultClassNames.today
                 ),
                 outside: cn(
