@@ -8,42 +8,43 @@ import HomeNav from './components/HomeNav';
 import HomeFooter from './components/Footer';
 import styles from './home.module.css';
 
-// Sample entries for the journal illustration. Companies are made up.
+// Sample entries for the journal illustration, taken from the demo account so the page
+// matches what "Try demo" shows. Companies are made up.
 const sampleEntries = [
     {
-        role: 'Frontend Developer',
-        company: 'Nordljus',
-        date: '2026-05-28',
+        role: 'UX/UI Designer',
+        company: 'Wavely',
+        date: '2026-05-17',
         status: 'interview',
         label: 'Interview',
     },
     {
-        role: 'UX Engineer',
-        company: 'Fjällsta AB',
-        date: '2026-05-22',
+        role: 'Frontend Developer',
+        company: 'Driftly',
+        date: '2026-05-17',
         status: 'assessment',
         label: 'Assessment',
     },
     {
-        role: 'Product Designer',
-        company: 'Brygga Studio',
-        date: '2026-05-19',
+        role: 'Frontend Developer',
+        company: 'Miru',
+        date: '2026-05-16',
         status: 'applied',
         label: 'Applied',
     },
     {
-        role: 'Fullstack Developer',
-        company: 'Lindholmen Labs',
-        date: '2026-05-12',
+        role: 'Product Designer',
+        company: 'Cloudbit',
+        date: '2026-05-15',
         status: 'offer',
         label: 'Offer',
     },
     {
-        role: 'Junior Developer',
-        company: 'Kvarn & Co',
-        date: '2026-05-06',
-        status: 'rejected',
-        label: 'Rejected',
+        role: 'UX Designer',
+        company: 'Tivio',
+        date: '2026-05-14',
+        status: 'withdrawn',
+        label: 'Withdrawn',
     },
 ];
 
@@ -132,7 +133,7 @@ export default async function HomePage() {
                             <ul className={styles.entries}>
                                 {sampleEntries.map((entry, i) => (
                                     <li
-                                        key={entry.role}
+                                        key={`${entry.role}-${entry.company}`}
                                         className={styles.entry}
                                         style={
                                             {
@@ -161,7 +162,7 @@ export default async function HomePage() {
                                     <strong>12</strong> applied
                                 </span>
                                 <span>
-                                    <strong>3</strong> interviews
+                                    <strong>2</strong> interviews
                                 </span>
                                 <span>
                                     <strong>1</strong> offer
@@ -171,8 +172,8 @@ export default async function HomePage() {
                     </div>
                     <div className={styles.note}>
                         <span className={styles.noteLabel}>Thu 10:00</span>
-                        Interview at Nordljus — bring portfolio, ask about the
-                        team.
+                        Interview at Wavely — video call with the hiring
+                        manager.
                     </div>
                 </div>
             </section>
