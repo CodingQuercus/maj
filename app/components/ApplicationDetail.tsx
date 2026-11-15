@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { JobApplication, Contact } from '@/lib/types';
+import { JobApplication, Contact, ApplicationEvent } from '@/lib/types';
 import { formatDate } from '@/lib/dates';
 
 import { WORK_TYPE_LABELS } from '@/lib/status';
@@ -40,6 +40,7 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import ApplicationDrawer from './ApplicationDrawer';
+import EventsSection from './EventsSection';
 import SectionLabel from './SectionLabel';
 import StatusPopover from './StatusPopover';
 
@@ -47,11 +48,13 @@ type ApplicationDetailProps = {
     application: JobApplication;
     // Loaded on the server together with the application.
     initialContacts: Contact[];
+    initialEvents: ApplicationEvent[];
 };
 
 export default function ApplicationDetail({
     application,
     initialContacts,
+    initialEvents,
 }: ApplicationDetailProps) {
     const [deleting, setDeleting] = useState(false);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -191,7 +194,13 @@ export default function ApplicationDetail({
 
                     {/* Status uses the same menu as the list, so it is changed the same way everywhere. */}
                     <div className="flex flex-wrap items-center gap-4">
-                        <StatusPopover applicationId={application.id} currentStatus={application.status} />
+                        {/* Keyed by status so it picks up a change made elsewhere on the page
+                            (e.g. "Set status to Interview" after adding an interview). */}
+                        <StatusPopover
+                            key={application.status}
+                            applicationId={application.id}
+                            currentStatus={application.status}
+                        />
                         {application.company && (
                             <span className={metaItem}>
                                 <Building2 size={14} aria-hidden="true" className={metaIcon} />
@@ -227,6 +236,15 @@ export default function ApplicationDetail({
                         )}
                     </div>
                 </header>
+
+                <hr />
+
+                {/* Events first: an upcoming interview is what you open an application for. */}
+                <EventsSection
+                    applicationId={application.id}
+                    status={application.status}
+                    initialEvents={initialEvents}
+                />
 
                 <hr />
 
