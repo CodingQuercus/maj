@@ -342,88 +342,27 @@
     color: var(--color-text-primary);
 }
 
-.previewHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2);
-    padding-bottom: var(--space-3);
-    border-bottom: 1px solid var(--paper-line);
-}
 
-.previewMeta {
-    display: block;
-    font-size: var(--text-xs);
-    color: var(--color-text-tertiary);
-    font-variant-numeric: tabular-nums;
-}
 
-.previewFoot {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding-top: var(--space-3);
-    border-top: 1px solid var(--paper-line);
-    font-size: var(--text-sm);
-    font-variant-numeric: tabular-nums;
-    color: var(--color-text-secondary);
-}
-
-.previewFoot svg {
-    color: var(--color-text-tertiary);
-}
-
-/* Stage progress: nodes on a line, filled (in the stage's colour) up to the current. */
-.progress {
+/* Stages as badges joined by arrows, top to bottom (four in a row don't fit the column). */
+.flow {
     list-style: none;
     margin: 0;
-    padding: var(--space-1) 0;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.progressStep {
-    position: relative;
+    padding: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-2);
 }
 
-.progressLine {
-    position: absolute;
-    top: 6px;
-    right: 50%;
-    width: 100%;
-    height: 2px;
-    background: var(--paper-line);
+.flowStep {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-.progressLine[data-reached='true'] {
-    background: var(--color-text-tertiary);
-}
-
-.progressNode {
-    position: relative;
-    width: 14px;
-    height: 14px;
-    border-radius: var(--radius-full);
-    border: 2px solid var(--paper-line);
-    background: var(--paper);
-}
-
-.progressNode[data-current='true'] {
-    box-shadow: 0 0 0 4px rgb(217 119 6 / 0.18);
-}
-
-.progressLabel {
-    font-size: 11px;
-    color: var(--color-text-disabled);
-    white-space: nowrap;
-}
-
-.progressLabel[data-reached='true'] {
-    color: var(--color-text-secondary);
+.flowArrow {
+    margin-block: 4px;
+    color: var(--color-text-tertiary);
 }
 
 /* Application page in miniature. */
@@ -489,26 +428,12 @@
     color: var(--color-text-tertiary);
 }
 
-.detailRow {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: var(--text-sm);
-    font-variant-numeric: tabular-nums;
-    color: var(--color-text-secondary);
-}
 
 .detailNote {
     font-size: var(--text-sm);
     color: var(--color-text-tertiary);
 }
 
-.previewRole {
-    display: block;
-    font-size: var(--text-base);
-    font-weight: 600;
-    color: var(--color-text-primary);
-}
 
 
 /* ---------- Closing band ---------- */

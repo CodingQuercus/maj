@@ -1,6 +1,12 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Building2, CalendarClock, MapPin, StickyNote } from 'lucide-react';
+import {
+    ArrowDown,
+    Building2,
+    FileText,
+    MapPin,
+    StickyNote,
+} from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
 import { Button } from '@/components/ui/button';
@@ -48,9 +54,6 @@ const sampleEntries = [
         label: 'Withdrawn',
     },
 ];
-
-// Stage the progress preview has reached (Interview).
-const CURRENT_STAGE = 2;
 
 const stages = [
     { status: 'applied', label: 'Applied' },
@@ -212,76 +215,29 @@ export default async function HomePage() {
                                     className={styles.preview}
                                     aria-hidden="true"
                                 >
-                                    <div className={styles.previewHeader}>
-                                        <span>
-                                            <span
-                                                className={styles.previewRole}
+                                    {/* The stages an application moves through. */}
+                                    <ol className={styles.flow}>
+                                        {stages.map((st, j) => (
+                                            <li
+                                                key={st.status}
+                                                className={styles.flowStep}
                                             >
-                                                UX/Frontend Developer
-                                            </span>
-                                            <span
-                                                className={styles.previewMeta}
-                                            >
-                                                Nestly · 2026-05-17
-                                            </span>
-                                        </span>
-                                        <span className="badge badge-dot badge-interview">
-                                            Interview
-                                        </span>
-                                    </div>
-                                    {/* Progress through the stages, up to the current one. */}
-                                    <ol className={styles.progress}>
-                                        {stages.map((st, j) => {
-                                            const reached = j <= CURRENT_STAGE;
-                                            return (
-                                                <li
-                                                    key={st.status}
-                                                    className={
-                                                        styles.progressStep
-                                                    }
-                                                >
-                                                    {j > 0 && (
-                                                        <span
-                                                            className={
-                                                                styles.progressLine
-                                                            }
-                                                            data-reached={
-                                                                reached
-                                                            }
-                                                        />
-                                                    )}
-                                                    <span
+                                                {j > 0 && (
+                                                    <ArrowDown
+                                                        size={14}
                                                         className={
-                                                            styles.progressNode
-                                                        }
-                                                        data-current={
-                                                            j === CURRENT_STAGE
-                                                        }
-                                                        style={
-                                                            reached
-                                                                ? {
-                                                                      background: `var(--status-${st.status})`,
-                                                                      borderColor: `var(--status-${st.status})`,
-                                                                  }
-                                                                : undefined
+                                                            styles.flowArrow
                                                         }
                                                     />
-                                                    <span
-                                                        className={
-                                                            styles.progressLabel
-                                                        }
-                                                        data-reached={reached}
-                                                    >
-                                                        {st.label}
-                                                    </span>
-                                                </li>
-                                            );
-                                        })}
+                                                )}
+                                                <span
+                                                    className={`badge badge-dot badge-${st.status}`}
+                                                >
+                                                    {st.label}
+                                                </span>
+                                            </li>
+                                        ))}
                                     </ol>
-                                    <span className={styles.previewFoot}>
-                                        <CalendarClock size={14} />
-                                        Next: interview 2026-05-26 · 13:30
-                                    </span>
                                 </div>
                             )}
                             {i === 1 && (
@@ -334,41 +290,40 @@ export default async function HomePage() {
                                     className={styles.preview}
                                     aria-hidden="true"
                                 >
-                                    {/* A small version of an application's page. */}
+                                    {/* A small version of an application's page: what the
+                                        feature text lists (description, notes, deadline,
+                                        status), status shown once. */}
                                     <div className={styles.detailHead}>
                                         <span className={styles.detailTitle}>
-                                            UX/UI Designer
+                                            Frontend Developer
                                         </span>
                                         <span className={styles.detailMeta}>
-                                            <span className="badge badge-dot badge-interview">
-                                                Interview
+                                            <span className="badge badge-dot badge-applied">
+                                                Applied
                                             </span>
                                             <span>
                                                 <Building2 size={13} />
-                                                Wavely
+                                                Lumio
                                             </span>
                                             <span>
                                                 <MapPin size={13} />
-                                                Malmö
+                                                Stockholm
                                             </span>
                                         </span>
                                         <span className={styles.detailApplied}>
-                                            Applied 2026-05-17
+                                            Applied 2026-05-10 · Deadline
+                                            2026-06-01
                                         </span>
                                     </div>
                                     <div className={styles.detailSection}>
                                         <span className={styles.detailLabel}>
-                                            <CalendarClock size={13} />
-                                            Events
-                                        </span>
-                                        <span className={styles.detailRow}>
-                                            <span className="badge badge-dot badge-interview">
-                                                Interview
-                                            </span>
-                                            2026-05-21 · 10:00
+                                            <FileText size={13} />
+                                            Job description
                                         </span>
                                         <span className={styles.detailNote}>
-                                            Video call with the hiring manager
+                                            Build and improve our web app with
+                                            React and TypeScript, together with
+                                            design and product.
                                         </span>
                                     </div>
                                     <div className={styles.detailSection}>
