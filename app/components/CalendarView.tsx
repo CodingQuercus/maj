@@ -1,20 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { CalendarDays, ChevronLeft, ChevronRight, Flag } from 'lucide-react';
+import { CalendarDays, Flag, Plus } from 'lucide-react';
 
+import EventDrawer from './EventDrawer';
+import MonthPicker from './MonthPicker';
 import PageTitle from './PageTitle';
 import { Button } from '@/components/ui/button';
 import { WEEKDAYS, formatAgendaDay, monthWeeks } from '@/lib/calendar';
 import { dateKey, todayLocal } from '@/lib/dates';
 import { EVENT_KIND_LABELS, compareEvents, formatTime } from '@/lib/events';
-import {
-    currentMonth,
-    formatMonth,
-    isMonthKey,
-    shiftMonth,
-} from '@/lib/report';
+import { currentMonth, formatMonth, isMonthKey } from '@/lib/report';
 import { OPEN_STATUSES } from '@/lib/status';
 import { CalendarEvent, JobApplication } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -33,6 +31,12 @@ type Day = {
     applied: number;
 };
 
+// What the drawer is open for: a new event (on a date) or an existing one.
+type DrawerState =
+    | { open: false }
+    | { open: true; date: string; event?: undefined }
+    | { open: true; event: CalendarEvent; date?: undefined };
+
 const emptyDay = (): Day => ({ events: [], deadlines: [], applied: 0 });
 
 // How many items a grid cell shows before "+N more".
@@ -40,6 +44,7 @@ const CELL_LIMIT = 3;
 
 // Month view of events (interviews, calls…), deadlines of open applications and the days
 // you applied. A grid from md up, an agenda list of the days with something on phones.
+// Events are added, edited and deleted here in a drawer, or on an application's page.
 // The month lives in the URL (?month=2026-11).
 export default function CalendarView({
     events,
@@ -50,6 +55,7 @@ export default function CalendarView({
     const thisMonth = currentMonth();
     const month = isMonthKey(param) ? param : thisMonth;
     const today = todayLocal();
+    const [drawer, setDrawer] = useState<DrawerState>({ open: false });
 
     const setMonth = (next: string) => {
         const params = new URLSearchParams(searchParams.toString());
@@ -58,6 +64,9 @@ export default function CalendarView({
         const query = params.toString();
         window.history.replaceState(null, '', query ? `?${query}` : '?');
     };
+
+    const addOn = (date: string) => setDrawer({ open: true, date });
+    const edit = (event: CalendarEvent) => setDrawer({ open: true, event });
 
     // Everything by date. Built for all dates; the grid only reads the visible weeks.
     const days = new Map<string, Day>();
@@ -75,6 +84,11 @@ export default function CalendarView({
         if (app.applied_at) dayFor(dateKey(app.applied_at)).applied += 1;
     }
 
+    // Picker in the drawer: most recently applied first.
+    const options = [...applications].sort((a, b) =>
+        (b.applied_at ?? '').localeCompare(a.applied_at ?? '')
+    );
+
     const weeks = monthWeeks(month);
     const label = formatMonth(month);
     const monthDays = [...days.keys()]
@@ -83,44 +97,24 @@ export default function CalendarView({
 
     return (
         <div className="p-4 sm:p-8">
-            <PageTitle icon={<CalendarDays />} title="Calendar" />
+            <div className="mb-4 flex items-center justify-between sm:mb-8">
+                <PageTitle icon={<CalendarDays />} title="Calendar" noMargin />
+                <Button
+                    // Today in the current month, otherwise the 1st of the month shown.
+                    onClick={() =>
+                        addOn(month === thisMonth ? today : `${month}-01`)
+                    }
+                    aria-label="Add event"
+                    className="size-[34px] p-0 sm:w-auto sm:px-4"
+                >
+                    <Plus size={16} aria-hidden="true" />
+                    <span className="hidden sm:inline">Add event</span>
+                </Button>
+            </div>
             <hr />
 
             <div className="flex flex-col gap-4">
-                {/* Month picker */}
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        aria-label="Previous month"
-                        onClick={() => setMonth(shiftMonth(month, -1))}
-                    >
-                        <ChevronLeft size={16} aria-hidden="true" />
-                    </Button>
-                    <h2
-                        className="min-w-40 text-center text-[length:var(--text-md)] tabular-nums"
-                        aria-live="polite"
-                    >
-                        {label}
-                    </h2>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        aria-label="Next month"
-                        onClick={() => setMonth(shiftMonth(month, 1))}
-                    >
-                        <ChevronRight size={16} aria-hidden="true" />
-                    </Button>
-                    {month !== thisMonth && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setMonth(thisMonth)}
-                        >
-                            Today
-                        </Button>
-                    )}
-                </div>
+                <MonthPicker month={month} onChange={setMonth} />
 
                 {/* md and up: month grid */}
                 <div className="hidden overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-xs)] md:block">
@@ -149,6 +143,8 @@ export default function CalendarView({
                                             day={days.get(key)}
                                             outside={!key.startsWith(month)}
                                             isToday={key === today}
+                                            onAdd={addOn}
+                                            onEdit={edit}
                                         />
                                     ))}
                                 </tr>
@@ -181,6 +177,7 @@ export default function CalendarView({
                                     <DayItems
                                         dayKey={key}
                                         day={days.get(key)!}
+                                        onEdit={edit}
                                         roomy
                                     />
                                 </li>
@@ -190,10 +187,17 @@ export default function CalendarView({
                 </div>
 
                 <p className="text-xs text-[var(--color-text-tertiary)]">
-                    Add interviews and other events on an application’s page.
                     Deadlines show for applications that are still open.
                 </p>
             </div>
+
+            <EventDrawer
+                open={drawer.open}
+                onClose={() => setDrawer({ open: false })}
+                applications={options}
+                event={drawer.open ? drawer.event : undefined}
+                defaultDate={drawer.open ? drawer.date : undefined}
+            />
         </div>
     );
 }
@@ -203,71 +207,123 @@ function GridCell({
     day,
     outside,
     isToday,
+    onAdd,
+    onEdit,
 }: {
     dayKey: string;
     day: Day | undefined;
     outside: boolean;
     isToday: boolean;
+    onAdd: (date: string) => void;
+    onEdit: (event: CalendarEvent) => void;
 }) {
     const dayNumber = Number(dayKey.slice(8));
     return (
         <td
             className={cn(
-                'h-28 border-r border-b border-[var(--color-border-soft)] p-1.5 align-top last:border-r-0 [tr:last-child>&]:border-b-0',
+                'group h-28 border-r border-b border-[var(--color-border-soft)] p-1.5 align-top last:border-r-0 [tr:last-child>&]:border-b-0',
                 outside && 'bg-[var(--color-surface)]'
             )}
         >
-            <span
-                className={cn(
-                    'mb-1 inline-flex size-6 items-center justify-center rounded-full text-xs tabular-nums',
-                    isToday
-                        ? 'bg-primary font-semibold text-primary-foreground'
-                        : outside
-                          ? 'text-[var(--color-text-disabled)]'
-                          : 'text-[var(--color-text-secondary)]'
+            <div className="mb-1 flex items-center justify-between">
+                <span
+                    className={cn(
+                        'inline-flex size-6 items-center justify-center rounded-full text-xs tabular-nums',
+                        isToday
+                            ? 'bg-primary font-semibold text-primary-foreground'
+                            : outside
+                              ? 'text-[var(--color-text-disabled)]'
+                              : 'text-[var(--color-text-secondary)]'
+                    )}
+                    {...(isToday && { 'aria-current': 'date' as const })}
+                >
+                    <span className="sr-only">{dayKey}</span>
+                    <span aria-hidden="true">{dayNumber}</span>
+                </span>
+                {/* Shown on hover or keyboard focus (always on touch screens). */}
+                {!outside && (
+                    <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={`Add event on ${dayKey}`}
+                        onClick={() => onAdd(dayKey)}
+                        className="size-6 text-[var(--color-text-tertiary)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+                    >
+                        <Plus size={14} aria-hidden="true" />
+                    </Button>
                 )}
-                {...(isToday && { 'aria-current': 'date' as const })}
-            >
-                <span className="sr-only">{dayKey}</span>
-                <span aria-hidden="true">{dayNumber}</span>
-            </span>
+            </div>
             {day && !outside && (
-                <DayItems dayKey={dayKey} day={day} limit={CELL_LIMIT} />
+                <DayItems
+                    dayKey={dayKey}
+                    day={day}
+                    limit={CELL_LIMIT}
+                    onEdit={onEdit}
+                />
             )}
         </td>
     );
 }
 
-// Events (with time), deadlines and an "N applied" line for one day. In the grid they are
-// compact and capped at `limit`; in the agenda they get more room.
+// Events (with time), deadlines and an "N applied" line for one day. Events open in the
+// drawer; deadlines go to their application. In the grid items are compact and capped at
+// `limit`; in the agenda they get more room.
 function DayItems({
     dayKey,
     day,
     limit,
     roomy = false,
+    onEdit,
 }: {
     dayKey: string;
     day: Day;
     limit?: number;
     roomy?: boolean;
+    onEdit: (event: CalendarEvent) => void;
 }) {
+    const size = roomy ? 'px-3 py-2 text-sm' : 'px-1.5 py-0.5 text-xs';
     const items = [
-        ...day.events.map((e) => ({
-            id: `e-${e.id}`,
-            href: `/applications/${e.job_applications.id}`,
-            label: `${formatTime(e.start_time) ? `${formatTime(e.start_time)} ` : ''}${EVENT_KIND_LABELS[e.kind]}`,
-            detail: e.job_applications.company,
-            title: `${EVENT_KIND_LABELS[e.kind]}: ${e.job_applications.title} at ${e.job_applications.company}${e.note ? ` (${e.note})` : ''}`,
-            deadline: false,
-        })),
-        ...day.deadlines.map((a) => ({
-            id: `d-${a.id}`,
-            href: `/applications/${a.id}`,
-            label: 'Deadline',
-            detail: a.company,
-            title: `Deadline: ${a.title} at ${a.company}`,
-            deadline: true,
-        })),
+        ...day.events.map((e) => (
+            <button
+                key={`e-${e.id}`}
+                type="button"
+                onClick={() => onEdit(e)}
+                title={`${EVENT_KIND_LABELS[e.kind]}: ${e.job_applications.title} at ${e.job_applications.company}${e.note ? ` (${e.note})` : ''}`}
+                className={cn(
+                    'flex w-full cursor-pointer items-center gap-1 rounded-md bg-[var(--color-accent-subtle)] text-left text-[var(--color-accent-text)] transition-colors outline-none hover:bg-[var(--color-accent-border)] focus-ring',
+                    size
+                )}
+            >
+                <span className="truncate">
+                    <span className="font-medium tabular-nums">
+                        {formatTime(e.start_time) &&
+                            `${formatTime(e.start_time)} `}
+                        {EVENT_KIND_LABELS[e.kind]}
+                    </span>{' '}
+                    {e.job_applications.company}
+                </span>
+            </button>
+        )),
+        ...day.deadlines.map((a) => (
+            <Link
+                key={`d-${a.id}`}
+                href={`/applications/${a.id}`}
+                title={`Deadline: ${a.title} at ${a.company}`}
+                className={cn(
+                    'flex items-center gap-1 rounded-md border border-border text-[var(--color-text-secondary)] no-underline transition-colors hover:bg-accent hover:text-[var(--color-text-secondary)]',
+                    size
+                )}
+            >
+                <Flag
+                    size={roomy ? 14 : 12}
+                    aria-hidden="true"
+                    className="shrink-0"
+                />
+                <span className="truncate">
+                    <span className="font-medium">Deadline</span> {a.company}
+                </span>
+            </Link>
+        )),
     ];
     const shown = limit ? items.slice(0, limit) : items;
     const hidden = items.length - shown.length;
@@ -275,35 +331,7 @@ function DayItems({
     return (
         <ul className={cn('flex flex-col', roomy ? 'gap-1.5' : 'gap-0.5')}>
             {shown.map((item) => (
-                <li key={item.id}>
-                    <Link
-                        href={item.href}
-                        title={item.title}
-                        className={cn(
-                            'flex items-center gap-1 rounded-md no-underline transition-colors',
-                            roomy
-                                ? 'px-3 py-2 text-sm'
-                                : 'px-1.5 py-0.5 text-xs',
-                            item.deadline
-                                ? 'border border-border text-[var(--color-text-secondary)] hover:bg-accent hover:text-[var(--color-text-secondary)]'
-                                : 'bg-[var(--color-accent-subtle)] text-[var(--color-accent-text)] hover:bg-[var(--color-accent-border)] hover:text-[var(--color-accent-text)]'
-                        )}
-                    >
-                        {item.deadline && (
-                            <Flag
-                                size={roomy ? 14 : 12}
-                                aria-hidden="true"
-                                className="shrink-0"
-                            />
-                        )}
-                        <span className="truncate">
-                            <span className="font-medium tabular-nums">
-                                {item.label}
-                            </span>{' '}
-                            {item.detail}
-                        </span>
-                    </Link>
-                </li>
+                <li key={item.key}>{item}</li>
             ))}
             {hidden > 0 && (
                 <li className="px-1.5 text-xs text-[var(--color-text-tertiary)]">

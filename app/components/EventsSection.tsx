@@ -6,27 +6,18 @@ import { CalendarClock, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { createClient } from '@/lib/supabase/client';
-import { formatDate, todayLocal } from '@/lib/dates';
+import { formatDate } from '@/lib/dates';
+import { deleteEventWithUndo } from '@/lib/eventActions';
 import {
-    EVENT_KINDS,
     EVENT_KIND_LABELS,
     compareEvents,
     formatTime,
     isUpcoming,
 } from '@/lib/events';
-import { ApplicationEvent, EventKind, Status } from '@/lib/types';
+import { ApplicationEvent, Status } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import DatePicker from './DatePicker';
+import EventForm from './EventForm';
 import SectionLabel from './SectionLabel';
 
 type EventsSectionProps = {
@@ -35,20 +26,6 @@ type EventsSectionProps = {
     // Loaded on the server together with the application.
     initialEvents: ApplicationEvent[];
 };
-
-type Draft = {
-    kind: EventKind;
-    date: string;
-    time: string; // "HH:MM" or ""
-    note: string;
-};
-
-const emptyDraft = (): Draft => ({
-    kind: 'interview',
-    date: todayLocal(),
-    time: '',
-    note: '',
-});
 
 // Interviews, tests, calls etc. for one application: listed by date, added and edited
 // inline (like contacts), removed with Undo. They also show in the calendar.
@@ -62,39 +39,20 @@ export default function EventsSection({
     );
     // null = form closed, 'new' = adding, otherwise the id of the event being edited.
     const [editing, setEditing] = useState<string | null>(null);
-    const [draft, setDraft] = useState<Draft>(emptyDraft);
-    const [saving, setSaving] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
 
     const router = useRouter();
     const supabase = useMemo(() => createClient(), []);
 
-    const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
-        setDraft((d) => ({ ...d, [key]: value }));
-
-    const openNew = () => {
-        setDraft(emptyDraft());
-        setError(null);
-        setEditing(editing === 'new' ? null : 'new');
-    };
-
-    const openEdit = (event: ApplicationEvent) => {
-        setDraft({
-            kind: event.kind,
-            date: event.event_date,
-            time: formatTime(event.start_time),
-            note: event.note ?? '',
-        });
-        setError(null);
-        setEditing(event.id);
-    };
+    const upsert = (event: ApplicationEvent) =>
+        setEvents((prev) =>
+            [...prev.filter((e) => e.id !== event.id), event].sort(
+                compareEvents
+            )
+        );
 
     // Adding an interview while the status is still earlier offers to move it on, but never
     // changes the status by itself.
-    const suggestInterviewStatus = (kind: EventKind) =>
-        kind === 'interview' && (status === 'applied' || status === 'assessment');
-
     const setStatusToInterview = async () => {
         const { error } = await supabase
             .from('job_applications')
@@ -108,41 +66,16 @@ export default function EventsSection({
         router.refresh();
     };
 
-    const save = async () => {
-        if (!draft.date) {
-            setError('Pick a date.');
-            return;
-        }
-        setError(null);
-        setSaving(true);
-        const values = {
-            kind: draft.kind,
-            event_date: draft.date,
-            start_time: draft.time || null,
-            note: draft.note.trim() || null,
-        };
-        const query =
-            editing === 'new'
-                ? supabase
-                      .from('events')
-                      .insert({ ...values, job_application_id: applicationId })
-                : supabase.from('events').update(values).eq('id', editing!);
-        const { data, error } = await query.select().single();
-        setSaving(false);
-
-        if (error) {
-            setError('Could not save the event. Please try again.');
-            return;
-        }
-
-        const isNew = editing === 'new';
-        setEvents((prev) =>
-            [...prev.filter((e) => e.id !== data.id), data].sort(compareEvents)
-        );
+    const onSaved = (event: ApplicationEvent, isNew: boolean) => {
+        upsert(event);
         setEditing(null);
+        const suggest =
+            isNew &&
+            event.kind === 'interview' &&
+            (status === 'applied' || status === 'assessment');
         toast.success(
             isNew ? 'Event added' : 'Event updated',
-            isNew && suggestInterviewStatus(data.kind)
+            suggest
                 ? {
                       duration: 8000,
                       action: {
@@ -154,108 +87,26 @@ export default function EventsSection({
         );
     };
 
-    const remove = async (id: string) => {
-        setDeletingId(id);
-        const { error } = await supabase.from('events').delete().eq('id', id);
-        setDeletingId(null);
-        if (error) {
-            toast.error('Could not delete the event. Please try again.');
-            return;
-        }
-        const removed = events.find((e) => e.id === id);
-        setEvents((prev) => prev.filter((e) => e.id !== id));
-        if (editing === id) setEditing(null);
-        toast.success('Event removed', {
-            // Longer than the default 4s so there is time to reach the Undo button.
-            duration: 8000,
-            action: removed && {
-                label: 'Undo',
-                onClick: () => restore(removed),
-            },
+    const remove = async (event: ApplicationEvent) => {
+        setDeletingId(event.id);
+        const deleted = await deleteEventWithUndo(event, {
+            onRestored: upsert,
         });
+        setDeletingId(null);
+        if (!deleted) return;
+        setEvents((prev) => prev.filter((e) => e.id !== event.id));
+        if (editing === event.id) setEditing(null);
     };
 
-    // Re-creates the event with its original id, so it comes back exactly as it was.
-    const restore = async (event: ApplicationEvent) => {
-        const { data, error } = await supabase
-            .from('events')
-            .insert(event)
-            .select()
-            .single();
-        if (error) {
-            toast.error('Could not restore the event. Please add it again.');
-            return;
-        }
-        setEvents((prev) => [...prev, data].sort(compareEvents));
-        toast.success('Event restored');
-    };
-
-    const form = (
-        <div className="mb-4 flex max-w-[480px] flex-col gap-3 rounded-lg bg-muted p-4">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                    <Label htmlFor="event-kind">Type</Label>
-                    <Select
-                        value={draft.kind}
-                        onValueChange={(v) => set('kind', v as EventKind)}
-                    >
-                        <SelectTrigger id="event-kind" className="w-full">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {EVENT_KINDS.map((k) => (
-                                <SelectItem key={k} value={k}>
-                                    {EVENT_KIND_LABELS[k]}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div>
-                    <Label htmlFor="event-date">Date</Label>
-                    <DatePicker
-                        id="event-date"
-                        label="Date"
-                        value={draft.date}
-                        onChange={(v) => set('date', v)}
-                    />
-                </div>
-                <div>
-                    <Label htmlFor="event-time">Time (optional)</Label>
-                    <Input
-                        id="event-time"
-                        type="time"
-                        value={draft.time}
-                        onChange={(e) => set('time', e.target.value)}
-                    />
-                </div>
-            </div>
-            <div>
-                <Label htmlFor="event-note">Note (optional)</Label>
-                <Input
-                    id="event-note"
-                    placeholder="e.g. Video call with the team lead"
-                    value={draft.note}
-                    onChange={(e) => set('note', e.target.value)}
-                />
-            </div>
-            {error && (
-                <p className="field-error" role="alert">
-                    {error}
-                </p>
-            )}
-            <div className="flex gap-2">
-                <Button size="sm" onClick={save} loading={saving}>
-                    {saving ? 'Saving…' : 'Save'}
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditing(null)}
-                >
-                    Cancel
-                </Button>
-            </div>
+    const form = (event?: ApplicationEvent) => (
+        <div className="mb-4 max-w-[480px] rounded-lg bg-muted p-4">
+            <EventForm
+                idPrefix={event ? `event-${event.id}` : 'event-new'}
+                applicationId={applicationId}
+                event={event}
+                onSaved={onSaved}
+                onCancel={() => setEditing(null)}
+            />
         </div>
     );
 
@@ -270,7 +121,7 @@ export default function EventsSection({
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={openNew}
+                    onClick={() => setEditing(editing === 'new' ? null : 'new')}
                     aria-expanded={editing === 'new'}
                 >
                     <Plus size={14} aria-hidden="true" />
@@ -278,7 +129,7 @@ export default function EventsSection({
                 </Button>
             </div>
 
-            {editing === 'new' && form}
+            {editing === 'new' && form()}
 
             {events.length === 0 && editing !== 'new' && (
                 <p className="text-sm text-[var(--color-text-tertiary)]">
@@ -289,7 +140,7 @@ export default function EventsSection({
             <ul className="flex flex-col gap-2">
                 {events.map((event) =>
                     editing === event.id ? (
-                        <li key={event.id}>{form}</li>
+                        <li key={event.id}>{form(event)}</li>
                     ) : (
                         <li
                             key={event.id}
@@ -325,7 +176,7 @@ export default function EventsSection({
                                     variant="ghost"
                                     size="icon-sm"
                                     aria-label={`Edit ${EVENT_KIND_LABELS[event.kind].toLowerCase()} on ${formatDate(event.event_date)}`}
-                                    onClick={() => openEdit(event)}
+                                    onClick={() => setEditing(event.id)}
                                 >
                                     <Pencil size={14} aria-hidden="true" />
                                 </Button>
@@ -333,7 +184,7 @@ export default function EventsSection({
                                     variant="ghost"
                                     size="icon-sm"
                                     aria-label={`Delete ${EVENT_KIND_LABELS[event.kind].toLowerCase()} on ${formatDate(event.event_date)}`}
-                                    onClick={() => remove(event.id)}
+                                    onClick={() => remove(event)}
                                     loading={deletingId === event.id}
                                 >
                                     {deletingId !== event.id && (

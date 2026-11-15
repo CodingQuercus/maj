@@ -2,15 +2,10 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import {
-    ChevronLeft,
-    ChevronRight,
-    Copy,
-    Download,
-    FileText,
-} from 'lucide-react';
+import { Copy, Download, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
+import MonthPicker from './MonthPicker';
 import PageTitle from './PageTitle';
 import { Button } from '@/components/ui/button';
 import { dateKey } from '@/lib/dates';
@@ -23,7 +18,6 @@ import {
     isMonthKey,
     monthDueNow,
     reportDueDate,
-    shiftMonth,
 } from '@/lib/report';
 import { JobApplication } from '@/lib/types';
 
@@ -94,32 +88,12 @@ export default function ReportView({ applications, dueDay }: ReportViewProps) {
             <hr />
 
             <div className="flex max-w-[900px] flex-col gap-4">
-                {/* Month picker: no months after the current one. */}
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        aria-label="Previous month"
-                        onClick={() => setMonth(shiftMonth(month, -1))}
-                    >
-                        <ChevronLeft size={16} aria-hidden="true" />
-                    </Button>
-                    <h2
-                        className="min-w-40 text-center text-[length:var(--text-md)] tabular-nums"
-                        aria-live="polite"
-                    >
-                        {label}
-                    </h2>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        aria-label="Next month"
-                        disabled={month >= thisMonth}
-                        onClick={() => setMonth(shiftMonth(month, 1))}
-                    >
-                        <ChevronRight size={16} aria-hidden="true" />
-                    </Button>
-                </div>
+                {/* No months after the current one. */}
+                <MonthPicker
+                    month={month}
+                    onChange={setMonth}
+                    max={thisMonth}
+                />
 
                 {/* Summary and the two ways to take the report along. */}
                 <section

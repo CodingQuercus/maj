@@ -239,15 +239,6 @@ export default function ApplicationDetail({
 
                 <hr />
 
-                {/* Events first: an upcoming interview is what you open an application for. */}
-                <EventsSection
-                    applicationId={application.id}
-                    status={application.status}
-                    initialEvents={initialEvents}
-                />
-
-                <hr />
-
                 {/* Job description */}
                 <section className="py-4">
                     <div className="mb-3 flex items-center justify-between">
@@ -267,6 +258,15 @@ export default function ApplicationDetail({
                         <p className={emptyText}>No description added.</p>
                     )}
                 </section>
+
+                <hr />
+
+                {/* Events (interviews, calls…), after the posting they belong to. */}
+                <EventsSection
+                    applicationId={application.id}
+                    status={application.status}
+                    initialEvents={initialEvents}
+                />
 
                 <hr />
 
