@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Building2, CalendarClock, Check, StickyNote, Users } from 'lucide-react';
+import { Building2, CalendarClock, MapPin, StickyNote } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,9 @@ const sampleEntries = [
         label: 'Withdrawn',
     },
 ];
+
+// Stage the progress preview has reached (Interview).
+const CURRENT_STAGE = 2;
 
 const stages = [
     { status: 'applied', label: 'Applied' },
@@ -214,40 +217,71 @@ export default async function HomePage() {
                                             <span
                                                 className={styles.previewRole}
                                             >
-                                                Frontend Developer
+                                                UX/Frontend Developer
                                             </span>
                                             <span
                                                 className={styles.previewMeta}
                                             >
-                                                Driftly · 2026-05-17
+                                                Nestly · 2026-05-17
                                             </span>
                                         </span>
                                         <span className="badge badge-dot badge-interview">
                                             Interview
                                         </span>
                                     </div>
-                                    {/* The status menu, open, as in the list. */}
-                                    <ul className={styles.statusMenu}>
-                                        {stages.map((st) => (
-                                            <li
-                                                key={st.status}
-                                                className={
-                                                    st.status === 'interview'
-                                                        ? styles.statusCurrent
-                                                        : undefined
-                                                }
-                                            >
-                                                <span
-                                                    className={`badge badge-dot badge-${st.status}`}
+                                    {/* Progress through the stages, up to the current one. */}
+                                    <ol className={styles.progress}>
+                                        {stages.map((st, j) => {
+                                            const reached = j <= CURRENT_STAGE;
+                                            return (
+                                                <li
+                                                    key={st.status}
+                                                    className={
+                                                        styles.progressStep
+                                                    }
                                                 >
-                                                    {st.label}
-                                                </span>
-                                                {st.status === 'interview' && (
-                                                    <Check size={14} />
-                                                )}
-                                            </li>
-                                        ))}
-                                    </ul>
+                                                    {j > 0 && (
+                                                        <span
+                                                            className={
+                                                                styles.progressLine
+                                                            }
+                                                            data-reached={
+                                                                reached
+                                                            }
+                                                        />
+                                                    )}
+                                                    <span
+                                                        className={
+                                                            styles.progressNode
+                                                        }
+                                                        data-current={
+                                                            j === CURRENT_STAGE
+                                                        }
+                                                        style={
+                                                            reached
+                                                                ? {
+                                                                      background: `var(--status-${st.status})`,
+                                                                      borderColor: `var(--status-${st.status})`,
+                                                                  }
+                                                                : undefined
+                                                        }
+                                                    />
+                                                    <span
+                                                        className={
+                                                            styles.progressLabel
+                                                        }
+                                                        data-reached={reached}
+                                                    >
+                                                        {st.label}
+                                                    </span>
+                                                </li>
+                                            );
+                                        })}
+                                    </ol>
+                                    <span className={styles.previewFoot}>
+                                        <CalendarClock size={14} />
+                                        Next: interview 2026-05-26 · 13:30
+                                    </span>
                                 </div>
                             )}
                             {i === 1 && (
@@ -300,31 +334,52 @@ export default async function HomePage() {
                                     className={styles.preview}
                                     aria-hidden="true"
                                 >
-                                    <div className={styles.previewHeader}>
-                                        <span className={styles.previewRole}>
+                                    {/* A small version of an application's page. */}
+                                    <div className={styles.detailHead}>
+                                        <span className={styles.detailTitle}>
                                             UX/UI Designer
                                         </span>
-                                        <span className="badge badge-dot badge-interview">
-                                            Interview
+                                        <span className={styles.detailMeta}>
+                                            <span className="badge badge-dot badge-interview">
+                                                Interview
+                                            </span>
+                                            <span>
+                                                <Building2 size={13} />
+                                                Wavely
+                                            </span>
+                                            <span>
+                                                <MapPin size={13} />
+                                                Malmö
+                                            </span>
+                                        </span>
+                                        <span className={styles.detailApplied}>
+                                            Applied 2026-05-17
                                         </span>
                                     </div>
-                                    <ul className={styles.detailList}>
-                                        <li>
-                                            <Building2 size={14} />
-                                            Wavely · Malmö
-                                        </li>
-                                        <li>
-                                            <CalendarClock size={14} />
-                                            Interview 2026-05-21 · 10:00
-                                        </li>
-                                        <li>
-                                            <StickyNote size={14} />
+                                    <div className={styles.detailSection}>
+                                        <span className={styles.detailLabel}>
+                                            <CalendarClock size={13} />
+                                            Events
+                                        </span>
+                                        <span className={styles.detailRow}>
+                                            <span className="badge badge-dot badge-interview">
+                                                Interview
+                                            </span>
+                                            2026-05-21 · 10:00
+                                        </span>
+                                        <span className={styles.detailNote}>
                                             Video call with the hiring manager
-                                        </li>
-                                        <li>
-                                            <Users size={14} />1 contact
-                                        </li>
-                                    </ul>
+                                        </span>
+                                    </div>
+                                    <div className={styles.detailSection}>
+                                        <span className={styles.detailLabel}>
+                                            <StickyNote size={13} />
+                                            Notes
+                                        </span>
+                                        <span className={styles.detailNote}>
+                                            Prepare two portfolio cases.
+                                        </span>
+                                    </div>
                                 </div>
                             )}
                         </li>
@@ -335,7 +390,7 @@ export default async function HomePage() {
             {/* Closing call to action on a notebook-cover band */}
             <section className={styles.cover} aria-labelledby="cover-heading">
                 <h2 id="cover-heading" className={styles.coverTitle}>
-                    Stay organized, <em>stay focused.</em>
+                    Start your <em>application journal.</em>
                 </h2>
                 <div className={styles.coverActions}>
                     <Button asChild size="lg" className={styles.coverPrimary}>

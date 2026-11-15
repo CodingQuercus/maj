@@ -35,8 +35,8 @@
     /* Accent — Teal (muted, professional) */
     --color-accent: #0f766e;
     /* Primary actions */
-    --color-accent-hover: #0d6761;
-    /* Button hover */
+    --color-accent-hover: #10554f;
+    /* Button hover: the logo's dark spine green, clearly darker than the accent */
     --color-accent-subtle: #f0fdfa;
     /* Accent tints, tag backgrounds */
     --color-accent-border: #99f6e4;

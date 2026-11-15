@@ -16,7 +16,7 @@ const buttonVariants = cva(
                 default:
                     'bg-primary text-primary-foreground hover:bg-[var(--color-accent-hover)] hover:text-primary-foreground',
                 outline:
-                    'border-border bg-[var(--color-white)] text-foreground shadow-[var(--shadow-xs)] hover:border-[var(--color-border-hard)] hover:bg-[var(--color-surface)] hover:text-foreground',
+                    'border-border bg-[var(--color-white)] text-foreground shadow-[var(--shadow-xs)] hover:border-[var(--color-border-hard)] hover:bg-[var(--color-overlay)] hover:text-foreground',
                 secondary:
                     'bg-secondary text-secondary-foreground hover:bg-accent hover:text-secondary-foreground',
                 ghost: 'text-[var(--color-text-secondary)] hover:bg-accent hover:text-foreground',
