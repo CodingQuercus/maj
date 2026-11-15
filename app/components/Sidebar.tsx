@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -10,18 +9,12 @@ import {
     FileText,
     LayoutDashboard,
     LogOut,
-    Menu,
     Settings,
 } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
-import {
-    Sheet,
-    SheetContent,
-    SheetTitle,
-    SheetTrigger,
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
+import { useMobileMenu } from './MobileMenu';
 import { useSignOut } from '@/lib/useSignOut';
 import { cn } from '@/lib/utils';
 
@@ -36,14 +29,16 @@ const accountLink = { href: '/account', label: 'Account', icon: Settings };
 
 // Navigation in three shapes, all rendered with CSS picking one so the right layout shows
 // from the first paint:
-// - phones: a menu button at the top left that opens the menu as a drawer (five sections
+// - phones: a drawer opened by the menu button in each page's title row (five sections
 //   no longer fit a bottom bar);
 // - tablet: a sticky sidebar with icons only;
 // - desktop: the same sidebar with labels.
 export default function Sidebar() {
     const pathname = usePathname();
     const { signOut, signingOut } = useSignOut();
-    const [menuOpen, setMenuOpen] = useState(false);
+    const menu = useMobileMenu();
+    const menuOpen = menu?.open ?? false;
+    const setMenuOpen = (open: boolean) => menu?.setOpen(open);
 
     // A section stays active on its sub-pages (e.g. /applications/123).
     const isActive = (href: string) =>
@@ -171,37 +166,33 @@ export default function Sidebar() {
 
     return (
         <>
-            {/* Phones: just a menu button at the top left that opens the menu as a drawer. Not
-                sticky, so pages with their own locked header (the applications list) keep
-                the top of the screen. */}
-            <div className="flex items-center px-2 pt-2 sm:hidden">
-                <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-                    <SheetTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Open menu"
-                        >
-                            <Menu size={20} aria-hidden="true" />
-                        </Button>
-                    </SheetTrigger>
-                    <SheetContent
-                        side="left"
-                        aria-describedby={undefined}
-                        className="w-72 gap-0 bg-muted px-4 py-6"
+            {/* Phones: the menu as a drawer, opened by the button in each page's title row
+                (MobileMenuButton). That button has no SheetTrigger, so focus is returned
+                to it here. */}
+            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+                <SheetContent
+                    side="left"
+                    aria-describedby={undefined}
+                    onCloseAutoFocus={(e) => {
+                        const opener = menu?.openerRef.current;
+                        if (opener?.isConnected) {
+                            e.preventDefault();
+                            opener.focus({ preventScroll: true });
+                        }
+                    }}
+                    className="w-72 gap-0 bg-muted px-4 py-6"
+                >
+                    <SheetTitle className="sr-only">Menu</SheetTitle>
+                    <Link
+                        href="/applications"
+                        className="mb-4 px-1 no-underline"
+                        onClick={() => setMenuOpen(false)}
                     >
-                        <SheetTitle className="sr-only">Menu</SheetTitle>
-                        <Link
-                            href="/applications"
-                            className="mb-4 px-1 no-underline"
-                            onClick={() => setMenuOpen(false)}
-                        >
-                            {brand('always')}
-                        </Link>
-                        {navContent(true)}
-                    </SheetContent>
-                </Sheet>
-            </div>
+                        {brand('always')}
+                    </Link>
+                    {navContent(true)}
+                </SheetContent>
+            </Sheet>
 
             {/* Tablet and desktop: sticky sidebar */}
             <aside

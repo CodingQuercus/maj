@@ -41,6 +41,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import ApplicationDrawer from './ApplicationDrawer';
 import EventsSection from './EventsSection';
+import { MobileMenuButton } from './MobileMenu';
 import SectionLabel from './SectionLabel';
 import StatusPopover from './StatusPopover';
 
@@ -168,7 +169,10 @@ export default function ApplicationDetail({
             <div className="p-4 sm:p-8">
                 {/* A real link to the list (works when opened from a shared link too). A plain
                     click returns to the list with the filters the user left it with. */}
-                <Button asChild variant="ghost" size="sm" className="mb-2 sm:mb-3">
+                {/* Phones: the menu button sits beside Back (the page has no title row icon). */}
+                <div className="mb-2 flex items-center gap-1 sm:mb-3">
+                <MobileMenuButton />
+                <Button asChild variant="ghost" size="sm">
                     <Link
                         href="/applications"
                         onClick={(e) => {
@@ -181,6 +185,7 @@ export default function ApplicationDetail({
                         Back to applications
                     </Link>
                 </Button>
+                </div>
 
                 {/* Header */}
                 <header className="mb-3 flex flex-col gap-3 sm:mb-6">
