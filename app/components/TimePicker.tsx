@@ -21,19 +21,25 @@ type TimePickerProps = {
     className?: string;
 };
 
-// Every quarter of an hour, 00:00–23:45.
-const TIMES = Array.from({ length: 96 }, (_, i) => {
-    const h = String(Math.floor(i / 4)).padStart(2, '0');
-    const m = String((i % 4) * 15).padStart(2, '0');
-    return `${h}:${m}`;
-});
+const pad = (n: number) => String(n).padStart(2, '0');
+const HOURS = Array.from({ length: 24 }, (_, i) => pad(i));
+const MINUTES = Array.from({ length: 12 }, (_, i) => pad(i * 5));
 
-// Where the list opens when no time is set: the start of a working day.
-const DEFAULT_SCROLL_TO = '09:00';
+// Where the hour column opens when no time is set: the start of a working day.
+const DEFAULT_HOUR = '09';
 
-// Time field styled like the date field: a button showing the time, opening a list of
-// quarter hours in a popover (the browser's own time popup can't be styled). The list
-// opens at the selected time, or at 09:00; arrow keys move between times.
+// Scrolls only the column (scrollIntoView would also move the page behind the popover).
+function centerInColumn(el: HTMLElement | null) {
+    const column = el?.closest('ul');
+    if (!el || !column) return;
+    column.scrollTop =
+        el.offsetTop - column.clientHeight / 2 + el.clientHeight / 2;
+}
+
+// Time field styled like the date field: a button showing the time that opens two
+// columns, hours and minutes (every 5). Picking an hour keeps the minutes (or :00);
+// picking minutes finishes. Arrow keys move within a column, left/right between them.
+// (The browser's own time popup can't be styled.)
 export default function TimePicker({
     id,
     label,
@@ -42,15 +48,57 @@ export default function TimePicker({
     className,
 }: TimePickerProps) {
     const [open, setOpen] = useState(false);
+    const [hour, minute] = value ? value.split(':') : ['', ''];
 
-    const pick = (next: string) => {
-        onChange(next);
+    // A saved minute that isn't on a 5 (e.g. :07) is still listed, in order.
+    const minutes =
+        minute && !MINUTES.includes(minute)
+            ? [...MINUTES, minute].sort()
+            : MINUTES;
+
+    const pickHour = (h: string) => onChange(`${h}:${minute || '00'}`);
+    const pickMinute = (m: string) => {
+        onChange(`${hour || DEFAULT_HOUR}:${m}`);
         setOpen(false);
     };
 
-    // A time that isn't on a quarter (e.g. saved as 10:10) is still listed, in order.
-    const times =
-        value && !TIMES.includes(value) ? [...TIMES, value].sort() : TIMES;
+    // Up/down within a column, left/right to the other column's selected (or first) item.
+    const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        const current = document.activeElement as HTMLElement | null;
+        const column = current?.closest<HTMLElement>('[data-column]');
+        if (!current || !column) return;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            const items = [...column.querySelectorAll<HTMLElement>('button')];
+            const i = items.indexOf(current);
+            const next =
+                items[
+                    Math.min(
+                        items.length - 1,
+                        Math.max(0, i + (e.key === 'ArrowDown' ? 1 : -1))
+                    )
+                ];
+            next?.focus();
+        }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            e.preventDefault();
+            const other = e.currentTarget.querySelector<HTMLElement>(
+                `[data-column="${column.dataset.column === 'hour' ? 'minute' : 'hour'}"]`
+            );
+            const target =
+                other?.querySelector<HTMLElement>('[aria-pressed="true"]') ??
+                other?.querySelector<HTMLElement>('button');
+            target?.focus();
+        }
+    };
+
+    const item = (selected: boolean) =>
+        cn(
+            'w-full cursor-pointer rounded-md px-3 py-1.5 text-center text-sm tabular-nums outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] focus-visible:ring-inset',
+            selected
+                ? 'bg-primary font-medium text-primary-foreground hover:bg-primary'
+                : 'text-foreground'
+        );
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -76,78 +124,97 @@ export default function TimePicker({
             </PopoverTrigger>
             <PopoverContent
                 align="start"
-                className="w-[var(--radix-popover-trigger-width)] min-w-40 p-1"
-                // Focus (and scroll to) the selected time, or 09:00.
+                className="w-56 p-0"
+                // Scroll both columns to the selected time (or 09:00) and focus the hour.
                 onOpenAutoFocus={(e) => {
                     e.preventDefault();
-                    const list = e.currentTarget as HTMLElement;
-                    const target = list.querySelector<HTMLElement>(
-                        `[data-time="${value || DEFAULT_SCROLL_TO}"]`
+                    const content = e.currentTarget as HTMLElement;
+                    const h = content.querySelector<HTMLElement>(
+                        `[data-hour="${hour || DEFAULT_HOUR}"]`
                     );
-                    target?.scrollIntoView({ block: 'center' });
-                    target?.focus({ preventScroll: true });
+                    const m = content.querySelector<HTMLElement>(
+                        `[data-minute="${minute || '00'}"]`
+                    );
+                    centerInColumn(h);
+                    centerInColumn(m);
+                    h?.focus({ preventScroll: true });
                 }}
             >
-                <ul
-                    aria-label={label}
-                    className="max-h-64 overflow-y-auto overscroll-contain"
-                    onKeyDown={(e) => {
-                        if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp')
-                            return;
-                        e.preventDefault();
-                        const items = [
-                            ...e.currentTarget.querySelectorAll<HTMLElement>(
-                                'button'
-                            ),
-                        ];
-                        const i = items.indexOf(
-                            document.activeElement as HTMLElement
-                        );
-                        const next =
-                            items[
-                                Math.min(
-                                    items.length - 1,
-                                    Math.max(
-                                        0,
-                                        i + (e.key === 'ArrowDown' ? 1 : -1)
-                                    )
-                                )
-                            ];
-                        next?.focus();
-                        next?.scrollIntoView({ block: 'nearest' });
-                    }}
+                <div
+                    className="grid grid-cols-2 gap-1 p-1"
+                    onKeyDown={onKeyDown}
                 >
-                    <li>
-                        <button
-                            type="button"
-                            data-time=""
-                            onClick={() => pick('')}
-                            className={cn(
-                                'w-full cursor-pointer rounded-md px-3 py-1.5 text-left text-sm text-[var(--color-text-secondary)] outline-none hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] focus-visible:ring-inset',
-                                !value && 'font-medium text-foreground'
-                            )}
+                    <div>
+                        <p className="px-3 py-1 text-center text-[11px] tracking-wider text-[var(--color-text-tertiary)] uppercase">
+                            Hour
+                        </p>
+                        <ul
+                            data-column="hour"
+                            aria-label="Hour"
+                            className="relative max-h-56 overflow-y-auto overscroll-contain"
                         >
-                            No time
-                        </button>
-                    </li>
-                    {times.map((t) => (
-                        <li key={t}>
-                            <button
-                                type="button"
-                                data-time={t}
-                                aria-current={t === value || undefined}
-                                onClick={() => pick(t)}
-                                className={cn(
-                                    'w-full cursor-pointer rounded-md px-3 py-1.5 text-left text-sm text-foreground tabular-nums outline-none hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] focus-visible:ring-inset',
-                                    t === value &&
-                                        'bg-primary text-primary-foreground hover:bg-primary focus-visible:bg-primary'
-                                )}
-                            >
-                                {t}
-                            </button>
-                        </li>
-                    ))}
-                </ul>
+                            {HOURS.map((h) => (
+                                <li key={h}>
+                                    <button
+                                        type="button"
+                                        data-hour={h}
+                                        aria-pressed={h === hour}
+                                        onClick={() => pickHour(h)}
+                                        className={item(h === hour)}
+                                    >
+                                        {h}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                    <div>
+                        <p className="px-3 py-1 text-center text-[11px] tracking-wider text-[var(--color-text-tertiary)] uppercase">
+                            Minute
+                        </p>
+                        <ul
+                            data-column="minute"
+                            aria-label="Minute"
+                            className="relative max-h-56 overflow-y-auto overscroll-contain"
+                        >
+                            {minutes.map((m) => (
+                                <li key={m}>
+                                    <button
+                                        type="button"
+                                        data-minute={m}
+                                        aria-pressed={m === minute}
+                                        onClick={() => pickMinute(m)}
+                                        className={item(m === minute)}
+                                    >
+                                        {m}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+                <div className="flex justify-between border-t border-border p-2">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={!value}
+                        onClick={() => {
+                            onChange('');
+                            setOpen(false);
+                        }}
+                    >
+                        Clear
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setOpen(false)}
+                    >
+                        Done
+                    </Button>
+                </div>
             </PopoverContent>
         </Popover>
     );
