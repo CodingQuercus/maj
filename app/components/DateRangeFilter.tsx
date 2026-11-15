@@ -155,6 +155,10 @@ export default function DateRangeFilter({
                         <Calendar
                             mode="range"
                             numberOfMonths={twoMonths ? 2 : 1}
+                            // With two months side by side the padding days of one month are
+                            // real days of the other, and they were drawn as part of the
+                            // range twice. Show each day once.
+                            showOutsideDays={false}
                             weekStartsOn={1}
                             selected={selected}
                             // Applications can't be in the future: end at the current month and
