@@ -3,7 +3,6 @@ import { Settings } from 'lucide-react';
 import AccountActions from './AccountActions';
 import PageTitle from './PageTitle';
 import ReportDeadlineSetting from './ReportDeadlineSetting';
-import SignOutButton from './SignOutButton';
 import { formatDate } from '@/lib/dates';
 
 type AccountViewProps = {
@@ -54,10 +53,6 @@ export default function AccountView({
 
                 <AccountActions email={email} isDemo={isDemo} />
 
-                {/* Phones only: the sidebar's sign-out is not shown in the bottom bar. */}
-                <div className="mt-4 max-w-[480px] sm:hidden">
-                    <SignOutButton />
-                </div>
             </div>
         </div>
     );

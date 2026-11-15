@@ -20,8 +20,7 @@ export default function DashboardLayout({
             <main
                 id="main-content"
                 tabIndex={-1}
-                // Bottom padding keeps content clear of the fixed bottom bar on phones.
-                className="min-w-0 flex-1 pb-[calc(64px+env(safe-area-inset-bottom))] outline-none sm:pb-0"
+                className="min-w-0 flex-1 pb-[env(safe-area-inset-bottom)] outline-none"
             >
                 {children}
             </main>

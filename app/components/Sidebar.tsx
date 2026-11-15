@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -9,9 +10,17 @@ import {
     FileText,
     LayoutDashboard,
     LogOut,
+    Menu,
     Settings,
 } from 'lucide-react';
 
+import { Button } from '@/components/ui/button';
+import {
+    Sheet,
+    SheetContent,
+    SheetTitle,
+    SheetTrigger,
+} from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import { useSignOut } from '@/lib/useSignOut';
 import { cn } from '@/lib/utils';
@@ -25,12 +34,16 @@ const links = [
 
 const accountLink = { href: '/account', label: 'Account', icon: Settings };
 
-// Sidebar on tablet (icons only) and desktop (icons + labels), bottom bar on phones.
-// On phones, signing out is on the account page rather than a tab in the bottom bar.
-// Both are rendered and CSS picks one, so the right layout shows from the first paint.
+// Navigation in three shapes, all rendered with CSS picking one so the right layout shows
+// from the first paint:
+// - phones: a top bar with the logo and a menu button that opens the menu as a drawer
+//   (five sections no longer fit a bottom bar);
+// - tablet: a sticky sidebar with icons only;
+// - desktop: the same sidebar with labels.
 export default function Sidebar() {
     const pathname = usePathname();
     const { signOut, signingOut } = useSignOut();
+    const [menuOpen, setMenuOpen] = useState(false);
 
     // A section stays active on its sub-pages (e.g. /applications/123).
     const isActive = (href: string) =>
@@ -48,43 +61,149 @@ export default function Sidebar() {
         <LogOut size={18} aria-hidden="true" />
     );
 
-    // Sidebar item: centred icon on tablet, icon + label from lg.
-    const sideItem = (active: boolean) =>
+    const itemBase =
+        'flex w-full cursor-pointer items-center gap-3 rounded-lg p-3 text-sm text-[var(--color-text-secondary)] no-underline transition-colors hover:bg-accent hover:text-[var(--color-text-secondary)]';
+    const itemActive =
+        'bg-[var(--color-white)] font-semibold text-foreground shadow-[var(--shadow-xs)] hover:bg-[var(--color-white)] hover:text-foreground';
+
+    // Sidebar item: centred icon on tablet, icon + label from lg. In the phone menu the
+    // label always shows.
+    const item = (active: boolean, inMenu: boolean) =>
         cn(
-            'flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg p-3 text-sm text-[var(--color-text-secondary)] no-underline transition-colors hover:bg-accent hover:text-[var(--color-text-secondary)] lg:justify-start',
-            active &&
-                'bg-[var(--color-white)] font-semibold text-foreground shadow-[var(--shadow-xs)] hover:bg-[var(--color-white)] hover:text-foreground'
+            itemBase,
+            !inMenu && 'justify-center lg:justify-start',
+            active && itemActive
         );
 
     // Label hidden visually on tablet but still read by screen readers.
-    const sideLabel = 'sr-only lg:not-sr-only';
+    const label = (inMenu: boolean) => (inMenu ? '' : 'sr-only lg:not-sr-only');
 
-    // Bottom bar item on phones.
-    const barItem = (active: boolean) =>
+    const iconClass = (active: boolean) =>
         cn(
-            'flex flex-1 cursor-pointer flex-col items-center gap-1 rounded-lg p-2 text-xs text-[var(--color-text-tertiary)] no-underline hover:text-[var(--color-text-tertiary)]',
-            active && 'font-semibold text-primary hover:text-primary'
+            'shrink-0',
+            active ? 'text-primary' : 'text-[var(--color-text-tertiary)]'
         );
 
-    return (
-        <>
-            {/* Phones: fixed bottom bar */}
-            <nav
-                aria-label="Main navigation"
-                className="fixed inset-x-0 bottom-0 z-10 flex h-[calc(64px+env(safe-area-inset-bottom))] items-center justify-around border-t border-border bg-muted pb-[env(safe-area-inset-bottom)] sm:hidden"
+    const brand = (withText: 'always' | 'lg') => (
+        <span className="flex items-center gap-2">
+            <Image
+                src="/maj-logo.svg"
+                alt="Maj"
+                width={28}
+                height={28}
+                style={{ height: 'auto' }}
+            />
+            <span
+                className={cn(
+                    'flex-col',
+                    withText === 'lg' ? 'hidden lg:flex' : 'flex'
+                )}
             >
-                {[...links, accountLink].map(({ href, label, icon: Icon }) => (
+                <span className="text-[length:var(--text-md)] leading-tight font-bold text-foreground">
+                    Maj
+                </span>
+                <span className="text-xs font-medium tracking-[var(--tracking-tight)] text-[var(--color-text-secondary)]">
+                    My Application Journal
+                </span>
+            </span>
+        </span>
+    );
+
+    // The links, account and sign out; shared by the sidebar and the phone menu.
+    const navContent = (inMenu: boolean) => (
+        <>
+            <nav
+                aria-label="App navigation"
+                className="flex flex-1 flex-col gap-1"
+            >
+                {links.map(({ href, label: text, icon: Icon }) => (
                     <Link
                         key={href}
                         href={href}
+                        title={inMenu ? undefined : text}
                         aria-current={isActive(href) ? 'page' : undefined}
-                        className={barItem(isActive(href))}
+                        className={item(isActive(href), inMenu)}
+                        onClick={() => setMenuOpen(false)}
                     >
-                        <Icon size={18} aria-hidden="true" />
-                        {label}
+                        <Icon
+                            size={18}
+                            aria-hidden="true"
+                            className={iconClass(isActive(href))}
+                        />
+                        <span className={label(inMenu)}>{text}</span>
                     </Link>
                 ))}
             </nav>
+
+            <div className="flex flex-col gap-1 border-t border-border pt-3">
+                <Link
+                    href={accountLink.href}
+                    title={inMenu ? undefined : accountLink.label}
+                    aria-current={
+                        isActive(accountLink.href) ? 'page' : undefined
+                    }
+                    className={item(isActive(accountLink.href), inMenu)}
+                    onClick={() => setMenuOpen(false)}
+                >
+                    <Settings
+                        size={18}
+                        aria-hidden="true"
+                        className={iconClass(isActive(accountLink.href))}
+                    />
+                    <span className={label(inMenu)}>{accountLink.label}</span>
+                </Link>
+                <button
+                    type="button"
+                    onClick={signOut}
+                    disabled={signingOut}
+                    aria-busy={signingOut || undefined}
+                    title={inMenu ? undefined : 'Sign out'}
+                    className={item(false, inMenu)}
+                >
+                    <span className="shrink-0 text-[var(--color-text-tertiary)]">
+                        {signOutIcon}
+                    </span>
+                    <span className={label(inMenu)}>Sign out</span>
+                </button>
+            </div>
+        </>
+    );
+
+    return (
+        <>
+            {/* Phones: top bar with a menu drawer. Not sticky, so pages with their own locked
+                header (the applications list) keep the top of the screen. */}
+            <header className="flex items-center justify-between border-b border-border bg-muted px-4 py-2 sm:hidden">
+                <Link href="/applications" className="no-underline">
+                    {brand('always')}
+                </Link>
+                <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+                    <SheetTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Open menu"
+                        >
+                            <Menu size={20} aria-hidden="true" />
+                        </Button>
+                    </SheetTrigger>
+                    <SheetContent
+                        side="left"
+                        aria-describedby={undefined}
+                        className="w-72 gap-0 bg-muted px-4 py-6"
+                    >
+                        <SheetTitle className="sr-only">Menu</SheetTitle>
+                        <Link
+                            href="/applications"
+                            className="mb-4 px-1 no-underline"
+                            onClick={() => setMenuOpen(false)}
+                        >
+                            {brand('always')}
+                        </Link>
+                        {navContent(true)}
+                    </SheetContent>
+                </Sheet>
+            </header>
 
             {/* Tablet and desktop: sticky sidebar */}
             <aside
@@ -93,87 +212,11 @@ export default function Sidebar() {
             >
                 <Link
                     href="/applications"
-                    className="mb-4 flex items-center justify-center gap-2 no-underline lg:justify-start"
+                    className="mb-4 flex justify-center no-underline lg:justify-start"
                 >
-                    <Image
-                        src="/maj-logo.svg"
-                        alt="Maj"
-                        width={28}
-                        height={28}
-                        style={{ height: 'auto' }}
-                    />
-                    <span className="hidden flex-col lg:flex">
-                        <span className="text-[length:var(--text-md)] leading-tight font-bold text-foreground">
-                            Maj
-                        </span>
-                        <span className="text-xs font-medium tracking-[var(--tracking-tight)] text-[var(--color-text-secondary)]">
-                            My Application Journal
-                        </span>
-                    </span>
+                    {brand('lg')}
                 </Link>
-
-                <nav
-                    aria-label="App navigation"
-                    className="flex flex-1 flex-col gap-1"
-                >
-                    {links.map(({ href, label, icon: Icon }) => (
-                        <Link
-                            key={href}
-                            href={href}
-                            title={label}
-                            aria-current={isActive(href) ? 'page' : undefined}
-                            className={sideItem(isActive(href))}
-                        >
-                            <Icon
-                                size={18}
-                                aria-hidden="true"
-                                className={cn(
-                                    'shrink-0',
-                                    isActive(href)
-                                        ? 'text-primary'
-                                        : 'text-[var(--color-text-tertiary)]'
-                                )}
-                            />
-                            <span className={sideLabel}>{label}</span>
-                        </Link>
-                    ))}
-                </nav>
-
-                <div className="flex flex-col gap-1 border-t border-border pt-3">
-                    <Link
-                        href={accountLink.href}
-                        title={accountLink.label}
-                        aria-current={
-                            isActive(accountLink.href) ? 'page' : undefined
-                        }
-                        className={sideItem(isActive(accountLink.href))}
-                    >
-                        <Settings
-                            size={18}
-                            aria-hidden="true"
-                            className={cn(
-                                'shrink-0',
-                                isActive(accountLink.href)
-                                    ? 'text-primary'
-                                    : 'text-[var(--color-text-tertiary)]'
-                            )}
-                        />
-                        <span className={sideLabel}>{accountLink.label}</span>
-                    </Link>
-                    <button
-                        type="button"
-                        onClick={signOut}
-                        disabled={signingOut}
-                        aria-busy={signingOut || undefined}
-                        title="Sign out"
-                        className={sideItem(false)}
-                    >
-                        <span className="shrink-0 text-[var(--color-text-tertiary)]">
-                            {signOutIcon}
-                        </span>
-                        <span className={sideLabel}>Sign out</span>
-                    </button>
-                </div>
+                {navContent(false)}
             </aside>
         </>
     );
