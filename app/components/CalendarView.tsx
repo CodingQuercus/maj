@@ -16,13 +16,8 @@ import {
     shiftMonth,
 } from '@/lib/report';
 import { OPEN_STATUSES } from '@/lib/status';
-import { ApplicationEvent, JobApplication } from '@/lib/types';
+import { CalendarEvent, JobApplication } from '@/lib/types';
 import { cn } from '@/lib/utils';
-
-// An event with the application it belongs to (embedded by the page's query).
-export type CalendarEvent = ApplicationEvent & {
-    job_applications: Pick<JobApplication, 'id' | 'title' | 'company'>;
-};
 
 type CalendarViewProps = {
     events: CalendarEvent[];

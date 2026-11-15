@@ -5,16 +5,39 @@ import { ChevronRight, LayoutDashboard } from 'lucide-react';
 
 import PageTitle from './PageTitle';
 import ActivityChart from './ActivityChart';
-import { JobApplication, Status } from '@/lib/types';
+import { CalendarEvent, JobApplication, Status } from '@/lib/types';
+import { EVENT_KIND_LABELS, formatTime, isUpcoming } from '@/lib/events';
 import { OPEN_STATUSES, STATUSES, STATUS_LABELS } from '@/lib/status';
-import { dateKey, parseDateKey, toDateKey, todayLocal } from '@/lib/dates';
+import {
+    dateKey,
+    daysUntil,
+    parseDateKey,
+    toDateKey,
+    todayLocal,
+} from '@/lib/dates';
 import { dateRangePresets } from '@/lib/dateRanges';
 import { upcomingDeadline } from '@/lib/deadline';
 import { cn } from '@/lib/utils';
 
 type OverviewViewProps = {
     applications: JobApplication[];
+    events: CalendarEvent[];
 };
+
+// One row in "Upcoming": an event or a deadline.
+type UpcomingItem = {
+    key: string;
+    href: string;
+    date: string; // YYYY-MM-DD
+    time: string; // "HH:MM" or ""
+    when: string; // "Today", "Due tomorrow"…
+    urgent: boolean;
+    title: string;
+    detail: string; // "Interview · Stackly"
+};
+
+const relativeDay = (days: number) =>
+    days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `In ${days} days`;
 
 // Card styling shared by every panel on the page.
 const card =
@@ -50,7 +73,10 @@ function StatTile({ label, value, hint }: StatTileProps) {
 
 // ---------- Page ----------
 
-export default function OverviewView({ applications }: OverviewViewProps) {
+export default function OverviewView({
+    applications,
+    events,
+}: OverviewViewProps) {
     const total = applications.length;
 
     const statusCounts = applications.reduce<Partial<Record<Status, number>>>(
@@ -76,17 +102,48 @@ export default function OverviewView({ applications }: OverviewViewProps) {
     // control) and compare neutrally: last month is a reference, not a +/- score.
     const thisMonthCount = appliedIn(thisMonth);
     const lastMonthCount = appliedIn(lastMonth);
-    const weekStart = dateRangePresets().find((p) => p.id === 'this-week')!.from;
+    const weekStart = dateRangePresets().find(
+        (p) => p.id === 'this-week'
+    )!.from;
     const thisWeekCount = applications.filter(
         (a) => a.applied_at && dateKey(a.applied_at) >= weekStart
     ).length;
     const active = OPEN_STATUSES.reduce((sum, s) => sum + count(s), 0);
 
-    // Next deadlines for open applications (any distance ahead).
-    const upcoming = applications
-        .map((app) => ({ app, info: upcomingDeadline(app, Infinity) }))
-        .filter((item) => item.info !== null)
-        .sort((a, b) => a.info!.days - b.info!.days)
+    // Next events and deadlines of open applications (any distance ahead), soonest first.
+    const upcoming: UpcomingItem[] = [
+        ...events.filter(isUpcoming).map((e) => ({
+            key: `e-${e.id}`,
+            href: `/applications/${e.job_applications.id}`,
+            date: e.event_date,
+            time: formatTime(e.start_time),
+            when: relativeDay(daysUntil(e.event_date)),
+            urgent: false,
+            title: e.job_applications.title,
+            detail: `${EVENT_KIND_LABELS[e.kind]} · ${e.job_applications.company}`,
+        })),
+        ...applications.flatMap((app) => {
+            const info = upcomingDeadline(app, Infinity);
+            return info
+                ? [
+                      {
+                          key: `d-${app.id}`,
+                          href: `/applications/${app.id}`,
+                          date: dateKey(app.deadline!),
+                          time: '',
+                          when: info.label,
+                          urgent: info.urgent,
+                          title: app.title,
+                          detail: `Deadline · ${app.company}`,
+                      },
+                  ]
+                : [];
+        }),
+    ]
+        .sort(
+            (a, b) =>
+                a.date.localeCompare(b.date) || a.time.localeCompare(b.time)
+        )
         .slice(0, 5);
 
     return (
@@ -178,27 +235,33 @@ export default function OverviewView({ applications }: OverviewViewProps) {
                         )}
                     </section>
 
-                    {/* Upcoming deadlines: when first, then what, one link per row. */}
+                    {/* Upcoming: interviews and other events together with deadlines; when
+                        first, then what, one link per row. */}
                     <section
                         className={`${card} p-5`}
-                        aria-labelledby="deadlines-heading"
+                        aria-labelledby="upcoming-heading"
                     >
-                        <h2
-                            id="deadlines-heading"
-                            className="mb-3 text-[length:var(--text-md)]"
-                        >
-                            Upcoming deadlines
-                        </h2>
+                        <div className="mb-3 flex items-center justify-between gap-2">
+                            <h2
+                                id="upcoming-heading"
+                                className="text-[length:var(--text-md)]"
+                            >
+                                Upcoming
+                            </h2>
+                            <Link href="/calendar" className="text-sm">
+                                Open calendar
+                            </Link>
+                        </div>
                         {upcoming.length === 0 ? (
                             <p className="text-sm text-[var(--color-text-tertiary)]">
-                                No upcoming deadlines for open applications.
+                                No upcoming interviews or deadlines.
                             </p>
                         ) : (
                             <ul className="-mx-2 flex flex-col">
-                                {upcoming.map(({ app, info }) => (
-                                    <li key={app.id}>
+                                {upcoming.map((item) => (
+                                    <li key={item.key}>
                                         <Link
-                                            href={`/applications/${app.id}`}
+                                            href={item.href}
                                             className="flex items-center gap-4 rounded-md px-2 py-2 no-underline transition-colors hover:bg-accent"
                                         >
                                             <span
@@ -208,23 +271,25 @@ export default function OverviewView({ applications }: OverviewViewProps) {
                                                 <span
                                                     className={cn(
                                                         'block text-sm font-medium',
-                                                        info!.urgent
+                                                        item.urgent
                                                             ? 'text-[var(--status-interview-text)]'
                                                             : 'text-foreground'
                                                     )}
                                                 >
-                                                    {info!.label}
+                                                    {item.when}
                                                 </span>
                                                 <span className="block text-xs text-[var(--color-text-tertiary)] tabular-nums">
-                                                    {app.deadline}
+                                                    {item.date}
+                                                    {item.time &&
+                                                        ` · ${item.time}`}
                                                 </span>
                                             </span>
                                             <span className="min-w-0 flex-1">
                                                 <span className="block truncate text-sm font-medium text-foreground">
-                                                    {app.title}
+                                                    {item.title}
                                                 </span>
                                                 <span className="block truncate text-xs text-[var(--color-text-secondary)]">
-                                                    {app.company}
+                                                    {item.detail}
                                                 </span>
                                             </span>
                                             <ChevronRight

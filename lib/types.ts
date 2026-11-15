@@ -53,3 +53,8 @@ export type ApplicationEvent = {
     created_at: string;
     updated_at: string | null;
 };
+
+// An event with the application it belongs to (embedded via job_applications(...)).
+export type CalendarEvent = ApplicationEvent & {
+    job_applications: Pick<JobApplication, 'id' | 'title' | 'company'>;
+};

@@ -1,9 +1,8 @@
 import { Metadata } from 'next';
 
 import { createClient } from '@/lib/supabase/server';
-import CalendarView, {
-    type CalendarEvent,
-} from '@/app/components/CalendarView';
+import CalendarView from '@/app/components/CalendarView';
+import { CalendarEvent } from '@/lib/types';
 
 export const metadata: Metadata = {
     title: 'Calendar',
