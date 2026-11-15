@@ -40,7 +40,7 @@ type ApplicationItemProps = {
 // clickable while keeping link behaviour (Cmd/Ctrl-click, middle-click, "open in new tab").
 // The status menu sits above that overlay (relative z-10) so it stays clickable.
 const stretchedLink =
-    "text-foreground no-underline outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:shadow-[inset_0_0_0_2px_var(--color-accent)]";
+    "text-foreground no-underline outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:shadow-[inset_0_0_0_2px_var(--color-focus)]";
 
 const appliedAt = (application: JobApplication) =>
     application.applied_at ? formatDate(application.applied_at) : '—';
@@ -106,7 +106,7 @@ export function ApplicationRow({ application }: ApplicationItemProps) {
             >
                 <Link
                     href={href}
-                    className="rounded-sm text-foreground no-underline outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-[var(--color-accent-border)]"
+                    className="rounded-sm text-foreground no-underline outline-none hover:underline focus-ring"
                 >
                     {application.title}
                 </Link>

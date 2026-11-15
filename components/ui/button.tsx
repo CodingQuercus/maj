@@ -9,7 +9,7 @@ import { Spinner } from '@/components/ui/spinner';
 // Variants: default = primary, outline = the old "secondary" (white with border),
 // destructive = the old "danger" (white with red text).
 const buttonVariants = cva(
-    "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border border-transparent text-sm leading-none font-medium whitespace-nowrap no-underline transition-[background-color,border-color,color,box-shadow,opacity] duration-100 outline-none select-none focus-visible:ring-[3px] focus-visible:ring-[var(--color-accent-border)] disabled:pointer-events-none disabled:opacity-45 aria-busy:cursor-progress [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+    "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border border-transparent text-sm leading-none font-medium whitespace-nowrap no-underline transition-[background-color,border-color,color,box-shadow,opacity] duration-100 outline-none select-none focus-ring disabled:pointer-events-none disabled:opacity-45 aria-busy:cursor-progress [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
     {
         variants: {
             variant: {
@@ -21,7 +21,7 @@ const buttonVariants = cva(
                     'bg-secondary text-secondary-foreground hover:bg-accent hover:text-secondary-foreground',
                 ghost: 'text-[var(--color-text-secondary)] hover:bg-accent hover:text-foreground',
                 destructive:
-                    'border-border bg-[var(--color-white)] text-destructive shadow-[var(--shadow-xs)] hover:border-[var(--color-danger-border)] hover:bg-[var(--color-danger-subtle)] hover:text-destructive focus-visible:ring-[var(--color-danger-border)]',
+                    'border-border bg-[var(--color-white)] text-destructive shadow-[var(--shadow-xs)] hover:border-[var(--color-danger-border)] hover:bg-[var(--color-danger-subtle)] hover:text-destructive',
                 link: 'h-auto px-0 text-[var(--color-accent-text)] underline-offset-4 hover:underline',
             },
             size: {

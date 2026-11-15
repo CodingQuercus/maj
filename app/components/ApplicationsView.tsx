@@ -456,7 +456,7 @@ export default function ApplicationsView({
                 tabIndex={0}
                 // From xl the table fits, so the region stops being a scroll container and the
                 // column headers can stick below the locked header.
-                className="hidden overflow-x-auto rounded-sm outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--color-accent-border)] sm:block xl:overflow-visible"
+                className="hidden overflow-x-auto rounded-sm outline-none focus-ring sm:block xl:overflow-visible"
             >
                 {/* 920px = the fixed columns (660px) + about 260px for Role. */}
                 {/* border-separate: with collapsed borders a sticky th leaves its border behind. */}

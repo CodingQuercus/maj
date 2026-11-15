@@ -57,7 +57,7 @@ export default function DatePicker({
                     // The label alone would hide the value from screen readers, so include it.
                     aria-label={`${label}: ${display || 'no date selected'}`}
                     className={cn(
-                        'w-full justify-start px-3 text-base font-normal shadow-none data-[state=open]:border-primary data-[state=open]:shadow-[var(--shadow-focus)]',
+                        'w-full justify-start px-3 text-base font-normal shadow-none data-[state=open]:border-[var(--color-focus)] data-[state=open]:shadow-[var(--shadow-focus)]',
                         !display &&
                             'text-[var(--color-text-disabled)] hover:text-[var(--color-text-disabled)]',
                         className
