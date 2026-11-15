@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import MonthSelect from './MonthSelect';
 import PageTitle from './PageTitle';
 import { Button } from '@/components/ui/button';
 import { dateKey } from '@/lib/dates';
@@ -58,6 +59,18 @@ export default function ReportView({ applications, dueDay }: ReportViewProps) {
 
     const rows = applicationsInMonth(applications, month);
     const undated = applications.filter((a) => !a.applied_at).length;
+
+    // Applications per month, for the month picker and the empty-month shortcut.
+    const counts = new Map<string, number>();
+    for (const a of applications) {
+        if (!a.applied_at) continue;
+        const key = dateKey(a.applied_at).slice(0, 7);
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    const latestWithData = [...counts.keys()]
+        .filter((key) => key <= thisMonth)
+        .sort()
+        .at(-1);
     const label = formatMonth(month);
 
     // Neutral timing note. Nothing for months whose deadline has passed: no "you missed it".
@@ -102,11 +115,14 @@ export default function ReportView({ applications, dueDay }: ReportViewProps) {
                     aria-label={`Summary for ${label}`}
                 >
                     <div className="-mt-1 flex items-center justify-between gap-2 border-b border-[var(--color-border-soft)] pb-3">
-                        <h2
-                            aria-live="polite"
-                            className="text-[length:var(--text-md)] tabular-nums"
-                        >
-                            {label}
+                        {/* The month name opens a year of months to pick directly. */}
+                        <h2 aria-live="polite">
+                            <MonthSelect
+                                month={month}
+                                onChange={setMonth}
+                                max={thisMonth}
+                                counts={counts}
+                            />
                         </h2>
                         <div className="flex items-center gap-1">
                             <Button
@@ -166,9 +182,22 @@ export default function ReportView({ applications, dueDay }: ReportViewProps) {
                 </section>
 
                 {rows.length === 0 ? (
-                    <p className="py-8 text-center text-sm text-[var(--color-text-tertiary)]">
-                        No applications with a date applied in {label}.
-                    </p>
+                    <div className="flex flex-col items-center gap-3 py-8 text-center">
+                        <p className="text-sm text-[var(--color-text-tertiary)]">
+                            No applications with a date applied in {label}.
+                        </p>
+                        {/* Point to where the data is, rather than leaving the user to search. */}
+                        {latestWithData && latestWithData !== month && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setMonth(latestWithData)}
+                            >
+                                Show {formatMonth(latestWithData)} (
+                                {counts.get(latestWithData)})
+                            </Button>
+                        )}
+                    </div>
                 ) : (
                     <section aria-label={`Applications in ${label}`}>
                         {/* Phones: one line per application. */}
