@@ -336,7 +336,7 @@ export default function ApplicationDetail({
 
                 {/* Contacts */}
                 <section className="py-4">
-                    <div className="mb-3 flex items-center justify-between">
+                    <div className="mb-3 flex max-w-[600px] items-center justify-between">
                         <SectionLabel icon={<Users size={16} />} label="Contacts" noMargin />
                         <Button
                             variant="ghost"
@@ -393,7 +393,8 @@ export default function ApplicationDetail({
                         <p className={emptyText}>No contacts added.</p>
                     )}
 
-                    <ul className="flex flex-col gap-2">
+                    {/* Capped width so the edit and delete buttons stay next to the text on wide screens. */}
+                    <ul className="flex max-w-[600px] flex-col gap-2">
                         {contacts.map((contact) => (
                             <li
                                 key={contact.id}

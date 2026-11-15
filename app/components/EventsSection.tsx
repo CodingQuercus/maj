@@ -121,7 +121,7 @@ export default function EventsSection({
 
     return (
         <section className="py-4">
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex max-w-[600px] items-center justify-between">
                 <SectionLabel
                     icon={<CalendarClock size={16} />}
                     label="Events"
@@ -146,7 +146,8 @@ export default function EventsSection({
                 </p>
             )}
 
-            <ul className="flex flex-col gap-2">
+            {/* Capped width so the edit and delete buttons stay next to the text on wide screens. */}
+            <ul className="flex max-w-[600px] flex-col gap-2">
                 {events.map((event) =>
                     editing === event.id ? (
                         <li key={event.id}>{form(event)}</li>
