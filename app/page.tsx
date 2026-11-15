@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { Building2, CalendarClock, Check, StickyNote, Users } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
 import { Button } from '@/components/ui/button';
@@ -55,6 +56,15 @@ const stages = [
     { status: 'offer', label: 'Offer' },
 ];
 
+// Demo numbers for the "By status" preview (12 applications in all).
+const statusCounts = [
+    { status: 'applied', label: 'Applied', count: 5 },
+    { status: 'assessment', label: 'Assessment', count: 1 },
+    { status: 'interview', label: 'Interview', count: 2 },
+    { status: 'offer', label: 'Offer', count: 1 },
+];
+const STATUS_TOTAL = 12;
+
 const features = [
     {
         title: 'Track applications',
@@ -62,7 +72,7 @@ const features = [
     },
     {
         title: 'Visualize progress',
-        desc: 'See your job search at a glance with a live dashboard.',
+        desc: 'See your job search at a glance with a live overview.',
     },
     {
         title: 'Keep everything in one place',
@@ -193,19 +203,128 @@ export default async function HomePage() {
                                 {feature.title}
                             </h2>
                             <p className={styles.stepDesc}>{feature.desc}</p>
+                            {/* Small previews of each part of the app, with demo data. */}
                             {i === 0 && (
                                 <div
-                                    className={styles.pipeline}
+                                    className={styles.preview}
                                     aria-hidden="true"
                                 >
-                                    {stages.map((s) => (
-                                        <span
-                                            key={s.status}
-                                            className={`badge badge-dot badge-${s.status}`}
-                                        >
-                                            {s.label}
+                                    <div className={styles.previewHeader}>
+                                        <span>
+                                            <span
+                                                className={styles.previewRole}
+                                            >
+                                                Frontend Developer
+                                            </span>
+                                            <span
+                                                className={styles.previewMeta}
+                                            >
+                                                Driftly · 2026-05-17
+                                            </span>
                                         </span>
-                                    ))}
+                                        <span className="badge badge-dot badge-interview">
+                                            Interview
+                                        </span>
+                                    </div>
+                                    {/* The status menu, open, as in the list. */}
+                                    <ul className={styles.statusMenu}>
+                                        {stages.map((st) => (
+                                            <li
+                                                key={st.status}
+                                                className={
+                                                    st.status === 'interview'
+                                                        ? styles.statusCurrent
+                                                        : undefined
+                                                }
+                                            >
+                                                <span
+                                                    className={`badge badge-dot badge-${st.status}`}
+                                                >
+                                                    {st.label}
+                                                </span>
+                                                {st.status === 'interview' && (
+                                                    <Check size={14} />
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                            {i === 1 && (
+                                <div
+                                    className={styles.preview}
+                                    aria-hidden="true"
+                                >
+                                    <span className={styles.previewTitle}>
+                                        By status
+                                    </span>
+                                    <ul className={styles.meterList}>
+                                        {statusCounts.map((s) => (
+                                            <li
+                                                key={s.status}
+                                                className={styles.meterRow}
+                                            >
+                                                <span
+                                                    className={`badge badge-dot badge-${s.status}`}
+                                                >
+                                                    {s.label}
+                                                </span>
+                                                <span
+                                                    className={
+                                                        styles.meterTrack
+                                                    }
+                                                >
+                                                    <span
+                                                        className={
+                                                            styles.meterFill
+                                                        }
+                                                        style={{
+                                                            width: `${(s.count / STATUS_TOTAL) * 100}%`,
+                                                        }}
+                                                    />
+                                                </span>
+                                                <span
+                                                    className={
+                                                        styles.meterCount
+                                                    }
+                                                >
+                                                    {s.count}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                            {i === 2 && (
+                                <div
+                                    className={styles.preview}
+                                    aria-hidden="true"
+                                >
+                                    <div className={styles.previewHeader}>
+                                        <span className={styles.previewRole}>
+                                            UX/UI Designer
+                                        </span>
+                                        <span className="badge badge-dot badge-interview">
+                                            Interview
+                                        </span>
+                                    </div>
+                                    <ul className={styles.detailList}>
+                                        <li>
+                                            <Building2 size={14} />
+                                            Wavely · Malmö
+                                        </li>
+                                        <li>
+                                            <CalendarClock size={14} />
+                                            Interview 2026-05-21 · 10:00
+                                        </li>
+                                        <li>
+                                            <StickyNote size={14} />
+                                            Video call with the hiring manager
+                                        </li>
+                                        <li>
+                                            <Users size={14} />1 contact
+                                        </li>
+                                    </ul>
                                 </div>
                             )}
                         </li>

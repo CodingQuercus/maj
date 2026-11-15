@@ -285,11 +285,124 @@
     color: var(--color-text-secondary);
 }
 
-.pipeline {
+/* Small previews of the app on paper, under the feature text. */
+.preview {
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
+    flex-direction: column;
+    gap: var(--space-3);
     margin-top: var(--space-2);
+    padding: var(--space-4);
+    background: var(--paper);
+    border: 1px solid var(--paper-line);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+.previewTitle {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.meterList,
+.detailList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.meterRow {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr 1.5rem;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.meterTrack {
+    height: 6px;
+    overflow: hidden;
+    border-radius: var(--radius-full);
+    background: var(--paper-line);
+}
+
+.meterFill {
+    display: block;
+    height: 100%;
+    border-radius: var(--radius-full);
+    background: var(--logo-cover);
+}
+
+.meterCount {
+    text-align: right;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-primary);
+}
+
+.previewHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--paper-line);
+}
+
+.previewMeta {
+    display: block;
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    font-variant-numeric: tabular-nums;
+}
+
+.statusMenu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.statusMenu li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 8px;
+    border-radius: var(--radius-md);
+}
+
+.statusMenu svg {
+    color: var(--color-text-secondary);
+}
+
+.statusCurrent {
+    background: var(--color-surface);
+}
+
+.previewRole {
+    display: block;
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.detailList li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-secondary);
+}
+
+.detailList svg {
+    flex-shrink: 0;
+    color: var(--color-text-tertiary);
 }
 
 /* ---------- Closing band ---------- */
@@ -476,6 +589,10 @@
 
     .stepNumber {
         grid-row: span 3;
+    }
+
+    .preview {
+        grid-column: 2;
     }
 }
 
