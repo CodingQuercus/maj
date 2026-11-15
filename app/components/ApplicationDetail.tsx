@@ -293,7 +293,7 @@ export default function ApplicationDetail({
                             aria-expanded={addingContact}
                         >
                             <Plus size={14} aria-hidden="true" />
-                            Add
+                            Add contact
                         </Button>
                     </div>
 

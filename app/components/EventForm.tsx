@@ -168,7 +168,7 @@ export default function EventForm({
                 <Label htmlFor={id('note')}>Note (optional)</Label>
                 <Input
                     id={id('note')}
-                    placeholder="e.g. Video call with the team lead"
+                    placeholder="e.g. where, who, what to prepare"
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                 />

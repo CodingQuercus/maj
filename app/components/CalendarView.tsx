@@ -16,14 +16,19 @@ import PageTitle from './PageTitle';
 import { Button } from '@/components/ui/button';
 import { WEEKDAYS, formatAgendaDay, monthWeeks } from '@/lib/calendar';
 import { dateKey, todayLocal } from '@/lib/dates';
-import { EVENT_KIND_LABELS, compareEvents, formatTime } from '@/lib/events';
+import {
+    EVENT_KIND_LABELS,
+    EVENT_KIND_TONE,
+    compareEvents,
+    formatTime,
+} from '@/lib/events';
 import {
     currentMonth,
     formatMonth,
     isMonthKey,
     shiftMonth,
 } from '@/lib/report';
-import { OPEN_STATUSES } from '@/lib/status';
+import { OPEN_STATUSES, STATUS_COLORS } from '@/lib/status';
 import { CalendarEvent, JobApplication } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -138,8 +143,8 @@ export default function CalendarView({
     );
 }
 
-// Dates of the month with a dot for events and a ring for deadlines (shape, not only
-// colour, tells them apart). Picking a date shows its schedule.
+// Dates of the month with dots for events (in their kind's colour) and a ring for
+// deadlines (shape, not only colour, tells them apart). Picking a date shows its schedule.
 function MonthGrid({
     month,
     onMonth,
@@ -246,9 +251,23 @@ function MonthGrid({
                                     aria-hidden="true"
                                     className="flex h-1.5 gap-0.5"
                                 >
-                                    {d && d.events.length > 0 && (
-                                        <span className="size-1.5 rounded-full bg-primary" />
-                                    )}
+                                    {/* One dot per colour of event that day (interview,
+                                        assessment, other), like their badges. */}
+                                    {[
+                                        ...new Set(
+                                            d?.events.map(
+                                                (e) => EVENT_KIND_TONE[e.kind]
+                                            )
+                                        ),
+                                    ].map((tone) => (
+                                        <span
+                                            key={tone}
+                                            className="size-1.5 rounded-full"
+                                            style={{
+                                                background: STATUS_COLORS[tone],
+                                            }}
+                                        />
+                                    ))}
                                     {d && d.deadlines.length > 0 && (
                                         <span className="size-1.5 rounded-full border border-[var(--color-text-tertiary)]" />
                                     )}
@@ -308,7 +327,7 @@ function DaySchedule({
                     onClick={onAdd}
                 >
                     <Plus size={14} aria-hidden="true" />
-                    Add
+                    Add event
                 </Button>
             </div>
 
@@ -325,17 +344,19 @@ function DaySchedule({
                                 onClick={() => onEdit(e)}
                                 className={cn(
                                     row,
-                                    'cursor-pointer bg-[var(--color-accent-subtle)] outline-none hover:bg-[var(--color-accent-border)] focus-ring'
+                                    'cursor-pointer border border-border outline-none hover:bg-accent focus-ring'
                                 )}
                             >
                                 <span className={timeCol}>
                                     {formatTime(e.start_time) || 'All day'}
                                 </span>
                                 <span className="min-w-0 flex-1">
-                                    <span className="block font-medium text-[var(--color-accent-text)]">
+                                    <span
+                                        className={`badge badge-dot badge-${EVENT_KIND_TONE[e.kind]} mb-1`}
+                                    >
                                         {EVENT_KIND_LABELS[e.kind]}
                                     </span>
-                                    <span className="block truncate text-[var(--color-text-secondary)]">
+                                    <span className="block truncate text-foreground">
                                         {e.job_applications.title} ·{' '}
                                         {e.job_applications.company}
                                     </span>

@@ -11,6 +11,7 @@ import { formatDate } from '@/lib/dates';
 import { deleteEventWithUndo } from '@/lib/eventActions';
 import {
     EVENT_KIND_LABELS,
+    EVENT_KIND_TONE,
     compareEvents,
     formatTime,
     isUpcoming,
@@ -125,7 +126,7 @@ export default function EventsSection({
                     aria-expanded={editing === 'new'}
                 >
                     <Plus size={14} aria-hidden="true" />
-                    Add
+                    Add event
                 </Button>
             </div>
 
@@ -151,7 +152,9 @@ export default function EventsSection({
                         >
                             <div className="min-w-0">
                                 <p className="flex flex-wrap items-center gap-x-2 text-sm">
-                                    <span className="font-medium text-foreground">
+                                    <span
+                                        className={`badge badge-dot badge-${EVENT_KIND_TONE[event.kind]}`}
+                                    >
                                         {EVENT_KIND_LABELS[event.kind]}
                                     </span>
                                     <span className="text-[var(--color-text-secondary)] tabular-nums">
