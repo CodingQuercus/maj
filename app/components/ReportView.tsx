@@ -60,17 +60,13 @@ export default function ReportView({ applications, dueDay }: ReportViewProps) {
     const rows = applicationsInMonth(applications, month);
     const undated = applications.filter((a) => !a.applied_at).length;
 
-    // Applications per month, for the month picker and the empty-month shortcut.
+    // Applications per month, shown in the month picker.
     const counts = new Map<string, number>();
     for (const a of applications) {
         if (!a.applied_at) continue;
         const key = dateKey(a.applied_at).slice(0, 7);
         counts.set(key, (counts.get(key) ?? 0) + 1);
     }
-    const latestWithData = [...counts.keys()]
-        .filter((key) => key <= thisMonth)
-        .sort()
-        .at(-1);
     const label = formatMonth(month);
 
     // Neutral timing note. Nothing for months whose deadline has passed: no "you missed it".
@@ -182,22 +178,9 @@ export default function ReportView({ applications, dueDay }: ReportViewProps) {
                 </section>
 
                 {rows.length === 0 ? (
-                    <div className="flex flex-col items-center gap-3 py-8 text-center">
-                        <p className="text-sm text-[var(--color-text-tertiary)]">
-                            No applications with a date applied in {label}.
-                        </p>
-                        {/* Point to where the data is, rather than leaving the user to search. */}
-                        {latestWithData && latestWithData !== month && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setMonth(latestWithData)}
-                            >
-                                Show {formatMonth(latestWithData)} (
-                                {counts.get(latestWithData)})
-                            </Button>
-                        )}
-                    </div>
+                    <p className="py-8 text-center text-sm text-[var(--color-text-tertiary)]">
+                        No applications with a date applied in {label}.
+                    </p>
                 ) : (
                     <section aria-label={`Applications in ${label}`}>
                         {/* Phones: one line per application. */}
