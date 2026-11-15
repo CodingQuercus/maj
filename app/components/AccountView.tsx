@@ -2,23 +2,21 @@ import { Settings } from 'lucide-react';
 
 import AccountActions from './AccountActions';
 import PageTitle from './PageTitle';
-import ReportDeadlineSetting from './ReportDeadlineSetting';
 import { formatDate } from '@/lib/dates';
 
 type AccountViewProps = {
     email: string;
     createdAt: string;
     isDemo: boolean;
-    reportDueDay: number | null;
 };
 
 export default function AccountView({
     email,
     createdAt,
     isDemo,
-    reportDueDay,
 }: AccountViewProps) {
-    const label = 'mb-1 block text-xs tracking-[0.08em] text-[var(--color-text-tertiary)] uppercase';
+    const label =
+        'mb-1 block text-xs tracking-[0.08em] text-[var(--color-text-tertiary)] uppercase';
 
     return (
         <div className="p-4 sm:p-8">
@@ -30,13 +28,18 @@ export default function AccountView({
                     className="mb-4 max-w-[480px] rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-xs)]"
                     aria-labelledby="profile-heading"
                 >
-                    <h2 id="profile-heading" className="mb-6 text-[length:var(--text-md)]">
+                    <h2
+                        id="profile-heading"
+                        className="mb-6 text-[length:var(--text-md)]"
+                    >
                         Profile
                     </h2>
                     <dl className="flex flex-col gap-4">
                         <div>
                             <dt className={label}>Email</dt>
-                            <dd className="text-sm break-all text-foreground">{email}</dd>
+                            <dd className="text-sm break-all text-foreground">
+                                {email}
+                            </dd>
                         </div>
                         <div>
                             <dt className={label}>Member since</dt>
@@ -47,12 +50,7 @@ export default function AccountView({
                     </dl>
                 </section>
 
-                <div className="mb-4 max-w-[480px]">
-                    <ReportDeadlineSetting dueDay={reportDueDay} />
-                </div>
-
                 <AccountActions email={email} isDemo={isDemo} />
-
             </div>
         </div>
     );

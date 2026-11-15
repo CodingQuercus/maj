@@ -27,7 +27,7 @@ import {
     formatMonth,
     isMonthKey,
     shiftMonth,
-} from '@/lib/report';
+} from '@/lib/months';
 import { OPEN_STATUSES, STATUS_COLORS } from '@/lib/status';
 import { CalendarEvent, JobApplication } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -249,7 +249,7 @@ function MonthGrid({
                                 </span>
                                 <span
                                     aria-hidden="true"
-                                    className="flex h-1.5 gap-0.5"
+                                    className="flex h-2 items-center gap-0.5"
                                 >
                                     {/* One dot per colour of event that day (interview,
                                         assessment, other), like their badges. */}
@@ -269,7 +269,7 @@ function MonthGrid({
                                         />
                                     ))}
                                     {d && d.deadlines.length > 0 && (
-                                        <span className="size-1.5 rounded-full border border-[var(--color-text-tertiary)]" />
+                                        <span className="size-2 rounded-full border-2 border-[var(--color-text-secondary)]" />
                                     )}
                                 </span>
                             </button>

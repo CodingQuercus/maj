@@ -1,12 +1,9 @@
 'use server';
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
-import { revalidatePath } from 'next/cache';
-
-import { DUE_DAY_MAX, parseDueDay } from '@/lib/report';
 
 // Emails a password reset link. Used from the sign-in page ("Forgot password?") and the account page.
 // Runs on the server so the shared demo account never triggers emails (its address doesn't exist
@@ -33,20 +30,23 @@ export async function requestPasswordReset(
 
     if (error) {
         console.error('requestPasswordReset failed', error);
-        return { error: 'Could not send reset link. Please try again in a moment.' };
+        return {
+            error: 'Could not send reset link. Please try again in a moment.',
+        };
     }
 }
 
 export async function deleteAccount() {
-
     // Create server client
     const supabase = await createClient();
 
     // Get the logged in user
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
 
     // return if no user
-    if(!user) return;
+    if (!user) return;
 
     if (user.email === process.env.DEMO_EMAIL) {
         throw new Error('Demo account cannot be deleted');
@@ -55,7 +55,7 @@ export async function deleteAccount() {
     // Create admin client
     const admin = createAdminClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
     // Remove data. Stop here if it fails, so the user is never deleted with data left behind.
@@ -64,7 +64,10 @@ export async function deleteAccount() {
         .delete()
         .eq('user_id', user.id);
     if (dataError) {
-        console.error('deleteAccount: could not delete applications', dataError);
+        console.error(
+            'deleteAccount: could not delete applications',
+            dataError
+        );
         throw new Error('Could not delete account data');
     }
 
@@ -88,10 +91,14 @@ export async function updatePassword(
     password: string
 ): Promise<{ error: string } | undefined> {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
-        return { error: 'Your reset link has expired. Please request a new one.' };
+        return {
+            error: 'Your reset link has expired. Please request a new one.',
+        };
     }
 
     if (user.email === process.env.DEMO_EMAIL) {
@@ -102,26 +109,4 @@ export async function updatePassword(
     if (error) return { error: error.message };
 
     redirect('/applications');
-}
-
-// Saves the monthly report deadline (a day of the month, or null for none) in the user's
-// account metadata, so no table is needed for this one preference.
-export async function updateReportDueDay(
-    day: number | null
-): Promise<{ error: string } | undefined> {
-    const value = parseDueDay(day);
-    if (day !== null && value === null) {
-        return { error: `Pick a day between 1 and ${DUE_DAY_MAX}.` };
-    }
-
-    const supabase = await createClient();
-    const { error } = await supabase.auth.updateUser({
-        data: { report_due_day: value },
-    });
-    if (error) {
-        console.error('updateReportDueDay failed', error);
-        return { error: 'Could not save. Please try again.' };
-    }
-
-    revalidatePath('/report');
 }

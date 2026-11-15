@@ -130,19 +130,6 @@ export function CalendarSkeleton() {
     );
 }
 
-export function ReportSkeleton() {
-    return (
-        <Container label="Loading monthly report">
-            <TitleSkeleton />
-            <div className="flex max-w-[900px] flex-col gap-4">
-                <Skeleton className="h-9 w-60" />
-                <Skeleton className="h-[120px] rounded-xl" />
-                <Skeleton className="h-[320px] rounded-xl" />
-            </div>
-        </Container>
-    );
-}
-
 export function AccountSkeleton() {
     return (
         <Container label="Loading account">

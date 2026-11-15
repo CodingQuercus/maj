@@ -1,11 +1,10 @@
 import { Metadata } from 'next';
 import AccountView from '@/app/components/AccountView';
 import { createClient } from '@/lib/supabase/server';
-import { parseDueDay } from '@/lib/report';
 
 export const metadata: Metadata = {
     title: 'Account',
-}
+};
 
 export default async function AccountPage() {
     const supabase = await createClient();
@@ -20,7 +19,6 @@ export default async function AccountPage() {
             email={user?.email ?? ''}
             createdAt={user?.created_at ?? ''}
             isDemo={isDemoAccount}
-            reportDueDay={parseDueDay(user?.user_metadata?.report_due_day)}
         />
     );
 }
