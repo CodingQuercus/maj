@@ -203,8 +203,7 @@ export default function OverviewView({
                                             <Link
                                                 href={`/applications?status=${s}`}
                                                 aria-label={`${STATUS_LABELS[s]}: ${n} (${share}%). Show these applications`}
-                                                title={`${n} of ${total} (${share}%)`}
-                                                className="grid grid-cols-[7.5rem_1fr_2rem] items-center gap-3 rounded-md px-2 py-1.5 no-underline transition-colors hover:bg-accent"
+                                                className="group grid grid-cols-[7.5rem_1fr_2rem] items-center gap-3 rounded-md px-2 py-1.5 no-underline transition-colors hover:bg-accent"
                                             >
                                                 <span
                                                     className={`badge badge-dot badge-${s} justify-self-start`}
@@ -212,7 +211,7 @@ export default function OverviewView({
                                                     {STATUS_LABELS[s]}
                                                 </span>
                                                 <span
-                                                    className="h-2 overflow-hidden rounded-full bg-muted"
+                                                    className="relative h-2 rounded-full bg-muted"
                                                     aria-hidden="true"
                                                 >
                                                     <span
@@ -221,9 +220,15 @@ export default function OverviewView({
                                                             width: `${share}%`,
                                                         }}
                                                     />
+                                                    {/* Styled tooltip on hover or keyboard focus
+                                                        (the browser's title tooltip can't be styled). */}
+                                                    <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 rounded-lg border border-border bg-[var(--color-white)] px-2.5 py-1 text-xs whitespace-nowrap text-foreground tabular-nums opacity-0 shadow-[var(--shadow-sm)] transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                                                        {n} of {total} · {share}
+                                                        %
+                                                    </span>
                                                 </span>
                                                 {/* Count only; the bar already shows the share
-                                                    (the % is in the title and accessible name). */}
+                                                    (the % is in the tooltip and accessible name). */}
                                                 <span className="text-right text-sm font-medium text-foreground tabular-nums">
                                                     {n}
                                                 </span>

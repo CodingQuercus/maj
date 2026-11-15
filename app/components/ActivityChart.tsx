@@ -274,10 +274,18 @@ export default function ActivityChart({
                                 />
                                 <Tooltip
                                     cursor={{ fill: 'var(--color-overlay)' }}
+                                    // Same look as the By status tooltip: paper, border, soft shadow.
                                     contentStyle={{
+                                        background: 'var(--color-white)',
                                         borderRadius: '8px',
                                         border: '1px solid var(--color-border)',
+                                        boxShadow: 'var(--shadow-sm)',
                                         fontSize: 'var(--text-sm)',
+                                        color: 'var(--color-text-primary)',
+                                    }}
+                                    labelStyle={{ fontWeight: 600 }}
+                                    itemStyle={{
+                                        color: 'var(--color-text-secondary)',
                                     }}
                                     labelFormatter={(_, payload) =>
                                         payload?.[0]?.payload?.title ?? ''

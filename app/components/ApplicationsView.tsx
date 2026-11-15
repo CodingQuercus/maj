@@ -205,8 +205,8 @@ export default function ApplicationsView({
 
     // Table columns. All are always shown; the table scrolls sideways when the screen is
     // narrower than its minimum width, with the Role column pinned on the left. The other
-    // columns get fixed widths that fit their content (header + sort icon, longest badge);
-    // Role takes the rest.
+    // fixed columns fit their content (header + sort icon, longest badge); Role and Company
+    // share the rest.
     const columns: { label: string; key: SortKey; className: string }[] = [
         {
             label: 'Role',
@@ -214,8 +214,9 @@ export default function ApplicationsView({
             className:
                 'sticky left-0 z-20 bg-background shadow-[inset_-1px_0_0_var(--color-border-soft)]',
         },
-        { label: 'Company', key: 'company', className: 'w-[200px]' },
-        { label: 'Location', key: 'location', className: 'w-[150px]' },
+        // No width: Role and Company share what the fixed columns leave, equally.
+        { label: 'Company', key: 'company', className: '' },
+        { label: 'Location', key: 'location', className: 'w-[180px]' },
         // "Date applied", not "Applied", which is also a status.
         { label: 'Date applied', key: 'applied_at', className: 'w-[160px]' },
         { label: 'Status', key: 'status', className: 'w-[150px]' },
@@ -458,9 +459,9 @@ export default function ApplicationsView({
                 // column headers can stick below the locked header.
                 className="hidden overflow-x-auto rounded-sm outline-none focus-ring sm:block xl:overflow-visible"
             >
-                {/* 920px = the fixed columns (660px) + about 260px for Role. */}
+                {/* 940px = the fixed columns (490px) + about 225px each for Role and Company. */}
                 {/* border-separate: with collapsed borders a sticky th leaves its border behind. */}
-                <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0">
+                <table className="w-full min-w-[940px] table-fixed border-separate border-spacing-0">
                     <caption className="sr-only">Applications</caption>
                     <thead>
                         <tr>
