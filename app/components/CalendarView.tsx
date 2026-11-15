@@ -3,16 +3,26 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { CalendarDays, Flag, Plus } from 'lucide-react';
+import {
+    CalendarDays,
+    ChevronLeft,
+    ChevronRight,
+    Flag,
+    Plus,
+} from 'lucide-react';
 
 import EventDrawer from './EventDrawer';
-import MonthPicker from './MonthPicker';
 import PageTitle from './PageTitle';
 import { Button } from '@/components/ui/button';
 import { WEEKDAYS, formatAgendaDay, monthWeeks } from '@/lib/calendar';
 import { dateKey, todayLocal } from '@/lib/dates';
 import { EVENT_KIND_LABELS, compareEvents, formatTime } from '@/lib/events';
-import { currentMonth, formatMonth, isMonthKey } from '@/lib/report';
+import {
+    currentMonth,
+    formatMonth,
+    isMonthKey,
+    shiftMonth,
+} from '@/lib/report';
 import { OPEN_STATUSES } from '@/lib/status';
 import { CalendarEvent, JobApplication } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -37,8 +47,8 @@ type DrawerState =
     | { open: true; event: CalendarEvent; date?: undefined };
 
 // Two columns: a month calendar to pick a day, and that day's schedule (events by time,
-// then deadlines of open applications). Stacked on phones. One Add button, for the picked
-// day. Events are added, edited and deleted in a drawer, or on an application's page.
+// then deadlines of open applications). Stacked on phones. The one Add button sits on the
+// day's schedule. Events are added, edited and deleted in a drawer, or on an application's page.
 // The month lives in the URL (?month=2026-11).
 export default function CalendarView({
     events,
@@ -94,29 +104,18 @@ export default function CalendarView({
 
     return (
         <div className="p-4 sm:p-8">
-            <div className="mb-4 flex items-center justify-between sm:mb-8">
-                <PageTitle icon={<CalendarDays />} title="Calendar" noMargin />
-                <Button
-                    onClick={() => setDrawer({ open: true, date: selected })}
-                    aria-label={`Add event on ${selected}`}
-                    className="size-[34px] p-0 sm:w-auto sm:px-4"
-                >
-                    <Plus size={16} aria-hidden="true" />
-                    <span className="hidden sm:inline">Add event</span>
-                </Button>
-            </div>
+            <PageTitle icon={<CalendarDays />} title="Calendar" />
             <hr />
 
             <div className="flex flex-col gap-4">
-                <MonthPicker
-                    month={month}
-                    onChange={setMonth}
-                    resetLabel="Today"
-                />
-
                 <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
                     <MonthGrid
                         month={month}
+                        onMonth={setMonth}
+                        onToday={() => {
+                            setMonth(thisMonth);
+                            setPicked(today);
+                        }}
                         today={today}
                         days={days}
                         selected={selected}
@@ -126,6 +125,7 @@ export default function CalendarView({
                         dayKey={selected}
                         isToday={selected === today}
                         day={days.get(selected)}
+                        onAdd={() => setDrawer({ open: true, date: selected })}
                         onEdit={(event) => setDrawer({ open: true, event })}
                     />
                 </div>
@@ -146,12 +146,16 @@ export default function CalendarView({
 // colour, tells them apart). Picking a date shows its schedule.
 function MonthGrid({
     month,
+    onMonth,
+    onToday,
     today,
     days,
     selected,
     onSelect,
 }: {
     month: string;
+    onMonth: (month: string) => void;
+    onToday: () => void;
     today: string;
     days: Map<string, Day>;
     selected: string;
@@ -170,6 +174,42 @@ function MonthGrid({
 
     return (
         <div className="rounded-xl border border-border bg-card p-2 shadow-[var(--shadow-xs)] sm:p-3">
+            {/* Month, Today and the arrows belong to the calendar they control. Today picks
+                today's date, so it only does nothing when today is already picked. */}
+            <div className="flex items-center justify-between gap-2 px-1 pt-1 pb-3">
+                <h2
+                    aria-live="polite"
+                    className="text-[length:var(--text-md)] tabular-nums"
+                >
+                    {formatMonth(month)}
+                </h2>
+                <div className="flex items-center gap-1">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={selected === today}
+                        onClick={onToday}
+                    >
+                        Today
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="Previous month"
+                        onClick={() => onMonth(shiftMonth(month, -1))}
+                    >
+                        <ChevronLeft size={16} aria-hidden="true" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="Next month"
+                        onClick={() => onMonth(shiftMonth(month, 1))}
+                    >
+                        <ChevronRight size={16} aria-hidden="true" />
+                    </Button>
+                </div>
+            </div>
             <div
                 aria-hidden="true"
                 className="grid grid-cols-7 pb-1 text-center text-[11px] tracking-wider text-[var(--color-text-tertiary)] uppercase"
@@ -241,11 +281,13 @@ function DaySchedule({
     dayKey,
     isToday,
     day,
+    onAdd,
     onEdit,
 }: {
     dayKey: string;
     isToday: boolean;
     day: Day | undefined;
+    onAdd: () => void;
     onEdit: (event: CalendarEvent) => void;
 }) {
     const empty =
@@ -260,17 +302,29 @@ function DaySchedule({
             aria-labelledby="day-heading"
             className="rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-xs)] md:sticky md:top-4"
         >
-            <h3
-                id="day-heading"
-                aria-live="polite"
-                className={cn(
-                    'mb-3 text-[length:var(--text-md)] tabular-nums',
-                    isToday && 'text-primary'
-                )}
-            >
-                {formatAgendaDay(dayKey)}
-                {isToday && ' · Today'}
-            </h3>
+            <div className="mb-3 flex items-center justify-between gap-2">
+                <h3
+                    id="day-heading"
+                    aria-live="polite"
+                    className={cn(
+                        'text-[length:var(--text-md)] tabular-nums',
+                        isToday && 'text-primary'
+                    )}
+                >
+                    {formatAgendaDay(dayKey)}
+                    {isToday && ' · Today'}
+                </h3>
+                {/* Adds on this day: the date it lands on is right beside it. */}
+                <Button
+                    variant="outline"
+                    size="sm"
+                    aria-label={`Add event on ${dayKey}`}
+                    onClick={onAdd}
+                >
+                    <Plus size={14} aria-hidden="true" />
+                    Add
+                </Button>
+            </div>
 
             {empty ? (
                 <p className="text-sm text-[var(--color-text-tertiary)]">
