@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
+    CalendarDays,
     ClipboardList,
     FileText,
     LayoutDashboard,
@@ -18,6 +19,7 @@ import { cn } from '@/lib/utils';
 const links = [
     { href: '/applications', label: 'Applications', icon: ClipboardList },
     { href: '/overview', label: 'Overview', icon: LayoutDashboard },
+    { href: '/calendar', label: 'Calendar', icon: CalendarDays },
     { href: '/report', label: 'Report', icon: FileText },
 ];
 

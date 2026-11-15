@@ -120,6 +120,16 @@ export function OverviewSkeleton() {
     );
 }
 
+export function CalendarSkeleton() {
+    return (
+        <Container label="Loading calendar">
+            <TitleSkeleton />
+            <Skeleton className="h-9 w-60" />
+            <Skeleton className="h-[520px] rounded-xl" />
+        </Container>
+    );
+}
+
 export function ReportSkeleton() {
     return (
         <Container label="Loading monthly report">
