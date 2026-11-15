@@ -112,10 +112,6 @@ export default function CalendarView({
                     <MonthGrid
                         month={month}
                         onMonth={setMonth}
-                        onToday={() => {
-                            setMonth(thisMonth);
-                            setPicked(today);
-                        }}
                         today={today}
                         days={days}
                         selected={selected}
@@ -147,7 +143,6 @@ export default function CalendarView({
 function MonthGrid({
     month,
     onMonth,
-    onToday,
     today,
     days,
     selected,
@@ -155,7 +150,6 @@ function MonthGrid({
 }: {
     month: string;
     onMonth: (month: string) => void;
-    onToday: () => void;
     today: string;
     days: Map<string, Day>;
     selected: string;
@@ -174,8 +168,7 @@ function MonthGrid({
 
     return (
         <div className="rounded-xl border border-border bg-card p-2 shadow-[var(--shadow-xs)] sm:p-3">
-            {/* Month, Today and the arrows belong to the calendar they control. Today picks
-                today's date, so it only does nothing when today is already picked. */}
+            {/* Month and arrows belong to the calendar they control. */}
             <div className="flex items-center justify-between gap-2 px-1 pt-1 pb-3">
                 <h2
                     aria-live="polite"
@@ -184,14 +177,6 @@ function MonthGrid({
                     {formatMonth(month)}
                 </h2>
                 <div className="flex items-center gap-1">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={selected === today}
-                        onClick={onToday}
-                    >
-                        Today
-                    </Button>
                     <Button
                         variant="ghost"
                         size="icon-sm"
@@ -249,9 +234,10 @@ function MonthGrid({
                                         'inline-flex size-8 items-center justify-center rounded-full text-sm tabular-nums',
                                         isSelected
                                             ? 'bg-primary font-semibold text-primary-foreground'
-                                            : isToday
-                                              ? 'font-semibold text-primary'
-                                              : 'text-foreground'
+                                            : 'text-foreground',
+                                        // Today is always ringed, picked or not.
+                                        isToday &&
+                                            'font-semibold ring-2 ring-primary ring-offset-2 ring-offset-[var(--color-card)]'
                                     )}
                                 >
                                     {Number(key.slice(8))}
