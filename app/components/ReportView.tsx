@@ -23,27 +23,32 @@ import {
     isMonthKey,
     monthDueNow,
     reportDueDate,
-    reportOpensDate,
     shiftMonth,
 } from '@/lib/report';
 import { JobApplication } from '@/lib/types';
 
 type ReportViewProps = {
     applications: JobApplication[];
+    // Day of the next month a month has to be reported by (set on the account page),
+    // or null for no deadline.
+    dueDay: number | null;
 };
 
 const card =
     'rounded-xl border border-border bg-card shadow-[var(--shadow-xs)]';
 
-// One month of applications, laid out for the monthly activity report to
-// Arbetsförmedlingen: how many, and date, role, employer and place for each.
+// One month of applications, laid out for a monthly report (e.g. to an unemployment
+// office): how many, and date, role, employer and place for each. Says nothing about
+// any particular office or country; a deadline only shows when the user has set one.
 // The month lives in the URL (?month=2026-10) so it survives a reload.
-export default function ReportView({ applications }: ReportViewProps) {
+export default function ReportView({ applications, dueDay }: ReportViewProps) {
     const searchParams = useSearchParams();
     const param = searchParams.get('month');
     const thisMonth = currentMonth();
     const month =
-        isMonthKey(param) && param <= thisMonth ? param : defaultReportMonth();
+        isMonthKey(param) && param <= thisMonth
+            ? param
+            : defaultReportMonth(dueDay);
 
     const setMonth = (next: string) => {
         const params = new URLSearchParams(searchParams.toString());
@@ -55,13 +60,14 @@ export default function ReportView({ applications }: ReportViewProps) {
     const undated = applications.filter((a) => !a.applied_at).length;
     const label = formatMonth(month);
 
-    // Neutral timing note: when this month can be or should be reported. Nothing for
-    // months whose reporting period has passed.
+    // Neutral timing note. Nothing for months whose deadline has passed: no "you missed it".
     const timing =
-        month === monthDueNow()
-            ? `Report it to Arbetsförmedlingen by ${reportDueDate(month)}.`
+        month === monthDueNow(dueDay)
+            ? `Due by ${reportDueDate(month, dueDay!)}.`
             : month === thisMonth
-              ? `In progress. You can report it from ${reportOpensDate(month)} to ${reportDueDate(month)}.`
+              ? dueDay
+                  ? `In progress. Due by ${reportDueDate(month, dueDay)}.`
+                  : 'In progress.'
               : null;
 
     const copy = async () => {
@@ -84,7 +90,7 @@ export default function ReportView({ applications }: ReportViewProps) {
 
     return (
         <div className="p-4 sm:p-8">
-            <PageTitle icon={<FileText />} title="Activity report" />
+            <PageTitle icon={<FileText />} title="Monthly report" />
             <hr />
 
             <div className="flex max-w-[900px] flex-col gap-4">
@@ -264,8 +270,15 @@ export default function ReportView({ applications }: ReportViewProps) {
                 <p className="text-xs text-[var(--color-text-tertiary)]">
                     {undated > 0 &&
                         `${undated} application${undated === 1 ? ' has' : 's have'} no date applied, so ${undated === 1 ? 'it isn’t' : 'they aren’t'} in any month. `}
-                    Interviews, work and studies go in the report too; add them
-                    there.
+                    {dueDay === null && (
+                        <>
+                            Have a monthly reporting deadline?{' '}
+                            <Link href="/account#report-heading">
+                                Set it in Account
+                            </Link>
+                            .
+                        </>
+                    )}
                 </p>
             </div>
         </div>

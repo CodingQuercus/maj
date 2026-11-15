@@ -2,6 +2,7 @@ import { Settings } from 'lucide-react';
 
 import AccountActions from './AccountActions';
 import PageTitle from './PageTitle';
+import ReportDeadlineSetting from './ReportDeadlineSetting';
 import SignOutButton from './SignOutButton';
 import { formatDate } from '@/lib/dates';
 
@@ -9,9 +10,15 @@ type AccountViewProps = {
     email: string;
     createdAt: string;
     isDemo: boolean;
+    reportDueDay: number | null;
 };
 
-export default function AccountView({ email, createdAt, isDemo }: AccountViewProps) {
+export default function AccountView({
+    email,
+    createdAt,
+    isDemo,
+    reportDueDay,
+}: AccountViewProps) {
     const label = 'mb-1 block text-xs tracking-[0.08em] text-[var(--color-text-tertiary)] uppercase';
 
     return (
@@ -40,6 +47,10 @@ export default function AccountView({ email, createdAt, isDemo }: AccountViewPro
                         </div>
                     </dl>
                 </section>
+
+                <div className="mb-4 max-w-[480px]">
+                    <ReportDeadlineSetting dueDay={reportDueDay} />
+                </div>
 
                 <AccountActions email={email} isDemo={isDemo} />
 

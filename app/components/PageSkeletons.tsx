@@ -122,7 +122,7 @@ export function OverviewSkeleton() {
 
 export function ReportSkeleton() {
     return (
-        <Container label="Loading activity report">
+        <Container label="Loading monthly report">
             <TitleSkeleton />
             <div className="flex max-w-[900px] flex-col gap-4">
                 <Skeleton className="h-9 w-60" />

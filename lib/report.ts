@@ -1,10 +1,22 @@
 import { JobApplication } from './types';
 import { dateKey, toDateKey, todayLocal } from './dates';
 
-// Monthly activity report (aktivitetsrapport) to Arbetsförmedlingen: the jobs applied for
-// in a month are reported from the 1st to the 14th of the next month. If the 14th is a
-// Saturday or Sunday, the next weekday is the last day.
-const REPORT_DUE_DAY = 14;
+// Monthly report of applications, e.g. for an unemployment office or a benefits log.
+// Optionally the user sets a deadline: a day of the month by which the previous month
+// has to be reported (stored as `report_due_day` in their account's metadata).
+
+// Days 1–28 exist in every month.
+export const DUE_DAY_MAX = 28;
+
+// The stored deadline day, or null when none is set (or the value is unusable).
+export function parseDueDay(value: unknown): number | null {
+    return typeof value === 'number' &&
+        Number.isInteger(value) &&
+        value >= 1 &&
+        value <= DUE_DAY_MAX
+        ? value
+        : null;
+}
 
 // Months are "YYYY-MM" keys throughout.
 export function monthKey(date: Date): string {
@@ -34,26 +46,22 @@ export function formatMonth(month: string): string {
     });
 }
 
-// Last day to report `month`, as YYYY-MM-DD: the 14th of the next month, moved to the
-// Monday after if it falls on a weekend.
-export function reportDueDate(month: string): string {
-    const [y, m] = shiftMonth(month, 1).split('-').map(Number);
-    const due = new Date(y, m - 1, REPORT_DUE_DAY);
-    const day = due.getDay();
-    if (day === 6) due.setDate(due.getDate() + 2);
-    if (day === 0) due.setDate(due.getDate() + 1);
-    return toDateKey(due);
+// Last day to report `month`, as YYYY-MM-DD: day `dueDay` of the next month.
+export function reportDueDate(month: string, dueDay: number): string {
+    return `${shiftMonth(month, 1)}-${String(dueDay).padStart(2, '0')}`;
 }
 
-// The month that is due for reporting right now, or null between reporting periods.
-export function monthDueNow(): string | null {
+// The month that is due for reporting right now, or null between reporting periods
+// (and always null without a deadline).
+export function monthDueNow(dueDay: number | null): string | null {
+    if (dueDay === null) return null;
     const lastMonth = shiftMonth(currentMonth(), -1);
-    return todayLocal() <= reportDueDate(lastMonth) ? lastMonth : null;
+    return todayLocal() <= reportDueDate(lastMonth, dueDay) ? lastMonth : null;
 }
 
-// Opens on last month while it can still be reported, otherwise on the month in progress.
-export function defaultReportMonth(): string {
-    return monthDueNow() ?? currentMonth();
+// Opens on last month while it is due, otherwise on the month in progress.
+export function defaultReportMonth(dueDay: number | null): string {
+    return monthDueNow(dueDay) ?? currentMonth();
 }
 
 // Applications with a date applied in `month`, oldest first (the order a report is read in).
@@ -64,9 +72,4 @@ export function applicationsInMonth(
     return applications
         .filter((a) => a.applied_at && dateKey(a.applied_at).startsWith(month))
         .sort((a, b) => (a.applied_at ?? '').localeCompare(b.applied_at ?? ''));
-}
-
-// First day `month` can be reported: the 1st of the next month.
-export function reportOpensDate(month: string): string {
-    return `${shiftMonth(month, 1)}-01`;
 }

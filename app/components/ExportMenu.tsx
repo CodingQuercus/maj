@@ -73,7 +73,7 @@ export default function ExportMenu({ applications }: ExportMenuProps) {
                 <DropdownMenuItem asChild>
                     <Link href="/report" className="no-underline">
                         <FileText size={16} aria-hidden="true" />
-                        Monthly activity report
+                        Monthly report
                     </Link>
                 </DropdownMenuItem>
             </DropdownMenuContent>

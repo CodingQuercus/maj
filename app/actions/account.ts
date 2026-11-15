@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
+import { revalidatePath } from 'next/cache';
+
+import { DUE_DAY_MAX, parseDueDay } from '@/lib/report';
 
 // Emails a password reset link. Used from the sign-in page ("Forgot password?") and the account page.
 // Runs on the server so the shared demo account never triggers emails (its address doesn't exist
@@ -99,4 +102,26 @@ export async function updatePassword(
     if (error) return { error: error.message };
 
     redirect('/applications');
+}
+
+// Saves the monthly report deadline (a day of the month, or null for none) in the user's
+// account metadata, so no table is needed for this one preference.
+export async function updateReportDueDay(
+    day: number | null
+): Promise<{ error: string } | undefined> {
+    const value = parseDueDay(day);
+    if (day !== null && value === null) {
+        return { error: `Pick a day between 1 and ${DUE_DAY_MAX}.` };
+    }
+
+    const supabase = await createClient();
+    const { error } = await supabase.auth.updateUser({
+        data: { report_due_day: value },
+    });
+    if (error) {
+        console.error('updateReportDueDay failed', error);
+        return { error: 'Could not save. Please try again.' };
+    }
+
+    revalidatePath('/report');
 }
