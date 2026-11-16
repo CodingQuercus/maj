@@ -15,7 +15,14 @@ import EventDrawer from './EventDrawer';
 import MonthSelect from './MonthSelect';
 import PageTitle from './PageTitle';
 import { Button } from '@/components/ui/button';
-import { WEEKDAYS, formatAgendaDay, monthWeeks } from '@/lib/calendar';
+import {
+    WEEKDAYS,
+    formatDayLong,
+    formatDayShort,
+    monthWeeks,
+    nextDays,
+    relativeDay,
+} from '@/lib/calendar';
 import { dateKey, todayLocal } from '@/lib/dates';
 import {
     EVENT_KIND_LABELS,
@@ -52,10 +59,23 @@ type DrawerState =
     | { open: true; date: string; event?: undefined }
     | { open: true; event: CalendarEvent; date?: undefined };
 
-// Two columns: a month calendar to pick a day, and that day's schedule (events by time,
-// then last days to apply for saved jobs). Stacked on phones. The one Add button sits on the
-// day's schedule. Events are added, edited and deleted in a drawer, or on an application's page.
-// The month lives in the URL (?month=2026-11).
+// How many days the side panel looks ahead when no day is picked.
+const UPCOMING_DAYS = 7;
+
+// The dot colours in use (calls and other events share one) with what they stand for.
+const LEGEND = [
+    { tone: EVENT_KIND_TONE.interview, label: 'Interview' },
+    { tone: EVENT_KIND_TONE.assessment, label: 'Assessment' },
+    { tone: EVENT_KIND_TONE.call, label: 'Call or other' },
+];
+
+const hasItems = (d: Day | undefined): d is Day =>
+    !!d && d.events.length + d.deadlines.length > 0;
+
+// Two columns: a month calendar, and beside it what is coming up in the next seven days
+// (events by time, and last days to apply for saved jobs). Picking a date narrows the list
+// to that day; picking it again goes back. Stacked on phones. Events are added, edited and
+// deleted in a drawer, or on an application's page. The month lives in the URL (?month=2026-11).
 export default function CalendarView({
     events,
     applications,
@@ -84,17 +104,6 @@ export default function CalendarView({
         }
     }
 
-    // The day shown: the one picked in this month; otherwise today in the current month,
-    // or the first day with something on it (else the 1st) in another month.
-    const firstBusyDay = [...days.keys()]
-        .filter((key) => key.startsWith(month))
-        .sort()[0];
-    const selected = picked?.startsWith(month)
-        ? picked
-        : month === thisMonth
-          ? today
-          : (firstBusyDay ?? `${month}-01`);
-
     const setMonth = (next: string) => {
         const params = new URLSearchParams(searchParams.toString());
         if (next === thisMonth) params.delete('month');
@@ -110,28 +119,30 @@ export default function CalendarView({
     );
 
     return (
-        <div className="p-4 sm:p-8">
+        // On larger screens the two cards fill the window's height, side by side.
+        <div className="flex min-h-dvh flex-col p-4 sm:p-8">
             <PageTitle icon={<CalendarDays />} title="Calendar" />
             <hr />
 
-            <div className="flex flex-col gap-4">
-                <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-                    <MonthGrid
-                        month={month}
-                        onMonth={setMonth}
-                        today={today}
-                        days={days}
-                        selected={selected}
-                        onSelect={setPicked}
-                    />
-                    <DaySchedule
-                        dayKey={selected}
-                        isToday={selected === today}
-                        day={days.get(selected)}
-                        onAdd={() => setDrawer({ open: true, date: selected })}
-                        onEdit={(event) => setDrawer({ open: true, event })}
-                    />
-                </div>
+            <div className="grid grid-cols-1 gap-4 md:min-h-[560px] md:flex-1 md:grid-cols-2 md:grid-rows-[minmax(0,1fr)] md:gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+                <MonthGrid
+                    month={month}
+                    onMonth={setMonth}
+                    today={today}
+                    days={days}
+                    picked={picked}
+                    onPick={(key) =>
+                        setPicked((current) => (current === key ? null : key))
+                    }
+                />
+                <Agenda
+                    picked={picked}
+                    today={today}
+                    days={days}
+                    onShowUpcoming={() => setPicked(null)}
+                    onAdd={(date) => setDrawer({ open: true, date })}
+                    onEdit={(event) => setDrawer({ open: true, event })}
+                />
             </div>
 
             <EventDrawer
@@ -145,22 +156,23 @@ export default function CalendarView({
     );
 }
 
-// Dates of the month with dots for events (in their kind's colour) and a ring for
-// deadlines (shape, not only colour, tells them apart). Picking a date shows its schedule.
+// Dates of the month marked with a dot per colour of event (with the number of events when
+// there are several) and a flag for a last day to apply, so shape tells them apart and
+// not only colour. A legend below says what the colours are.
 function MonthGrid({
     month,
     onMonth,
     today,
     days,
-    selected,
-    onSelect,
+    picked,
+    onPick,
 }: {
     month: string;
     onMonth: (month: string) => void;
     today: string;
     days: Map<string, Day>;
-    selected: string;
-    onSelect: (day: string) => void;
+    picked: string | null;
+    onPick: (day: string) => void;
 }) {
     // Events and deadlines per month, for the month picker.
     const monthCounts = new Map<string, number>();
@@ -184,7 +196,7 @@ function MonthGrid({
             .join(', ');
 
     return (
-        <div className="rounded-xl border border-border bg-card p-2 shadow-[var(--shadow-xs)] sm:p-3">
+        <div className="flex flex-col rounded-xl border border-border bg-card p-2 shadow-[var(--shadow-xs)] sm:p-3">
             {/* Previous / month / next. The month opens a year of months to jump to, each
                 with how many events and deadlines it has. */}
             <div className="flex items-center justify-between gap-2 px-1 pt-1 pb-3">
@@ -227,7 +239,7 @@ function MonthGrid({
             <div
                 role="group"
                 aria-label={formatMonth(month)}
-                className="grid grid-cols-7"
+                className="grid grid-cols-7 md:flex-1 md:auto-rows-fr"
             >
                 {monthWeeks(month)
                     .flat()
@@ -235,22 +247,27 @@ function MonthGrid({
                         if (!key.startsWith(month))
                             return <span key={key} aria-hidden="true" />;
                         const d = days.get(key);
-                        const isSelected = key === selected;
+                        const isPicked = key === picked;
                         const isToday = key === today;
                         const info = summary(d);
+                        const tones = [
+                            ...new Set(
+                                d?.events.map((e) => EVENT_KIND_TONE[e.kind])
+                            ),
+                        ];
                         return (
                             <button
                                 key={key}
                                 type="button"
-                                aria-pressed={isSelected}
-                                aria-label={`${formatAgendaDay(key)}${isToday ? ', today' : ''}${info ? `, ${info}` : ''}`}
-                                onClick={() => onSelect(key)}
-                                className="flex h-12 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg outline-none hover:bg-[var(--color-surface)] focus-ring sm:h-14 lg:h-16"
+                                aria-pressed={isPicked}
+                                aria-label={`${formatDayLong(key)}${isToday ? ', today' : ''}${info ? `, ${info}` : ''}`}
+                                onClick={() => onPick(key)}
+                                className="flex h-12 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg outline-none hover:bg-[var(--color-surface)] focus-ring sm:h-14 md:h-auto md:min-h-14"
                             >
                                 <span
                                     className={cn(
                                         'inline-flex size-8 items-center justify-center rounded-full text-sm tabular-nums',
-                                        isSelected
+                                        isPicked
                                             ? 'bg-primary font-semibold text-primary-foreground'
                                             : 'text-foreground',
                                         // Today is always ringed, picked or not.
@@ -262,17 +279,9 @@ function MonthGrid({
                                 </span>
                                 <span
                                     aria-hidden="true"
-                                    className="flex h-2 items-center gap-0.5"
+                                    className="flex h-2.5 items-center gap-0.5 text-[var(--color-text-secondary)]"
                                 >
-                                    {/* One dot per colour of event that day (interview,
-                                        assessment, other), like their badges. */}
-                                    {[
-                                        ...new Set(
-                                            d?.events.map(
-                                                (e) => EVENT_KIND_TONE[e.kind]
-                                            )
-                                        ),
-                                    ].map((tone) => (
+                                    {tones.map((tone) => (
                                         <span
                                             key={tone}
                                             className="size-1.5 rounded-full"
@@ -281,132 +290,250 @@ function MonthGrid({
                                             }}
                                         />
                                     ))}
+                                    {d && d.events.length > 1 && (
+                                        <span className="text-[10px] leading-none font-medium tabular-nums">
+                                            {d.events.length}
+                                        </span>
+                                    )}
                                     {d && d.deadlines.length > 0 && (
-                                        <span className="size-2 rounded-full border-2 border-[var(--color-text-secondary)]" />
+                                        <Flag
+                                            size={10}
+                                            strokeWidth={2.5}
+                                            className={cn(
+                                                tones.length && 'ml-0.5'
+                                            )}
+                                        />
                                     )}
                                 </span>
                             </button>
                         );
                     })}
             </div>
+            {/* What the marks mean. Kinds also show as labelled badges in the list. */}
+            <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border px-1 pt-3 pb-1 text-xs text-[var(--color-text-secondary)]">
+                {LEGEND.map(({ tone, label }) => (
+                    <li key={label} className="flex items-center gap-1.5">
+                        <span
+                            aria-hidden="true"
+                            className="size-1.5 rounded-full"
+                            style={{ background: STATUS_COLORS[tone] }}
+                        />
+                        {label}
+                    </li>
+                ))}
+                <li className="flex items-center gap-1.5">
+                    <Flag size={12} strokeWidth={2.25} aria-hidden="true" />
+                    Last day to apply
+                </li>
+            </ul>
         </div>
     );
 }
 
-// One day: events in time order (those without a time first, as "All day"), then
-// deadlines. Events open for editing; deadlines go to their application.
-function DaySchedule({
-    dayKey,
-    isToday,
-    day,
+// The next seven days, grouped by day, or only the picked day. Events open for editing;
+// deadlines go to their application.
+function Agenda({
+    picked,
+    today,
+    days,
+    onShowUpcoming,
     onAdd,
     onEdit,
 }: {
-    dayKey: string;
-    isToday: boolean;
-    day: Day | undefined;
-    onAdd: () => void;
+    picked: string | null;
+    today: string;
+    days: Map<string, Day>;
+    onShowUpcoming: () => void;
+    onAdd: (date: string) => void;
     onEdit: (event: CalendarEvent) => void;
 }) {
-    const empty =
-        !day || (day.events.length === 0 && day.deadlines.length === 0);
-    const row =
-        'flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors';
-    const timeCol =
-        'w-14 shrink-0 pt-px text-xs text-[var(--color-text-tertiary)] tabular-nums';
+    const shown = picked
+        ? [picked]
+        : nextDays(today, UPCOMING_DAYS).filter((key) =>
+              hasItems(days.get(key))
+          );
+    const addDate = picked ?? today;
+
+    // "Today", "Tomorrow" or nothing, after a date.
+    const nearby = (key: string) => {
+        const rel = relativeDay(key, today);
+        return rel === 'today' || rel === 'tomorrow'
+            ? rel[0].toUpperCase() + rel.slice(1)
+            : '';
+    };
 
     return (
         <section
-            aria-labelledby="day-heading"
-            className="rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-xs)] md:sticky md:top-4"
+            aria-labelledby="agenda-heading"
+            className="flex flex-col rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-xs)]"
         >
+            {picked && (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="-mt-1 mb-1 -ml-2 self-start text-[var(--color-text-secondary)]"
+                    onClick={onShowUpcoming}
+                >
+                    <ChevronLeft size={14} aria-hidden="true" />
+                    Next {UPCOMING_DAYS} days
+                </Button>
+            )}
             <div className="mb-3 flex items-center justify-between gap-2">
                 <h3
-                    id="day-heading"
+                    id="agenda-heading"
                     aria-live="polite"
                     className={cn(
-                        'text-[length:var(--text-md)] tabular-nums',
-                        isToday && 'text-primary'
+                        'text-[length:var(--text-md)]',
+                        picked === today && 'text-primary'
                     )}
                 >
-                    {formatAgendaDay(dayKey)}
-                    {isToday && ' · Today'}
+                    {picked ? (
+                        <>
+                            {formatDayShort(picked)}
+                            {nearby(picked) && ` · ${nearby(picked)}`}
+                        </>
+                    ) : (
+                        `Next ${UPCOMING_DAYS} days`
+                    )}
                 </h3>
-                {/* Adds on this day: the date it lands on is right beside it. */}
+                {/* Adds on the picked day, or today. */}
                 <Button
                     variant="outline"
                     size="sm"
-                    aria-label={`Add event on ${dayKey}`}
-                    onClick={onAdd}
+                    aria-label={`Add event on ${formatDayLong(addDate)}`}
+                    onClick={() => onAdd(addDate)}
                 >
                     <Plus size={14} aria-hidden="true" />
                     Add event
                 </Button>
             </div>
 
-            {empty ? (
+            {shown.length === 0 || (picked && !hasItems(days.get(picked))) ? (
                 <p className="text-sm text-[var(--color-text-tertiary)]">
-                    Nothing planned.
+                    {picked
+                        ? 'Nothing planned.'
+                        : `Nothing in the next ${UPCOMING_DAYS} days.`}
                 </p>
             ) : (
-                <ul className="-mx-1 flex flex-col gap-1">
-                    {day!.events.map((e) => (
-                        <li key={e.id}>
-                            <button
-                                type="button"
-                                onClick={() => onEdit(e)}
-                                className={cn(
-                                    row,
-                                    'cursor-pointer border border-border outline-none hover:bg-accent focus-ring'
-                                )}
-                            >
-                                <span className={timeCol}>
-                                    {formatTime(e.start_time) || 'All day'}
-                                </span>
-                                <span className="min-w-0 flex-1">
-                                    <span
-                                        className={`badge badge-dot badge-${EVENT_KIND_TONE[e.kind]} mb-1`}
+                // Scrolls on its own on larger screens, so the card keeps the calendar's height.
+                <div className="-m-1 p-1 md:min-h-0 md:flex-1 md:overflow-y-auto">
+                    {picked ? (
+                        <DayItems
+                            day={days.get(picked)!}
+                            today={today}
+                            onEdit={onEdit}
+                        />
+                    ) : (
+                        <ul className="flex flex-col gap-4">
+                            {shown.map((key) => (
+                                <li key={key}>
+                                    <h4
+                                        className={cn(
+                                            'mb-1.5 text-xs font-medium text-[var(--color-text-secondary)]',
+                                            key === today && 'text-primary'
+                                        )}
                                     >
-                                        {EVENT_KIND_LABELS[e.kind]}
-                                    </span>
-                                    <span className="block truncate text-foreground">
-                                        {e.job_applications.title} ·{' '}
-                                        {e.job_applications.company}
-                                    </span>
-                                    {e.note && (
-                                        <span className="block truncate text-xs text-[var(--color-text-tertiary)]">
-                                            {e.note}
-                                        </span>
-                                    )}
-                                </span>
-                            </button>
-                        </li>
-                    ))}
-                    {day!.deadlines.map((a) => (
-                        <li key={a.id}>
-                            <Link
-                                href={`/applications/${a.id}`}
-                                className={cn(
-                                    row,
-                                    'border border-border no-underline hover:bg-accent'
-                                )}
-                            >
-                                <span className={timeCol}>
-                                    <Flag size={14} aria-hidden="true" />
-                                </span>
-                                <span className="min-w-0 flex-1">
-                                    <span className="block font-medium text-foreground">
-                                        Apply by
-                                    </span>
-                                    <span className="block truncate text-[var(--color-text-secondary)]">
-                                        {a.title} · {a.company}
-                                    </span>
-                                </span>
-                            </Link>
-                        </li>
-                    ))}
-                </ul>
+                                        {nearby(key) && `${nearby(key)} · `}
+                                        {formatDayShort(key)}
+                                    </h4>
+                                    <DayItems
+                                        day={days.get(key)!}
+                                        today={today}
+                                        onEdit={onEdit}
+                                    />
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
             )}
         </section>
+    );
+}
+
+// One day's events in time order (those without a time first), then its deadlines. The
+// company comes first and wraps rather than being cut off.
+function DayItems({
+    day,
+    today,
+    onEdit,
+}: {
+    day: Day;
+    today: string;
+    onEdit: (event: CalendarEvent) => void;
+}) {
+    const row =
+        'flex w-full flex-col items-start gap-1 rounded-lg border border-border px-3 py-2.5 text-left text-sm transition-colors hover:bg-accent';
+
+    return (
+        <ul className="flex flex-col gap-1.5">
+            {day.events.map((e) => (
+                <li key={e.id}>
+                    <button
+                        type="button"
+                        onClick={() => onEdit(e)}
+                        className={cn(
+                            row,
+                            'cursor-pointer outline-none focus-ring'
+                        )}
+                    >
+                        <span className="flex items-center gap-2">
+                            {e.start_time && (
+                                <span className="font-medium text-foreground tabular-nums">
+                                    {formatTime(e.start_time)}
+                                </span>
+                            )}
+                            <span
+                                className={`badge badge-dot badge-${EVENT_KIND_TONE[e.kind]}`}
+                            >
+                                {EVENT_KIND_LABELS[e.kind]}
+                            </span>
+                        </span>
+                        <Names
+                            company={e.job_applications.company}
+                            title={e.job_applications.title}
+                        />
+                        {e.note && (
+                            <span className="block max-w-full truncate text-xs text-[var(--color-text-tertiary)]">
+                                {e.note}
+                            </span>
+                        )}
+                    </button>
+                </li>
+            ))}
+            {day.deadlines.map((a) => (
+                <li key={a.id}>
+                    <Link
+                        href={`/applications/${a.id}`}
+                        className={cn(row, 'no-underline')}
+                    >
+                        <span className="flex items-center gap-2">
+                            <span className="badge badge-saved">
+                                <Flag size={12} aria-hidden="true" />
+                                Apply by
+                            </span>
+                            {/* Time left to apply. */}
+                            <span className="text-xs text-[var(--color-text-secondary)]">
+                                {relativeDay(dateKey(a.deadline!), today)}
+                            </span>
+                        </span>
+                        <Names company={a.company} title={a.title} />
+                    </Link>
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+function Names({ company, title }: { company: string; title: string }) {
+    return (
+        <>
+            <span className="block max-w-full font-medium break-words text-foreground">
+                {company}
+            </span>
+            <span className="-mt-1 block max-w-full break-words text-[var(--color-text-secondary)]">
+                {title}
+            </span>
+        </>
     );
 }
