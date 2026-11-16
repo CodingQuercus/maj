@@ -354,14 +354,6 @@ function Agenda({
           );
     const addDate = picked ?? today;
 
-    // "Today", "Tomorrow" or nothing, after a date.
-    const nearby = (key: string) => {
-        const rel = relativeDay(key, today);
-        return rel === 'today' || rel === 'tomorrow'
-            ? rel[0].toUpperCase() + rel.slice(1)
-            : '';
-    };
-
     return (
         <section
             aria-labelledby="agenda-heading"
@@ -387,14 +379,9 @@ function Agenda({
                         picked === today && 'text-primary'
                     )}
                 >
-                    {picked ? (
-                        <>
-                            {formatDayShort(picked)}
-                            {nearby(picked) && ` · ${nearby(picked)}`}
-                        </>
-                    ) : (
-                        `Next ${UPCOMING_DAYS} days`
-                    )}
+                    {picked
+                        ? formatDayShort(picked)
+                        : `Next ${UPCOMING_DAYS} days`}
                 </h3>
                 {/* Adds on the picked day, or today. */}
                 <Button
@@ -433,7 +420,6 @@ function Agenda({
                                             key === today && 'text-primary'
                                         )}
                                     >
-                                        {nearby(key) && `${nearby(key)} · `}
                                         {formatDayShort(key)}
                                     </h4>
                                     <DayItems
