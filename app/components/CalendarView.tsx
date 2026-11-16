@@ -62,11 +62,11 @@ type DrawerState =
 // How many days the side panel looks ahead when no day is picked.
 const UPCOMING_DAYS = 7;
 
-// The dot colours in use (calls and other events share one) with what they stand for.
+// The dot colours in use with what they stand for.
 const LEGEND = [
     { tone: EVENT_KIND_TONE.interview, label: 'Interview' },
     { tone: EVENT_KIND_TONE.assessment, label: 'Assessment' },
-    { tone: EVENT_KIND_TONE.call, label: 'Call or other' },
+    { tone: EVENT_KIND_TONE.other, label: 'Other' },
 ];
 
 const hasItems = (d: Day | undefined): d is Day =>
@@ -262,7 +262,7 @@ function MonthGrid({
                                 aria-pressed={isPicked}
                                 aria-label={`${formatDayLong(key)}${isToday ? ', today' : ''}${info ? `, ${info}` : ''}`}
                                 onClick={() => onPick(key)}
-                                className="flex h-12 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg outline-none hover:bg-[var(--color-surface)] focus-ring sm:h-14 md:h-auto md:min-h-14"
+                                className="flex h-14 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg outline-none hover:bg-[var(--color-surface)] focus-ring sm:h-16 md:h-auto md:min-h-16"
                             >
                                 <span
                                     className={cn(
@@ -272,7 +272,7 @@ function MonthGrid({
                                             : 'text-foreground',
                                         // Today is always ringed, picked or not.
                                         isToday &&
-                                            'font-semibold ring-2 ring-primary ring-offset-2 ring-offset-[var(--color-card)]'
+                                            'font-semibold ring-2 ring-primary ring-offset-1 ring-offset-[var(--color-card)]'
                                     )}
                                 >
                                     {Number(key.slice(8))}

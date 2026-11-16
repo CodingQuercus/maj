@@ -1,27 +1,20 @@
 import { ApplicationEvent, EventKind, Status } from './types';
 import { todayLocal } from './dates';
 
-export const EVENT_KINDS: EventKind[] = [
-    'interview',
-    'assessment',
-    'call',
-    'other',
-];
+export const EVENT_KINDS: EventKind[] = ['interview', 'assessment', 'other'];
 
 export const EVENT_KIND_LABELS: Record<EventKind, string> = {
     interview: 'Interview',
     assessment: 'Assessment',
-    call: 'Call',
     other: 'Other',
 };
 
 // Colour of each kind, borrowed from the matching status (interviews look like the
-// Interview status, assessments like Assessment); calls and other events stay neutral.
+// Interview status, assessments like Assessment); other events (calls, meetings…) stay neutral.
 // Used as badge-<tone> classes and with STATUS_COLORS.
 export const EVENT_KIND_TONE: Record<EventKind, Status> = {
     interview: 'interview',
     assessment: 'assessment',
-    call: 'applied',
     other: 'applied',
 };
 

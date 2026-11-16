@@ -40,7 +40,7 @@ export type Contact = {
 };
 
 // Kinds of dated events on an application (the calendar shows them).
-export type EventKind = 'interview' | 'assessment' | 'call' | 'other';
+export type EventKind = 'interview' | 'assessment' | 'other';
 
 // An interview, test, call etc. linked to a job application.
 export type ApplicationEvent = {

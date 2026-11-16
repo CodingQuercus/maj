@@ -313,7 +313,7 @@ export default function ApplicationDetail({
 
                 <hr />
 
-                {/* Events (interviews, calls…), after the posting they belong to. */}
+                {/* Events (interviews, tests…), after the posting they belong to. */}
                 <EventsSection
                     applicationId={application.id}
                     status={application.status}

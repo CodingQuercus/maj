@@ -1,4 +1,4 @@
--- Events (interviews, assessments, calls…) for the calendar. Run in the Supabase SQL editor.
+-- Events (interviews, assessments, other) for the calendar. Run in the Supabase SQL editor.
 -- Ran against production on 2026-11-15.
 
 create table public.events (

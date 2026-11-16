@@ -28,7 +28,7 @@ type EventsSectionProps = {
     initialEvents: ApplicationEvent[];
 };
 
-// Interviews, tests, calls etc. for one application: listed by date, added and edited
+// Interviews, tests and other events for one application: listed by date, added and edited
 // inline (like contacts), removed with Undo. They also show in the calendar.
 export default function EventsSection({
     applicationId,
